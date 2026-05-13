@@ -4,8 +4,7 @@ import { useState } from 'react'
 
 export default function Home() {
   const [simNo, setSimNo] = useState('')
-  const [data, setData] = useState([])
-
+  const [data, setData] = useState<any[]>([])
   const searchSim = async () => {
     const response = await fetch(`/api/sim?sim_no=${simNo}`)
     const result = await response.json()
@@ -47,7 +46,7 @@ export default function Home() {
         </thead>
 
         <tbody>
-          {data.map((row, index) => (
+          {data.map((row: any, index: number) => (
             <tr key={index}>
               <td className="border p-2">{row.usage_month}</td>
               <td className="border p-2">{row.sim_no}</td>
