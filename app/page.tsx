@@ -42,7 +42,7 @@ export default function Home() {
         <div className="mb-4">
           <textarea
             rows={8}
-            placeholder="Paste MSISDN or SIM numbers here"
+            placeholder="MSISDN or SIM number"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             className="w-full border border-gray-300 rounded-lg p-4 outline-none"
