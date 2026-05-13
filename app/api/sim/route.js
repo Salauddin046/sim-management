@@ -11,9 +11,9 @@ export async function POST(req) {
   try {
     const body = await req.json()
 
-    const simNumbers = body.simNumbers || []
+    const numbers = body.numbers || []
 
-    if (!simNumbers.length) {
+    if (!numbers.length) {
       return Response.json([])
     }
 
@@ -21,15 +21,18 @@ export async function POST(req) {
       `
       SELECT
         usage_month,
+        msisdn,
         sim_no,
         sim_status,
         plan,
         used_data_mb
       FROM sim_data2
-      WHERE sim_no = ANY($1)
-      ORDER BY sim_no, usage_month DESC
+      WHERE
+        msisdn = ANY($1)
+        OR sim_no = ANY($1)
+      ORDER BY usage_month DESC
       `,
-      [simNumbers]
+      [numbers]
     )
 
     return Response.json(result.rows)

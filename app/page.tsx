@@ -1,5 +1,5 @@
 'use client'
-    if (!simNumbers.length) return
+    if (!numbers.length) return
 
     setLoading(true)
 
@@ -9,7 +9,7 @@
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ simNumbers }),
+        body: JSON.stringify({ numbers }),
       })
 
       const result = await response.json()
@@ -27,7 +27,7 @@
         <div className="mb-4">
           <textarea
             rows={8}
-            placeholder="Paste SIM numbers here (one per line)"
+            placeholder="Paste MSISDN or SIM numbers here (one per line)"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             className="w-full border border-gray-300 rounded-lg p-4 outline-none"
@@ -38,7 +38,7 @@
           onClick={searchBulk}
           className="bg-black text-white px-6 py-3 rounded-lg mb-6"
         >
-          Bulk Search
+          Search
         </button>
 
         {loading && (
@@ -50,6 +50,7 @@
             <thead>
               <tr className="bg-gray-200">
                 <th className="border p-3">Month</th>
+                <th className="border p-3">MSISDN</th>
                 <th className="border p-3">SIM Number</th>
                 <th className="border p-3">Status</th>
                 <th className="border p-3">Plan</th>
@@ -62,6 +63,7 @@
                 data.map((row: any, index: number) => (
                   <tr key={index}>
                     <td className="border p-3">{row.usage_month}</td>
+                    <td className="border p-3">{row.msisdn}</td>
                     <td className="border p-3">{row.sim_no}</td>
                     <td className="border p-3">{row.sim_status}</td>
                     <td className="border p-3">{row.plan}</td>
@@ -71,7 +73,7 @@
               ) : (
                 <tr>
                   <td
-                    colSpan={5}
+                    colSpan={6}
                     className="border p-4 text-center"
                   >
                     No data found
