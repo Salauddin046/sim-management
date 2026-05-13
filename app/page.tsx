@@ -1,4 +1,18 @@
 'use client'
+
+import { useState } from 'react'
+
+export default function Home() {
+  const [input, setInput] = useState('')
+  const [data, setData] = useState<any[]>([])
+  const [loading, setLoading] = useState(false)
+
+  const searchBulk = async () => {
+    const numbers = input
+      .split('\n')
+      .map((num) => num.trim())
+      .filter(Boolean)
+
     if (!numbers.length) return
 
     setLoading(true)
@@ -24,10 +38,11 @@
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       <div className="max-w-7xl mx-auto bg-white rounded-xl shadow-lg p-6">
+
         <div className="mb-4">
           <textarea
             rows={8}
-            placeholder="Paste MSISDN or SIM numbers here (one per line)"
+            placeholder="Paste MSISDN or SIM numbers here"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             className="w-full border border-gray-300 rounded-lg p-4 outline-none"
@@ -83,6 +98,7 @@
             </tbody>
           </table>
         </div>
+
       </div>
     </div>
   )
