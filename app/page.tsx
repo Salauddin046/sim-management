@@ -69,7 +69,7 @@ export default function Home() {
     const url = URL.createObjectURL(blob)
 
     link.setAttribute('href', url)
-    link.setAttribute('download', 'sim_search_data.csv')
+    link.setAttribute('download', 'data_usage.csv')
 
     document.body.appendChild(link)
 
