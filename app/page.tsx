@@ -135,7 +135,7 @@ export default function Home() {
         <div className="mb-4">
           <textarea
             rows={10}
-            placeholder="Paste up to 1000 MSISDN or SIM numbers"
+            placeholder="Search upto 1000 MSISDN or SIM numbers"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             className="w-full border border-gray-300 rounded-lg p-4 outline-none"
