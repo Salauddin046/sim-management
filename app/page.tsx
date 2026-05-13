@@ -1,60 +1,29 @@
 'use client'
-
-import { useState } from 'react'
-
-export default function Home() {
-  const [input, setInput] = useState('')
-  const [data, setData] = useState<any[]>([])
-  const [loading, setLoading] = useState(false)
-
-  const searchBulk = async () => {
-    const numbers = input
-      .split('\n')
-      .map((num) => num.trim())
-      .filter(Boolean)
-
-    if (!numbers.length) return
-
-    setLoading(true)
-
-    try {
-      const response = await fetch('/api/sim', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ numbers }),
-      })
-
-      const result = await response.json()
-      setData(result)
-    } catch (error) {
-      console.error(error)
-    }
-
-    setLoading(false)
-  }
-
-  return (
-    <div className="min-h-screen bg-gray-100 p-6">
-      <div className="max-w-7xl mx-auto bg-white rounded-xl shadow-lg p-6">
-
         <div className="mb-4">
           <textarea
             rows={8}
-            placeholder="MSISDN or SIM number"
+            placeholder="Paste MSISDN or SIM numbers here"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             className="w-full border border-gray-300 rounded-lg p-4 outline-none"
           />
         </div>
 
-        <button
-          onClick={searchBulk}
-          className="bg-black text-white px-6 py-3 rounded-lg mb-6"
-        >
-          Search
-        </button>
+        <div className="flex gap-4 mb-6">
+          <button
+            onClick={searchBulk}
+            className="bg-black text-white px-6 py-3 rounded-lg"
+          >
+            Search
+          </button>
+
+          <button
+            onClick={downloadCSV}
+            className="bg-green-600 text-white px-6 py-3 rounded-lg"
+          >
+            Download CSV
+          </button>
+        </div>
 
         {loading && (
           <p className="mb-4">Loading...</p>
