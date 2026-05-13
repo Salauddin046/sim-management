@@ -1,4 +1,87 @@
 'use client'
+
+import { useState } from 'react'
+
+export default function Home() {
+  const [input, setInput] = useState('')
+  const [data, setData] = useState<any[]>([])
+  const [loading, setLoading] = useState(false)
+
+  const searchBulk = async () => {
+    const numbers = input
+      .split('\n')
+      .map((num) => num.trim())
+      .filter(Boolean)
+
+    if (!numbers.length) return
+
+    setLoading(true)
+
+    try {
+      const response = await fetch('/api/sim', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ numbers }),
+      })
+
+      const result = await response.json()
+      setData(result)
+    } catch (error) {
+      console.error(error)
+    }
+
+    setLoading(false)
+  }
+
+  const downloadCSV = () => {
+    if (!data.length) return
+
+    const headers = [
+      'Month',
+      'MSISDN',
+      'SIM Number',
+      'Status',
+      'Plan',
+      'Used Data (MB)',
+    ]
+
+    const rows = data.map((row: any) => [
+      row.usage_month,
+      row.msisdn,
+      row.sim_no,
+      row.sim_status,
+      row.plan,
+      row.used_data_mb,
+    ])
+
+    const csvContent = [headers, ...rows]
+      .map((e) => e.join(','))
+      .join('\n')
+
+    const blob = new Blob([csvContent], {
+      type: 'text/csv;charset=utf-8;',
+    })
+
+    const link = document.createElement('a')
+
+    const url = URL.createObjectURL(blob)
+
+    link.setAttribute('href', url)
+    link.setAttribute('download', 'sim_search_data.csv')
+
+    document.body.appendChild(link)
+
+    link.click()
+
+    document.body.removeChild(link)
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-100 p-6">
+      <div className="max-w-7xl mx-auto bg-white rounded-xl shadow-lg p-6">
+
         <div className="mb-4">
           <textarea
             rows={8}
