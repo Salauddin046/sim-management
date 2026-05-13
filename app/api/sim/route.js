@@ -7,13 +7,13 @@ const pool = new Pool({
   connectionTimeoutMillis: 5000,
 })
 
-export async function GET(req) {
+export async function POST(req) {
   try {
-    const { searchParams } = new URL(req.url)
+    const body = await req.json()
 
-    const simNo = searchParams.get('sim_no')?.trim()
+    const simNumbers = body.simNumbers || []
 
-    if (!simNo) {
+    if (!simNumbers.length) {
       return Response.json([])
     }
 
@@ -26,11 +26,10 @@ export async function GET(req) {
         plan,
         used_data_mb
       FROM sim_data2
-      WHERE sim_no = $1
-      ORDER BY usage_month DESC
-      LIMIT 12
+      WHERE sim_no = ANY($1)
+      ORDER BY sim_no, usage_month DESC
       `,
-      [simNo]
+      [simNumbers]
     )
 
     return Response.json(result.rows)

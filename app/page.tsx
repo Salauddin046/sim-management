@@ -1,19 +1,17 @@
 'use client'
-
-import { useState } from 'react'
-
-export default function Home() {
-  const [simNo, setSimNo] = useState('')
-  const [data, setData] = useState<any[]>([])
-  const [loading, setLoading] = useState(false)
-
-  const searchSim = async () => {
-    if (!simNo) return
+    if (!simNumbers.length) return
 
     setLoading(true)
 
     try {
-      const response = await fetch(`/api/sim?sim_no=${simNo}`)
+      const response = await fetch('/api/sim', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ simNumbers }),
+      })
+
       const result = await response.json()
       setData(result)
     } catch (error) {
@@ -25,26 +23,26 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
-      <div className="max-w-7xl mx-auto bg-white shadow-lg rounded-xl p-6">
-        <div className="flex gap-3 mb-6">
-          <input
-            type="text"
-            placeholder="Search SIM Number"
-            value={simNo}
-            onChange={(e) => setSimNo(e.target.value)}
-            className="border border-gray-300 p-3 rounded-lg w-full outline-none"
+      <div className="max-w-7xl mx-auto bg-white rounded-xl shadow-lg p-6">
+        <div className="mb-4">
+          <textarea
+            rows={8}
+            placeholder="Paste SIM numbers here (one per line)"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            className="w-full border border-gray-300 rounded-lg p-4 outline-none"
           />
-
-          <button
-            onClick={searchSim}
-            className="bg-black text-white px-6 rounded-lg hover:bg-gray-800"
-          >
-            Search
-          </button>
         </div>
 
+        <button
+          onClick={searchBulk}
+          className="bg-black text-white px-6 py-3 rounded-lg mb-6"
+        >
+          Bulk Search
+        </button>
+
         {loading && (
-          <p className="mb-4 text-gray-600">Loading...</p>
+          <p className="mb-4">Loading...</p>
         )}
 
         <div className="overflow-x-auto">
@@ -62,7 +60,7 @@ export default function Home() {
             <tbody>
               {data.length > 0 ? (
                 data.map((row: any, index: number) => (
-                  <tr key={index} className="hover:bg-gray-50">
+                  <tr key={index}>
                     <td className="border p-3">{row.usage_month}</td>
                     <td className="border p-3">{row.sim_no}</td>
                     <td className="border p-3">{row.sim_status}</td>
@@ -74,9 +72,9 @@ export default function Home() {
                 <tr>
                   <td
                     colSpan={5}
-                    className="border p-4 text-center text-gray-500"
+                    className="border p-4 text-center"
                   >
-                    No SIM data found
+                    No data found
                   </td>
                 </tr>
               )}
