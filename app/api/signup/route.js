@@ -23,12 +23,19 @@ export async function POST(req) {
     }
 
     await pool.query(
-      'INSERT INTO users (username, password) VALUES ($1, $2)',
+      `
+      INSERT INTO users (
+        username,
+        password,
+        approved
+      )
+      VALUES ($1, $2, FALSE)
+      `,
       [username, password]
     )
 
     return Response.json({
-      message: 'Signup successful',
+      message: 'Signup request sent to admin',
     })
   } catch (error) {
     console.error(error)

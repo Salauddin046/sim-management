@@ -11,7 +11,12 @@ export async function POST(req) {
     const { username, password } = body
 
     const result = await pool.query(
-      'SELECT * FROM users WHERE username = $1 AND password = $2',
+      `
+      SELECT *
+      FROM users
+      WHERE username = $1
+      AND password = $2
+      `,
       [username, password]
     )
 
@@ -19,6 +24,19 @@ export async function POST(req) {
       return Response.json(
         { error: 'Invalid username or password' },
         { status: 401 }
+      )
+    }
+
+    const user = result.rows[0]
+
+    if (!user.approved) {
+      return Response.json(
+        {
+          error: 'Admin approval pending',
+        },
+        {
+          status: 403,
+        }
       )
     }
 
