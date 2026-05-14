@@ -410,7 +410,7 @@ export default function Home() {
 
           <textarea
             rows={4}
-            placeholder="Enter SIM numbers"
+            placeholder="Enter SIM or Phone numbers"
             value={input}
             onChange={(e) =>
               setInput(
@@ -782,7 +782,7 @@ export default function Home() {
                 </th>
 
                 <th className="border p-1">
-                  Zero Data consumed onth
+                  Zero Data consumed month
                 </th>
 
                 {months.map(
