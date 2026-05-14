@@ -350,7 +350,24 @@ export default function Home() {
         )
       )
     )
-  ).sort()
+  ).sort(
+    (
+      a: any,
+      b: any
+    ) => {
+
+      const dateA =
+        new Date(a)
+
+      const dateB =
+        new Date(b)
+
+      return (
+        dateA.getTime() -
+        dateB.getTime()
+      )
+    }
+  )
 
   let months = [...allMonths]
 
@@ -373,6 +390,49 @@ export default function Home() {
         month >= fromMonth &&
         month <= toMonth
     )
+  }
+
+  const handleSort = (
+    key: string,
+    direction: string
+  ) => {
+
+    const sorted = [...data]
+
+    sorted.sort(
+      (
+        a: any,
+        b: any
+      ) => {
+
+        const valueA =
+          a[key] || 0
+
+        const valueB =
+          b[key] || 0
+
+        if (
+          typeof valueA === 'string'
+        ) {
+
+          return direction === 'asc'
+            ? valueA.localeCompare(
+                valueB
+              )
+            : valueB.localeCompare(
+                valueA
+              )
+        }
+
+        return direction === 'asc'
+          ? Number(valueA) -
+              Number(valueB)
+          : Number(valueB) -
+              Number(valueA)
+      }
+    )
+
+    setData(sorted)
   }
 
   const downloadCSV = () => {
@@ -641,7 +701,7 @@ export default function Home() {
         <div className="flex justify-between items-center mb-6">
 
           <h1 className="text-4xl font-bold">
-            Datix Master
+            Telecom Dashboard
           </h1>
 
           <button
@@ -745,25 +805,116 @@ export default function Home() {
 
           <table className="w-full border-collapse text-sm">
 
-            <thead className="bg-gray-200">
+            <thead className="bg-gray-200 sticky top-0 z-10">
 
               <tr>
 
-                <th className="border p-3">
-                  SIM Number
-                </th>
+                {[
+                  {
+                    label:
+                      'SIM Number',
+                    key: 'sim_no',
+                  },
 
-                <th className="border p-3">
-                  Phone Number
-                </th>
+                  {
+                    label:
+                      'MSISDN',
+                    key: 'msisdn',
+                  },
 
-                <th className="border p-3">
-                  Status
-                </th>
+                  {
+                    label:
+                      'Status',
+                    key:
+                      'sim_status',
+                  },
 
-                <th className="border p-3">
-                  Plan
-                </th>
+                  {
+                    label:
+                      'Plan',
+                    key: 'plan',
+                  },
+                ].map(
+                  (
+                    header: any
+                  ) => (
+
+                    <th
+                      key={
+                        header.key
+                      }
+                      className="border p-3 min-w-[180px]"
+                    >
+
+                      <div className="flex flex-col gap-2">
+
+                        <span className="font-semibold">
+                          {
+                            header.label
+                          }
+                        </span>
+
+                        <select
+                          className="
+                            border
+                            border-gray-300
+                            rounded
+                            px-2
+                            py-1
+                            text-xs
+                          "
+                          onChange={(
+                            e
+                          ) => {
+
+                            const value =
+                              e
+                                .target
+                                .value
+
+                            if (
+                              value ===
+                              'asc'
+                            ) {
+
+                              handleSort(
+                                header.key,
+                                'asc'
+                              )
+                            }
+
+                            if (
+                              value ===
+                              'desc'
+                            ) {
+
+                              handleSort(
+                                header.key,
+                                'desc'
+                              )
+                            }
+                          }}
+                        >
+
+                          <option value="">
+                            Filter
+                          </option>
+
+                          <option value="asc">
+                            Ascending
+                          </option>
+
+                          <option value="desc">
+                            Descending
+                          </option>
+
+                        </select>
+
+                      </div>
+
+                    </th>
+                  )
+                )}
 
                 <th className="border p-3">
                   Min Data (MB)
@@ -782,20 +933,124 @@ export default function Home() {
                 </th>
 
                 <th className="border p-3">
-                  Data Consumed Months
+                  Consumed Months
                 </th>
 
                 <th className="border p-3">
-                  Zero Conusmed Months
+                  Zero Months
                 </th>
 
                 {months.map(
                   (month: any) => (
+
                     <th
                       key={month}
                       className="border p-3"
                     >
-                      {month} (MB)
+
+                      <div className="flex flex-col gap-2">
+
+                        <span>
+                          {month} (MB)
+                        </span>
+
+                        <select
+                          className="
+                            border
+                            border-gray-300
+                            rounded
+                            px-2
+                            py-1
+                            text-xs
+                          "
+                          onChange={(
+                            e
+                          ) => {
+
+                            const value =
+                              e
+                                .target
+                                .value
+
+                            const sorted =
+                              [
+                                ...data,
+                              ]
+
+                            if (
+                              value ===
+                              'asc'
+                            ) {
+
+                              sorted.sort(
+                                (
+                                  a: any,
+                                  b: any
+                                ) =>
+                                  Number(
+                                    a[
+                                      month
+                                    ] ||
+                                      0
+                                  ) -
+                                  Number(
+                                    b[
+                                      month
+                                    ] ||
+                                      0
+                                  )
+                              )
+                            }
+
+                            if (
+                              value ===
+                              'desc'
+                            ) {
+
+                              sorted.sort(
+                                (
+                                  a: any,
+                                  b: any
+                                ) =>
+                                  Number(
+                                    b[
+                                      month
+                                    ] ||
+                                      0
+                                  ) -
+                                  Number(
+                                    a[
+                                      month
+                                    ] ||
+                                      0
+                                  )
+                              )
+                            }
+
+                            setData(
+                              sorted
+                            )
+                          }}
+                        >
+
+                          <option value="">
+                            Filter
+                          </option>
+
+                          <option value="asc">
+                            Low →
+                            High
+                          </option>
+
+                          <option value="desc">
+                            High →
+                            Low
+                          </option>
+
+                        </select>
+
+                      </div>
+
                     </th>
                   )
                 )}
@@ -814,9 +1069,13 @@ export default function Home() {
 
                   const usageValues =
                     months.map(
-                      (month: any) =>
+                      (
+                        month: any
+                      ) =>
                         Number(
-                          row[month] || 0
+                          row[
+                            month
+                          ] || 0
                         )
                     )
 
@@ -839,23 +1098,26 @@ export default function Home() {
                       0
                     )
 
-                  const averageValue = (
-                    totalUsage /
-                    usageValues.length
-                  ).toFixed(2)
+                  const averageValue =
+                    (
+                      totalUsage /
+                      usageValues.length
+                    ).toFixed(2)
 
                   const consumedMonths =
                     usageValues.filter(
                       (
                         value: number
-                      ) => value > 0
+                      ) =>
+                        value > 0
                     ).length
 
                   const zeroMonths =
                     usageValues.filter(
                       (
                         value: number
-                      ) => value === 0
+                      ) =>
+                        value === 0
                     ).length
 
                   return (
@@ -874,7 +1136,9 @@ export default function Home() {
                       </td>
 
                       <td className="border p-3">
-                        {row.sim_status}
+                        {
+                          row.sim_status
+                        }
                       </td>
 
                       <td className="border p-3">
@@ -894,11 +1158,15 @@ export default function Home() {
                       </td>
 
                       <td className="border p-3 text-center">
-                        {averageValue}
+                        {
+                          averageValue
+                        }
                       </td>
 
                       <td className="border p-3 text-center">
-                        {consumedMonths}
+                        {
+                          consumedMonths
+                        }
                       </td>
 
                       <td className="border p-3 text-center">
@@ -920,7 +1188,9 @@ export default function Home() {
                           return (
 
                             <td
-                              key={month}
+                              key={
+                                month
+                              }
                               className={`
                                 border
                                 p-3
