@@ -1,24 +1,4 @@
 import { Pool } from 'pg'
-import nodemailer from 'nodemailer'
-
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-})
-
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-})
-
-export async function POST(req) {
-  try {
-    const body = await req.json()
-
-    const {
-      name,
       email,
       username,
       password,
@@ -64,8 +44,7 @@ export async function POST(req) {
       ]
     )
 
-    const approveLink =
-      `${process.env.NEXT_PUBLIC_BASE_URL}/api/approve?username=${username}`
+    const approveLink = `${process.env.NEXT_PUBLIC_BASE_URL}/api/approve?username=${username}`
 
     await transporter.sendMail({
       from: process.env.EMAIL_USER,
@@ -80,12 +59,11 @@ export async function POST(req) {
 
         <a href="${approveLink}"
            style="
-             background:black;
-             color:white;
-             padding:12px 20px;
-             text-decoration:none;
-             border-radius:6px;
-             display:inline-block;
+            background:black;
+            color:white;
+            padding:12px 20px;
+            text-decoration:none;
+            border-radius:6px;
            ">
            Approve User
         </a>
@@ -95,7 +73,6 @@ export async function POST(req) {
     return Response.json({
       message: 'Signup request sent to admin',
     })
-
   } catch (error) {
     console.error(error)
 

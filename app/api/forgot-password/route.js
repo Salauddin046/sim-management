@@ -1,4 +1,6 @@
 import { Pool } from 'pg'
+  },
+})
 
 export async function POST(req) {
   try {

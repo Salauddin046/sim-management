@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 export default function Home() {
   const [isLogin, setIsLogin] = useState(true)
@@ -12,11 +12,20 @@ export default function Home() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
 
+  const [otp, setOtp] = useState('')
+  const [otpSent, setOtpSent] = useState(false)
+
   const [message, setMessage] = useState('')
 
-  const [selectedModule, setSelectedModule] = useState('')
+  const [captcha, setCaptcha] = useState('')
+  const [captchaInput, setCaptchaInput] =
+    useState('')
 
-  const [profileOpen, setProfileOpen] = useState(false)
+  const [selectedModule, setSelectedModule] =
+    useState('')
+
+  const [profileOpen, setProfileOpen] =
+    useState(false)
 
   const [user, setUser] = useState<any>(null)
 
@@ -25,30 +34,121 @@ export default function Home() {
 
   const [loading, setLoading] = useState(false)
 
-  const handleSignup = async () => {
+  useEffect(() => {
+    generateCaptcha()
+  }, [])
+
+  const generateCaptcha = () => {
+    const chars =
+      'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+
+    let text = ''
+
+    for (let i = 0; i < 6; i++) {
+      text += chars.charAt(
+        Math.floor(Math.random() * chars.length)
+      )
+    }
+
+    setCaptcha(text)
+  }
+
+  const sendOtp = async () => {
     setMessage('')
 
     try {
-      const response = await fetch('/api/signup', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name,
-          email,
-          username,
-          password,
-        }),
-      })
+      const response = await fetch(
+        '/api/send-otp',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type':
+              'application/json',
+          },
+          body: JSON.stringify({
+            email,
+            username,
+          }),
+        }
+      )
 
       const result = await response.json()
 
       if (response.ok) {
-        setMessage('Signup request sent to admin')
-        setIsLogin(true)
+        setOtpSent(true)
+        setMessage('OTP sent to email')
       } else {
         setMessage(result.error)
+      }
+    } catch (error) {
+      console.error(error)
+      setMessage('OTP failed')
+    }
+  }
+
+  const verifyOtpAndSignup = async () => {
+    setMessage('')
+
+    try {
+      const verifyResponse = await fetch(
+        '/api/verify-otp',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type':
+              'application/json',
+          },
+          body: JSON.stringify({
+            username,
+            otp,
+          }),
+        }
+      )
+
+      const verifyResult =
+        await verifyResponse.json()
+
+      if (!verifyResponse.ok) {
+        setMessage(verifyResult.error)
+        return
+      }
+
+      const signupResponse = await fetch(
+        '/api/signup',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type':
+              'application/json',
+          },
+          body: JSON.stringify({
+            name,
+            email,
+            username,
+            password,
+          }),
+        }
+      )
+
+      const signupResult =
+        await signupResponse.json()
+
+      if (signupResponse.ok) {
+        setMessage(
+          'Signup request sent to admin'
+        )
+
+        setIsLogin(true)
+
+        setOtpSent(false)
+
+        setName('')
+        setEmail('')
+        setUsername('')
+        setPassword('')
+        setOtp('')
+      } else {
+        setMessage(signupResult.error)
       }
     } catch (error) {
       console.error(error)
@@ -59,17 +159,29 @@ export default function Home() {
   const handleLogin = async () => {
     setMessage('')
 
+    if (
+      captchaInput.toUpperCase() !== captcha
+    ) {
+      setMessage('Invalid CAPTCHA')
+      generateCaptcha()
+      return
+    }
+
     try {
-      const response = await fetch('/api/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          username,
-          password,
-        }),
-      })
+      const response = await fetch(
+        '/api/login',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type':
+              'application/json',
+          },
+          body: JSON.stringify({
+            username,
+            password,
+          }),
+        }
+      )
 
       const result = await response.json()
 
@@ -87,7 +199,7 @@ export default function Home() {
 
   const handleForgotPassword = async () => {
     if (!email) {
-      setMessage('Please enter registered email')
+      setMessage('Enter registered email')
       return
     }
 
@@ -97,7 +209,8 @@ export default function Home() {
         {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
+            'Content-Type':
+              'application/json',
           },
           body: JSON.stringify({
             email,
@@ -126,7 +239,7 @@ export default function Home() {
 
     if (!numbers.length) {
       setMessage(
-        'Please enter Phone or SIM numbers'
+        'Please enter SIM or phone numbers'
       )
       return
     }
@@ -277,6 +390,38 @@ export default function Home() {
             className="w-full border border-gray-300 rounded-lg p-3 mb-4"
           />
 
+          {!isLogin && otpSent && (
+            <input
+              type="text"
+              placeholder="Enter OTP"
+              value={otp}
+              onChange={(e) =>
+                setOtp(e.target.value)
+              }
+              className="w-full border border-gray-300 rounded-lg p-3 mb-4"
+            />
+          )}
+
+          {isLogin && (
+            <>
+              <div className="bg-gray-200 text-center p-3 rounded-lg mb-3 text-xl font-bold tracking-widest">
+                {captcha}
+              </div>
+
+              <input
+                type="text"
+                placeholder="Enter CAPTCHA"
+                value={captchaInput}
+                onChange={(e) =>
+                  setCaptchaInput(
+                    e.target.value
+                  )
+                }
+                className="w-full border border-gray-300 rounded-lg p-3 mb-4"
+              />
+            </>
+          )}
+
           {isLogin ? (
             <button
               onClick={handleLogin}
@@ -284,12 +429,19 @@ export default function Home() {
             >
               Login
             </button>
-          ) : (
+          ) : otpSent ? (
             <button
-              onClick={handleSignup}
+              onClick={verifyOtpAndSignup}
               className="w-full bg-green-600 text-white py-3 rounded-lg"
             >
-              Signup
+              Verify OTP & Signup
+            </button>
+          ) : (
+            <button
+              onClick={sendOtp}
+              className="w-full bg-blue-600 text-white py-3 rounded-lg"
+            >
+              Send OTP
             </button>
           )}
 
@@ -325,158 +477,78 @@ export default function Home() {
     )
   }
 
-  if (
-    loggedIn &&
-    selectedModule !== 'sim'
-  ) {
-    return (
-      <div className="min-h-screen bg-gray-100 p-8">
-
-        <div className="flex justify-between items-center mb-8">
-
-          <h1 className="text-3xl font-bold">
-            Dashboard
-          </h1>
-
-          <div className="flex gap-4">
-
-            <button
-              onClick={() =>
-                setProfileOpen(
-                  !profileOpen
-                )
-              }
-              className="bg-white px-4 py-2 rounded-lg shadow"
-            >
-              {user?.name || 'Profile'}
-            </button>
-
-            <button
-              onClick={logout}
-              className="bg-red-500 text-white px-4 py-2 rounded-lg"
-            >
-              Logout
-            </button>
-
-          </div>
-
-        </div>
-
-        {profileOpen && (
-          <div className="bg-white rounded-xl shadow p-6 mb-6">
-
-            <h2 className="text-2xl font-bold mb-4">
-              Profile
-            </h2>
-
-            <p className="mb-2">
-              <b>Name:</b> {user?.name}
-            </p>
-
-            <p className="mb-2">
-              <b>Email:</b> {user?.email}
-            </p>
-
-            <p className="mb-2">
-              <b>Username:</b> {user?.username}
-            </p>
-
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-
-          <div
-            onClick={() =>
-              setSelectedModule('sim')
-            }
-            className="
-              bg-white
-              rounded-2xl
-              shadow-lg
-              p-8
-              cursor-pointer
-              hover:shadow-2xl
-              transition
-            "
-          >
-            <h2 className="text-2xl font-bold mb-4">
-              SIM Usage
-            </h2>
-
-            <p className="text-gray-600">
-              Search SIM and Phone usage data
-            </p>
-          </div>
-
-        </div>
-
-      </div>
-    )
-  }
-
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
+    <div className="min-h-screen bg-gray-100 p-8">
 
-      <div className="max-w-7xl mx-auto bg-white rounded-2xl shadow-lg p-6">
+      <div className="flex justify-between items-center mb-8">
 
-        <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">
+          Telecom Dashboard
+        </h1>
 
-          <h1 className="text-2xl font-bold">
-            SIM Usage Analytics
-          </h1>
+        <div className="flex gap-4">
 
           <button
             onClick={() =>
-              setSelectedModule('')
+              setProfileOpen(!profileOpen)
             }
-            className="bg-gray-200 px-4 py-2 rounded-lg"
+            className="bg-white px-4 py-2 rounded-lg shadow"
           >
-            Back To Dashboard
+            {user?.name || 'Profile'}
+          </button>
+
+          <button
+            onClick={logout}
+            className="bg-red-500 text-white px-4 py-2 rounded-lg"
+          >
+            Logout
           </button>
 
         </div>
 
-        <div className="mb-4">
+      </div>
 
-          <textarea
-            rows={10}
-            placeholder="Search upto 1000 Phone or SIM numbers"
-            value={input}
-            onChange={(e) =>
-              setInput(e.target.value)
-            }
-            className="
-              w-full
-              border
-              border-gray-300
-              rounded-lg
-              p-4
-              outline-none
-            "
-          />
+      {profileOpen && (
+        <div className="bg-white rounded-xl shadow p-6 mb-6">
+
+          <h2 className="text-2xl font-bold mb-4">
+            Profile
+          </h2>
+
+          <p className="mb-2">
+            <b>Name:</b> {user?.name}
+          </p>
+
+          <p className="mb-2">
+            <b>Email:</b> {user?.email}
+          </p>
+
+          <p className="mb-2">
+            <b>Username:</b>{' '}
+            {user?.username}
+          </p>
 
         </div>
+      )}
+
+      <div className="bg-white rounded-2xl shadow-lg p-6">
+
+        <textarea
+          rows={8}
+          placeholder="Search upto 1000 SIM or phone numbers"
+          value={input}
+          onChange={(e) =>
+            setInput(e.target.value)
+          }
+          className="w-full border border-gray-300 rounded-lg p-4 mb-4"
+        />
 
         <button
           onClick={searchBulk}
-          className="
-            bg-black
-            text-white
-            px-6
-            py-3
-            rounded-lg
-            mb-4
-          "
+          className="bg-black text-white px-6 py-3 rounded-lg mb-6"
         >
           Search
         </button>
-
-        {message && (
-          <p className="text-red-600 mb-4">
-            {message}
-          </p>
-        )}
 
         {loading && (
           <p className="mb-4">
@@ -531,111 +603,97 @@ export default function Home() {
 
             <tbody>
 
-              {data.length > 0 ? (
-                data.map(
-                  (
-                    row: any,
-                    index: number
-                  ) => {
+              {data.map(
+                (
+                  row: any,
+                  index: number
+                ) => {
 
-                    const usageValues =
-                      months.map(
-                        (month: any) =>
-                          Number(
-                            row[month] || 0
-                          )
-                      )
-
-                    const maxValue =
-                      Math.max(
-                        ...usageValues
-                      )
-
-                    const minValue =
-                      Math.min(
-                        ...usageValues
-                      )
-
-                    return (
-                      <tr key={index}>
-
-                        <td className="border p-3">
-                          {row.sim_no}
-                        </td>
-
-                        <td className="border p-3">
-                          {row.msisdn}
-                        </td>
-
-                        <td className="border p-3">
-                          {row.sim_status}
-                        </td>
-
-                        <td className="border p-3">
-                          {row.plan}
-                        </td>
-
-                        <td className="border p-3 text-center">
-                          {minValue}
-                        </td>
-
-                        <td className="border p-3 text-center">
-                          {maxValue}
-                        </td>
-
-                        {months.map(
-                          (
-                            month: any
-                          ) => {
-
-                            const value =
-                              Number(
-                                row[
-                                  month
-                                ] || 0
-                              )
-
-                            return (
-                              <td
-                                key={
-                                  month
-                                }
-                                className={`
-                                  border
-                                  p-3
-                                  text-center
-                                  ${
-                                    value ===
-                                    maxValue
-                                      ? 'bg-green-300 font-bold'
-                                      : ''
-                                  }
-                                `}
-                              >
-                                {row[
-                                  month
-                                ] || '-'}
-                              </td>
-                            )
-                          }
-                        )}
-
-                      </tr>
+                  const usageValues =
+                    months.map(
+                      (month: any) =>
+                        Number(
+                          row[month] || 0
+                        )
                     )
-                  }
-                )
-              ) : (
-                <tr>
-                  <td
-                    colSpan={
-                      months.length +
-                      6
-                    }
-                    className="border p-4 text-center"
-                  >
-                    No data found
-                  </td>
-                </tr>
+
+                  const maxValue =
+                    Math.max(
+                      ...usageValues
+                    )
+
+                  const minValue =
+                    Math.min(
+                      ...usageValues
+                    )
+
+                  return (
+                    <tr key={index}>
+
+                      <td className="border p-3">
+                        {row.sim_no}
+                      </td>
+
+                      <td className="border p-3">
+                        {row.msisdn}
+                      </td>
+
+                      <td className="border p-3">
+                        {row.sim_status}
+                      </td>
+
+                      <td className="border p-3">
+                        {row.plan}
+                      </td>
+
+                      <td className="border p-3 text-center">
+                        {minValue}
+                      </td>
+
+                      <td className="border p-3 text-center">
+                        {maxValue}
+                      </td>
+
+                      {months.map(
+                        (
+                          month: any
+                        ) => {
+
+                          const value =
+                            Number(
+                              row[
+                                month
+                              ] || 0
+                            )
+
+                          return (
+                            <td
+                              key={
+                                month
+                              }
+                              className={`
+                                border
+                                p-3
+                                text-center
+                                ${
+                                  value ===
+                                  maxValue
+                                    ? 'bg-green-300 font-bold'
+                                    : ''
+                                }
+                              `}
+                            >
+                              {row[
+                                month
+                              ] || '-'}
+                            </td>
+                          )
+                        }
+                      )}
+
+                    </tr>
+                  )
+                }
               )}
 
             </tbody>
