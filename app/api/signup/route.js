@@ -1,4 +1,38 @@
 import { Pool } from 'pg'
+import nodemailer from 'nodemailer'
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+})
+
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+})
+
+export async function POST(req) {
+  try {
+    const body = await req.json()
+
+    const {
+      name,
+      email,
+      username,
+      password,
+    } = body
+
+    const existing = await pool.query(
+      `
+      SELECT *
+      FROM users
+      WHERE username = $1
+      OR email = $2
+      `,
+      [username, email]
+    )
 
     if (existing.rows.length > 0) {
       return Response.json(
@@ -30,7 +64,8 @@ import { Pool } from 'pg'
       ]
     )
 
-    const approveLink = `${process.env.NEXT_PUBLIC_BASE_URL}/api/approve?username=${username}`
+    const approveLink =
+      `${process.env.NEXT_PUBLIC_BASE_URL}/api/approve?username=${username}`
 
     await transporter.sendMail({
       from: process.env.EMAIL_USER,
@@ -45,11 +80,12 @@ import { Pool } from 'pg'
 
         <a href="${approveLink}"
            style="
-            background:black;
-            color:white;
-            padding:12px 20px;
-            text-decoration:none;
-            border-radius:6px;
+             background:black;
+             color:white;
+             padding:12px 20px;
+             text-decoration:none;
+             border-radius:6px;
+             display:inline-block;
            ">
            Approve User
         </a>
@@ -59,6 +95,7 @@ import { Pool } from 'pg'
     return Response.json({
       message: 'Signup request sent to admin',
     })
+
   } catch (error) {
     console.error(error)
 
