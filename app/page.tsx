@@ -1,6 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import {
+  useEffect,
+  useState,
+} from 'react'
 
 export default function Home() {
 
@@ -28,10 +31,92 @@ export default function Home() {
   const [profileOpen, setProfileOpen] =
     useState(false)
 
-  const [loggedUser] =
-    useState<any>({
-      username: 'Admin',
-    })
+  const [loggedUser, setLoggedUser] =
+    useState<any>(null)
+
+  useEffect(() => {
+
+    const user =
+      localStorage.getItem(
+        'user'
+      )
+
+    if (user) {
+
+      setLoggedUser(
+        JSON.parse(user)
+      )
+    }
+
+    let timeout: any
+
+    const resetTimer = () => {
+
+      clearTimeout(timeout)
+
+      timeout = setTimeout(() => {
+
+        localStorage.removeItem(
+          'user'
+        )
+
+        alert(
+          'Session expired. Logged out automatically.'
+        )
+
+        window.location.reload()
+
+      }, 10 * 60 * 1000)
+    }
+
+    resetTimer()
+
+    window.addEventListener(
+      'mousemove',
+      resetTimer
+    )
+
+    window.addEventListener(
+      'keydown',
+      resetTimer
+    )
+
+    window.addEventListener(
+      'click',
+      resetTimer
+    )
+
+    window.addEventListener(
+      'scroll',
+      resetTimer
+    )
+
+    return () => {
+
+      clearTimeout(timeout)
+
+      window.removeEventListener(
+        'mousemove',
+        resetTimer
+      )
+
+      window.removeEventListener(
+        'keydown',
+        resetTimer
+      )
+
+      window.removeEventListener(
+        'click',
+        resetTimer
+      )
+
+      window.removeEventListener(
+        'scroll',
+        resetTimer
+      )
+    }
+
+  }, [])
 
   const searchBulk = async () => {
 
@@ -193,6 +278,44 @@ export default function Home() {
       )
   }
 
+  const handleSort = (
+    key: string,
+    direction: string
+  ) => {
+
+    const sorted =
+      [...data]
+
+    sorted.sort(
+      (
+        a: any,
+        b: any
+      ) => {
+
+        const valueA =
+          a[key] || ''
+
+        const valueB =
+          b[key] || ''
+
+        return direction ===
+          'asc'
+          ? valueA
+              .toString()
+              .localeCompare(
+                valueB.toString()
+              )
+          : valueB
+              .toString()
+              .localeCompare(
+                valueA.toString()
+              )
+      }
+    )
+
+    setData(sorted)
+  }
+
   const downloadCSV = () => {
 
     const headers = [
@@ -206,7 +329,10 @@ export default function Home() {
       'Avg Data',
       'Consumed Months',
       'Zero Months',
-      ...months,
+      ...months.map(
+        (month: any) =>
+          `${month} (MB)`
+      ),
     ]
 
     const rows =
@@ -342,7 +468,7 @@ export default function Home() {
         <div className="flex justify-between items-center mb-4">
 
           <h1 className="text-2xl font-bold">
-            Telecom Dashboard
+            Datix Master
           </h1>
 
           <div className="relative">
@@ -381,12 +507,13 @@ export default function Home() {
               >
                 {loggedUser?.username
                   ?.charAt(0)
-                  ?.toUpperCase()}
+                  ?.toUpperCase() || 'U'}
               </div>
 
               <span>
                 {
-                  loggedUser?.username
+                  loggedUser?.username ||
+                  'User'
                 }
               </span>
 
@@ -399,7 +526,7 @@ export default function Home() {
                   absolute
                   right-0
                   mt-2
-                  w-52
+                  w-72
                   bg-white
                   border
                   rounded-lg
@@ -408,13 +535,52 @@ export default function Home() {
                 "
               >
 
-                <div className="p-3 border-b">
+                <div className="p-4 border-b space-y-3">
 
-                  <p className="font-semibold text-sm">
-                    {
-                      loggedUser?.username
-                    }
-                  </p>
+                  <div>
+
+                    <p className="text-[11px] text-gray-500">
+                      Username
+                    </p>
+
+                    <p className="font-semibold text-sm break-all">
+                      {
+                        loggedUser?.username ||
+                        '-'
+                      }
+                    </p>
+
+                  </div>
+
+                  <div>
+
+                    <p className="text-[11px] text-gray-500">
+                      Name
+                    </p>
+
+                    <p className="font-semibold text-sm break-all">
+                      {
+                        loggedUser?.name ||
+                        '-'
+                      }
+                    </p>
+
+                  </div>
+
+                  <div>
+
+                    <p className="text-[11px] text-gray-500">
+                      Email
+                    </p>
+
+                    <p className="font-semibold text-sm break-all">
+                      {
+                        loggedUser?.email ||
+                        '-'
+                      }
+                    </p>
+
+                  </div>
 
                 </div>
 
@@ -553,259 +719,6 @@ export default function Home() {
             </option>
 
           </select>
-
-        </div>
-
-        <div className="
-          overflow-auto
-          rounded-lg
-          border
-          border-gray-300
-          max-h-[650px]
-        ">
-
-          <table className="
-            w-full
-            border-collapse
-            text-xs
-          ">
-
-            <thead className="
-              bg-gray-200
-              sticky
-              top-0
-              z-10
-            ">
-
-              <tr>
-
-                <th className="border p-1 min-w-[120px]">
-                  SIM Number
-                </th>
-
-                <th className="border p-1 min-w-[120px]">
-                  Phone Number
-                </th>
-
-                <th className="border p-1 min-w-[100px]">
-                  Status
-                </th>
-
-                <th className="border p-1 min-w-[100px]">
-                  Plan
-                </th>
-
-                <th className="border p-1 min-w-[70px]">
-                  Min Data (MB)
-                </th>
-
-                <th className="border p-1 min-w-[70px]">
-                  Max Data (MB)
-                </th>
-
-                <th className="border p-1 min-w-[70px]">
-                  Total Data (MB)
-                </th>
-
-                <th className="border p-1 min-w-[70px]">
-                  Avg Data (MB)
-                </th>
-
-                <th className="border p-1 min-w-[70px]">
-                  Count of Data Used Month
-                </th>
-
-                <th className="border p-1 min-w-[70px]">
-                  Count of Zero Data used Month
-                </th>
-
-                {months.map(
-                  (
-                    month: any
-                  ) => (
-
-                    <th
-                      key={
-                        month
-                      }
-                      className="
-                        border
-                        p-1
-                        min-w-[70px]
-                        max-w-[70px]
-                        text-[10px]
-                      "
-                    >
-                      {month} (MB)
-                    </th>
-                  )
-                )}
-
-              </tr>
-
-            </thead>
-
-            <tbody>
-
-              {data.map(
-                (
-                  row: any,
-                  index: number
-                ) => {
-
-                  const usageValues =
-                    months.map(
-                      (
-                        month: any
-                      ) =>
-                        Number(
-                          row[
-                            month
-                          ] || 0
-                        )
-                    )
-
-                  const maxValue =
-                    Math.max(
-                      ...usageValues
-                    )
-
-                  const minValue =
-                    Math.min(
-                      ...usageValues
-                    )
-
-                  const totalUsage =
-                    usageValues.reduce(
-                      (
-                        a: number,
-                        b: number
-                      ) => a + b,
-                      0
-                    )
-
-                  const averageValue =
-                    (
-                      totalUsage /
-                      usageValues.length
-                    ).toFixed(2)
-
-                  const consumedMonths =
-                    usageValues.filter(
-                      (
-                        value: number
-                      ) =>
-                        value > 0
-                    ).length
-
-                  const zeroMonths =
-                    usageValues.filter(
-                      (
-                        value: number
-                      ) =>
-                        value === 0
-                    ).length
-
-                  return (
-
-                    <tr
-                      key={index}
-                      className="
-                        hover:bg-gray-50
-                      "
-                    >
-
-                      <td className="border p-1 text-center">
-                        {row.sim_no}
-                      </td>
-
-                      <td className="border p-1 text-center">
-                        {row.msisdn}
-                      </td>
-
-                      <td className="border p-1 text-center">
-                        {
-                          row.sim_status
-                        }
-                      </td>
-
-                      <td className="border p-1 text-center">
-                        {row.plan}
-                      </td>
-
-                      <td className="border p-1 text-center">
-                        {minValue}
-                      </td>
-
-                      <td className="border p-1 text-center">
-                        {maxValue}
-                      </td>
-
-                      <td className="border p-1 text-center">
-                        {totalUsage}
-                      </td>
-
-                      <td className="border p-1 text-center">
-                        {
-                          averageValue
-                        }
-                      </td>
-
-                      <td className="border p-1 text-center">
-                        {
-                          consumedMonths
-                        }
-                      </td>
-
-                      <td className="border p-1 text-center">
-                        {zeroMonths}
-                      </td>
-
-                      {months.map(
-                        (
-                          month: any
-                        ) => {
-
-                          const value =
-                            Number(
-                              row[
-                                month
-                              ] || 0
-                            )
-
-                          return (
-
-                            <td
-                              key={
-                                month
-                              }
-                              className={`
-                                border
-                                p-1
-                                text-center
-                                text-[10px]
-                                ${
-                                  value ===
-                                  maxValue
-                                    ? 'bg-green-300 font-bold'
-                                    : ''
-                                }
-                              `}
-                            >
-                              {value}
-                            </td>
-                          )
-                        }
-                      )}
-
-                    </tr>
-                  )
-                }
-              )}
-
-            </tbody>
-
-          </table>
 
         </div>
 
