@@ -9,54 +9,45 @@ export async function POST(req) {
     const body = await req.json()
 
     const {
-      username,
+      token,
       password,
     } = body
 
     const result = await pool.query(
-      `
-      SELECT *
-      FROM users
-      WHERE username = $1
-      AND password = $2
-      `,
-      [username, password]
+      'SELECT * FROM users WHERE reset_token = $1',
+      [token]
     )
 
     if (result.rows.length === 0) {
       return Response.json(
         {
-          error: 'Invalid username or password',
+          error: 'Invalid token',
         },
         {
-          status: 401,
+          status: 400,
         }
       )
     }
 
-    const user = result.rows[0]
-
-    if (!user.approved) {
-      return Response.json(
-        {
-          error: 'Admin approval pending',
-        },
-        {
-          status: 403,
-        }
-      )
-    }
+    await pool.query(
+      `
+      UPDATE users
+      SET password = $1,
+          reset_token = NULL
+      WHERE reset_token = $2
+      `,
+      [password, token]
+    )
 
     return Response.json({
       success: true,
-      user,
     })
   } catch (error) {
     console.error(error)
 
     return Response.json(
       {
-        error: 'Login failed',
+        error: 'Reset failed',
       },
       {
         status: 500,
