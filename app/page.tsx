@@ -349,6 +349,34 @@ export default function Home() {
     setData(sorted)
   }
 
+  const filterByValue = (
+    key: string,
+    value: string
+  ) => {
+
+    if (!value) {
+
+      setData(originalData)
+
+      return
+    }
+
+    const filtered =
+      originalData.filter(
+        (row: any) =>
+          (
+            row[key] || ''
+          )
+            .toString()
+            .toLowerCase()
+            .includes(
+              value.toLowerCase()
+            )
+      )
+
+    setData(filtered)
+  }
+
   const logout = () => {
 
     localStorage.clear()
@@ -548,105 +576,6 @@ export default function Home() {
 
             </button>
 
-            {profileOpen && (
-
-              <div className="
-                absolute
-                right-0
-                mt-2
-                w-72
-                bg-white
-                border
-                rounded-lg
-                shadow-lg
-                z-50
-              ">
-
-                <div className="
-                  p-4
-                  border-b
-                  space-y-3
-                ">
-
-                  <div>
-
-                    <p className="
-                      text-[11px]
-                      text-gray-500
-                    ">
-                      Username
-                    </p>
-
-                    <p className="
-                      font-semibold
-                      text-sm
-                    ">
-                      {
-                        loggedUser?.username
-                      }
-                    </p>
-
-                  </div>
-
-                  <div>
-
-                    <p className="
-                      text-[11px]
-                      text-gray-500
-                    ">
-                      Name
-                    </p>
-
-                    <p className="
-                      font-semibold
-                      text-sm
-                    ">
-                      {
-                        loggedUser?.name
-                      }
-                    </p>
-
-                  </div>
-
-                  <div>
-
-                    <p className="
-                      text-[11px]
-                      text-gray-500
-                    ">
-                      Email
-                    </p>
-
-                    <p className="
-                      font-semibold
-                      text-sm
-                    ">
-                      {
-                        loggedUser?.email
-                      }
-                    </p>
-
-                  </div>
-
-                </div>
-
-                <button
-                  onClick={logout}
-                  className="
-                    w-full
-                    text-left
-                    px-4
-                    py-3
-                    text-red-600
-                    hover:bg-gray-100
-                  "
-                >
-                  Logout
-                </button>
-
-              </div>
-            )}
-
           </div>
 
         </div>
@@ -723,6 +652,114 @@ export default function Home() {
             Reset Filter
           </button>
 
+          <select
+            value={filterType}
+            onChange={(e) =>
+              setFilterType(
+                e.target.value
+              )
+            }
+            className="
+              border
+              rounded-lg
+              px-3
+              py-2
+            "
+          >
+
+            <option value="all">
+              All Months
+            </option>
+
+            <option value="6months">
+              Last 6 Months
+            </option>
+
+            <option value="1year">
+              Last 1 Year
+            </option>
+
+            <option value="custom">
+              Month Range
+            </option>
+
+          </select>
+
+          {filterType ===
+            'custom' && (
+            <>
+              <select
+                value={fromMonth}
+                onChange={(e) =>
+                  setFromMonth(
+                    e.target.value
+                  )
+                }
+                className="
+                  border
+                  rounded-lg
+                  px-3
+                  py-2
+                "
+              >
+
+                <option value="">
+                  From Month
+                </option>
+
+                {allMonths.map(
+                  (
+                    month
+                  ) => (
+
+                    <option
+                      key={month}
+                      value={month}
+                    >
+                      {month}
+                    </option>
+                  )
+                )}
+
+              </select>
+
+              <select
+                value={toMonth}
+                onChange={(e) =>
+                  setToMonth(
+                    e.target.value
+                  )
+                }
+                className="
+                  border
+                  rounded-lg
+                  px-3
+                  py-2
+                "
+              >
+
+                <option value="">
+                  To Month
+                </option>
+
+                {allMonths.map(
+                  (
+                    month
+                  ) => (
+
+                    <option
+                      key={month}
+                      value={month}
+                    >
+                      {month}
+                    </option>
+                  )
+                )}
+
+              </select>
+            </>
+          )}
+
         </div>
 
         <div className="
@@ -747,21 +784,125 @@ export default function Home() {
 
               <tr>
 
-                <th className="border p-1">
-                  SIM
-                </th>
+                {[
+                  {
+                    label: 'SIM',
+                    key: 'sim_no',
+                  },
 
-                <th className="border p-1">
-                  MSISDN
-                </th>
+                  {
+                    label: 'MSISDN',
+                    key: 'msisdn',
+                  },
 
-                <th className="border p-1">
-                  Status
-                </th>
+                  {
+                    label: 'Status',
+                    key: 'sim_status',
+                  },
 
-                <th className="border p-1">
-                  Plan
-                </th>
+                  {
+                    label: 'Plan',
+                    key: 'plan',
+                  },
+                ].map(
+                  (
+                    header: any
+                  ) => (
+
+                    <th
+                      key={
+                        header.key
+                      }
+                      className="
+                        border
+                        p-1
+                        min-w-[150px]
+                      "
+                    >
+
+                      <div className="
+                        flex
+                        flex-col
+                        gap-1
+                      ">
+
+                        <span>
+                          {
+                            header.label
+                          }
+                        </span>
+
+                        <select
+                          className="
+                            border
+                            rounded
+                            text-[10px]
+                          "
+                          onChange={(e) => {
+
+                            const value =
+                              e.target.value
+
+                            if (
+                              value ===
+                              'reset'
+                            ) {
+
+                              setData(
+                                originalData
+                              )
+
+                              return
+                            }
+
+                            sortData(
+                              header.key,
+                              value
+                            )
+                          }}
+                        >
+
+                          <option value="">
+                            Sort
+                          </option>
+
+                          <option value="asc">
+                            A-Z
+                          </option>
+
+                          <option value="desc">
+                            Z-A
+                          </option>
+
+                          <option value="reset">
+                            Reset
+                          </option>
+
+                        </select>
+
+                        <input
+                          type="text"
+                          placeholder="Search"
+                          className="
+                            border
+                            rounded
+                            px-1
+                            py-1
+                            text-[10px]
+                          "
+                          onChange={(e) =>
+                            filterByValue(
+                              header.key,
+                              e.target.value
+                            )
+                          }
+                        />
+
+                      </div>
+
+                    </th>
+                  )
+                )}
 
                 <th className="border p-1">
                   Min
@@ -799,7 +940,68 @@ export default function Home() {
                         text-[10px]
                       "
                     >
-                      {month} (MB)
+
+                      <div className="
+                        flex
+                        flex-col
+                        gap-1
+                      ">
+
+                        <span>
+                          {month} (MB)
+                        </span>
+
+                        <select
+                          className="
+                            border
+                            rounded
+                            text-[10px]
+                          "
+                          onChange={(e) => {
+
+                            const value =
+                              e.target.value
+
+                            if (
+                              value ===
+                              'reset'
+                            ) {
+
+                              setData(
+                                originalData
+                              )
+
+                              return
+                            }
+
+                            sortData(
+                              month,
+                              value,
+                              true
+                            )
+                          }}
+                        >
+
+                          <option value="">
+                            Sort
+                          </option>
+
+                          <option value="asc">
+                            Low-High
+                          </option>
+
+                          <option value="desc">
+                            High-Low
+                          </option>
+
+                          <option value="reset">
+                            Reset
+                          </option>
+
+                        </select>
+
+                      </div>
+
                     </th>
                   )
                 )}
