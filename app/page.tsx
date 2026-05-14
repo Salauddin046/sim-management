@@ -13,9 +13,6 @@ export default function Home() {
   const [loggedUser, setLoggedUser] =
     useState<any>(null)
 
-  const [profileOpen, setProfileOpen] =
-    useState(false)
-
   const [name, setName] =
     useState('')
 
@@ -50,6 +47,9 @@ export default function Home() {
     useState('')
 
   const [data, setData] =
+    useState<any[]>([])
+
+  const [originalData, setOriginalData] =
     useState<any[]>([])
 
   const [loading, setLoading] =
@@ -179,12 +179,6 @@ export default function Home() {
 
           setIsLogin(true)
 
-          setName('')
-          setEmail('')
-          setUsername('')
-          setPassword('')
-          setOtp('')
-
           setOtpSent(false)
 
         } else {
@@ -242,13 +236,9 @@ export default function Home() {
 
         setLoggedUser(result.user)
 
-        generateCaptcha()
-
       } else {
 
         setMessage(result.error)
-
-        generateCaptcha()
       }
 
     } catch (error) {
@@ -322,9 +312,12 @@ export default function Home() {
         )
       })
 
-      setData(
+      const finalData =
         Object.values(grouped)
-      )
+
+      setData(finalData)
+
+      setOriginalData(finalData)
 
     } catch (error) {
 
@@ -680,6 +673,17 @@ export default function Home() {
             </button>
           )}
 
+          <button
+            onClick={() =>
+              setIsLogin(!isLogin)
+            }
+            className="w-full mt-4 text-blue-600"
+          >
+            {isLogin
+              ? 'Create New Account'
+              : 'Already have account? Login'}
+          </button>
+
           {message && (
             <p className="text-center mt-4 text-red-600">
               {message}
@@ -705,11 +709,6 @@ export default function Home() {
           </h1>
 
           <button
-            onClick={() =>
-              setProfileOpen(
-                !profileOpen
-              )
-            }
             className="w-12 h-12 rounded-full bg-black text-white"
           >
             {loggedUser?.username
@@ -740,10 +739,6 @@ export default function Home() {
                 p-3
                 text-sm
                 resize-none
-                shadow-sm
-                focus:outline-none
-                focus:ring-2
-                focus:ring-black
               "
             />
 
@@ -769,6 +764,15 @@ export default function Home() {
             className="bg-green-600 text-white px-6 py-3 rounded-lg"
           >
             Download CSV
+          </button>
+
+          <button
+            onClick={() =>
+              setData(originalData)
+            }
+            className="bg-gray-500 text-white px-6 py-3 rounded-lg"
+          >
+            Reset Filter
           </button>
 
           <select
@@ -818,7 +822,7 @@ export default function Home() {
 
                   {
                     label:
-                      'MSISDN',
+                      'Phone Number',
                     key: 'msisdn',
                   },
 
@@ -843,7 +847,7 @@ export default function Home() {
                       key={
                         header.key
                       }
-                      className="border p-3 min-w-[180px]"
+                      className="border p-3 min-w-[200px]"
                     >
 
                       <div className="flex flex-col gap-2">
@@ -857,7 +861,6 @@ export default function Home() {
                         <select
                           className="
                             border
-                            border-gray-300
                             rounded
                             px-2
                             py-1
@@ -901,11 +904,11 @@ export default function Home() {
                           </option>
 
                           <option value="asc">
-                            Ascending
+                            A → Z
                           </option>
 
                           <option value="desc">
-                            Descending
+                            Z → A
                           </option>
 
                         </select>
@@ -933,11 +936,11 @@ export default function Home() {
                 </th>
 
                 <th className="border p-3">
-                  Consumed Months
+                  Data Consumed Months
                 </th>
 
                 <th className="border p-3">
-                  Zero Months
+                  Zero Data conusmed Months
                 </th>
 
                 {months.map(
@@ -945,7 +948,7 @@ export default function Home() {
 
                     <th
                       key={month}
-                      className="border p-3"
+                      className="border p-3 min-w-[220px]"
                     >
 
                       <div className="flex flex-col gap-2">
@@ -957,7 +960,6 @@ export default function Home() {
                         <select
                           className="
                             border
-                            border-gray-300
                             rounded
                             px-2
                             py-1
@@ -1027,6 +1029,31 @@ export default function Home() {
                               )
                             }
 
+                            if (
+                              value ===
+                              'green'
+                            ) {
+
+                              const filtered =
+                                sorted.filter(
+                                  (
+                                    row: any
+                                  ) =>
+                                    Number(
+                                      row[
+                                        month
+                                      ] ||
+                                        0
+                                    ) > 0
+                                )
+
+                              setData(
+                                filtered
+                              )
+
+                              return
+                            }
+
                             setData(
                               sorted
                             )
@@ -1038,16 +1065,72 @@ export default function Home() {
                           </option>
 
                           <option value="asc">
-                            Low →
-                            High
+                            Low → High
                           </option>
 
                           <option value="desc">
-                            High →
-                            Low
+                            High → Low
+                          </option>
+
+                          <option value="green">
+                            Highlighted
                           </option>
 
                         </select>
+
+                        <input
+                          type="number"
+                          placeholder="Filter value"
+                          className="
+                            border
+                            rounded
+                            px-2
+                            py-1
+                            text-xs
+                          "
+                          onChange={(
+                            e
+                          ) => {
+
+                            const filterValue =
+                              Number(
+                                e
+                                  .target
+                                  .value
+                              )
+
+                            if (
+                              !e
+                                .target
+                                .value
+                            ) {
+
+                              setData(
+                                originalData
+                              )
+
+                              return
+                            }
+
+                            const filtered =
+                              originalData.filter(
+                                (
+                                  row: any
+                                ) =>
+                                  Number(
+                                    row[
+                                      month
+                                    ] ||
+                                      0
+                                  ) ===
+                                  filterValue
+                              )
+
+                            setData(
+                              filtered
+                            )
+                          }}
+                        />
 
                       </div>
 
