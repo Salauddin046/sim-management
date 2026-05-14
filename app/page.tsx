@@ -13,31 +13,15 @@ export default function Home() {
   const [password, setPassword] = useState('')
 
   const [otp, setOtp] = useState('')
+  const [generatedOtp, setGeneratedOtp] =
+    useState('')
+
   const [otpSent, setOtpSent] = useState(false)
 
   const [message, setMessage] = useState('')
 
   const [captcha, setCaptcha] = useState('')
   const [captchaInput, setCaptchaInput] =
-    useState('')
-
-  const [profileOpen, setProfileOpen] =
-    useState(false)
-
-  const [user, setUser] = useState<any>(null)
-
-  const [input, setInput] = useState('')
-  const [data, setData] = useState<any[]>([])
-
-  const [loading, setLoading] = useState(false)
-
-  const [filterType, setFilterType] =
-    useState('6months')
-
-  const [fromMonth, setFromMonth] =
-    useState('')
-
-  const [toMonth, setToMonth] =
     useState('')
 
   useEffect(() => {
@@ -73,7 +57,6 @@ export default function Home() {
           },
           body: JSON.stringify({
             email,
-            username,
           }),
         }
       )
@@ -81,6 +64,7 @@ export default function Home() {
       const result = await response.json()
 
       if (response.ok) {
+        setGeneratedOtp(result.otp)
         setOtpSent(true)
         setMessage('OTP sent to email')
       } else {
@@ -95,31 +79,13 @@ export default function Home() {
   const verifyOtpAndSignup = async () => {
     setMessage('')
 
+    if (otp !== generatedOtp) {
+      setMessage('Invalid OTP')
+      return
+    }
+
     try {
-      const verifyResponse = await fetch(
-        '/api/verify-otp',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type':
-              'application/json',
-          },
-          body: JSON.stringify({
-            username,
-            otp,
-          }),
-        }
-      )
-
-      const verifyResult =
-        await verifyResponse.json()
-
-      if (!verifyResponse.ok) {
-        setMessage(verifyResult.error)
-        return
-      }
-
-      const signupResponse = await fetch(
+      const response = await fetch(
         '/api/signup',
         {
           method: 'POST',
@@ -136,25 +102,23 @@ export default function Home() {
         }
       )
 
-      const signupResult =
-        await signupResponse.json()
+      const result = await response.json()
 
-      if (signupResponse.ok) {
+      if (response.ok) {
         setMessage(
           'Account created successfully'
         )
 
         setIsLogin(true)
 
-        setOtpSent(false)
-
         setName('')
         setEmail('')
         setUsername('')
         setPassword('')
         setOtp('')
+        setOtpSent(false)
       } else {
-        setMessage(signupResult.error)
+        setMessage(result.error)
       }
     } catch (error) {
       console.error(error)
@@ -193,7 +157,6 @@ export default function Home() {
 
       if (response.ok) {
         setLoggedIn(true)
-        setUser(result.user)
       } else {
         setMessage(result.error)
       }
@@ -234,124 +197,6 @@ export default function Home() {
       console.error(error)
       setMessage('Failed')
     }
-  }
-
-  const searchBulk = async () => {
-    setMessage('')
-
-    const numbers = input
-      .split('\n')
-      .map((num) => num.trim())
-      .filter(Boolean)
-
-    if (!numbers.length) {
-      setMessage(
-        'Please enter SIM or phone numbers'
-      )
-      return
-    }
-
-    if (numbers.length > 1000) {
-      setMessage(
-        'Maximum 1000 searches allowed'
-      )
-      return
-    }
-
-    setLoading(true)
-
-    try {
-      const response = await fetch(
-        '/api/sim',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type':
-              'application/json',
-          },
-          body: JSON.stringify({
-            numbers,
-          }),
-        }
-      )
-
-      const result = await response.json()
-
-      const grouped: any = {}
-
-      result.forEach((row: any) => {
-        const key = row.sim_no
-
-        if (!grouped[key]) {
-          grouped[key] = {
-            sim_no: row.sim_no,
-            msisdn: row.msisdn,
-            sim_status: row.sim_status,
-            plan: row.plan,
-          }
-        }
-
-        grouped[key][row.usage_month] =
-          Number(row.used_data_mb || 0)
-      })
-
-      setData(Object.values(grouped))
-    } catch (error) {
-      console.error(error)
-      setMessage('Search failed')
-    }
-
-    setLoading(false)
-  }
-
-  const allMonths = Array.from(
-    new Set(
-      data.flatMap((row: any) =>
-        Object.keys(row).filter(
-          (key) =>
-            ![
-              'sim_no',
-              'msisdn',
-              'sim_status',
-              'plan',
-            ].includes(key)
-        )
-      )
-    )
-  ).sort((a: any, b: any) => {
-    return (
-      new Date(a).getTime() -
-      new Date(b).getTime()
-    )
-  })
-
-  let months = [...allMonths]
-
-  if (filterType === '6months') {
-    months = allMonths.slice(-6)
-  }
-
-  if (filterType === '1year') {
-    months = allMonths.slice(-12)
-  }
-
-  if (
-    filterType === 'custom' &&
-    fromMonth &&
-    toMonth
-  ) {
-    months = allMonths.filter(
-      (month: any) =>
-        new Date(month) >=
-          new Date(fromMonth) &&
-        new Date(month) <=
-          new Date(toMonth)
-    )
-  }
-
-  const logout = () => {
-    setLoggedIn(false)
-    setUser(null)
   }
 
   if (!loggedIn) {
@@ -496,372 +341,17 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 p-8">
+    <div className="min-h-screen flex items-center justify-center bg-gray-100">
 
-      <div className="flex justify-between items-center mb-8">
+      <div className="bg-white p-10 rounded-2xl shadow-lg">
 
-        <h1 className="text-3xl font-bold">
+        <h1 className="text-4xl font-bold mb-4">
           Telecom Dashboard
         </h1>
 
-        <div className="flex gap-4">
-
-          <button
-            onClick={() =>
-              setProfileOpen(!profileOpen)
-            }
-            className="bg-white px-4 py-2 rounded-lg shadow"
-          >
-            {user?.name || 'Profile'}
-          </button>
-
-          <button
-            onClick={logout}
-            className="bg-red-500 text-white px-4 py-2 rounded-lg"
-          >
-            Logout
-          </button>
-
-        </div>
-
-      </div>
-
-      {profileOpen && (
-        <div className="bg-white rounded-xl shadow p-6 mb-6">
-
-          <h2 className="text-2xl font-bold mb-4">
-            Profile
-          </h2>
-
-          <p className="mb-2">
-            <b>Name:</b> {user?.name}
-          </p>
-
-          <p className="mb-2">
-            <b>Email:</b> {user?.email}
-          </p>
-
-          <p className="mb-2">
-            <b>Username:</b>{' '}
-            {user?.username}
-          </p>
-
-        </div>
-      )}
-
-      <div className="bg-white rounded-2xl shadow-lg p-6">
-
-        <div className="flex gap-4 mb-4 flex-wrap">
-
-          <select
-            value={filterType}
-            onChange={(e) =>
-              setFilterType(
-                e.target.value
-              )
-            }
-            className="border border-gray-300 rounded-lg p-3"
-          >
-            <option value="6months">
-              Last 6 Months
-            </option>
-
-            <option value="1year">
-              Last 1 Year
-            </option>
-
-            <option value="custom">
-              Custom Range
-            </option>
-          </select>
-
-          {filterType === 'custom' && (
-            <>
-              <select
-                value={fromMonth}
-                onChange={(e) =>
-                  setFromMonth(
-                    e.target.value
-                  )
-                }
-                className="border border-gray-300 rounded-lg p-3"
-              >
-                <option value="">
-                  From Month
-                </option>
-
-                {allMonths.map(
-                  (month: any) => (
-                    <option
-                      key={month}
-                      value={month}
-                    >
-                      {month}
-                    </option>
-                  )
-                )}
-              </select>
-
-              <select
-                value={toMonth}
-                onChange={(e) =>
-                  setToMonth(
-                    e.target.value
-                  )
-                }
-                className="border border-gray-300 rounded-lg p-3"
-              >
-                <option value="">
-                  To Month
-                </option>
-
-                {allMonths.map(
-                  (month: any) => (
-                    <option
-                      key={month}
-                      value={month}
-                    >
-                      {month}
-                    </option>
-                  )
-                )}
-              </select>
-            </>
-          )}
-
-        </div>
-
-        <textarea
-          rows={8}
-          placeholder="Search upto 1000 SIM or phone numbers"
-          value={input}
-          onChange={(e) =>
-            setInput(e.target.value)
-          }
-          className="w-full border border-gray-300 rounded-lg p-4 mb-4"
-        />
-
-        <button
-          onClick={searchBulk}
-          className="bg-black text-white px-6 py-3 rounded-lg mb-6"
-        >
-          Search
-        </button>
-
-        {loading && (
-          <p className="mb-4">
-            Loading...
-          </p>
-        )}
-
-        <div className="overflow-x-auto">
-
-          <table className="w-full border-collapse border border-gray-300 text-sm">
-
-            <thead>
-              <tr className="bg-gray-200">
-
-                <th className="border p-3">
-                  SIM Number
-                </th>
-
-                <th className="border p-3">
-                  MSISDN
-                </th>
-
-                <th className="border p-3">
-                  Status
-                </th>
-
-                <th className="border p-3">
-                  Plan
-                </th>
-
-                <th className="border p-3">
-                  Min Data
-                </th>
-
-                <th className="border p-3">
-                  Max Data
-                </th>
-
-                <th className="border p-3">
-                  Avg Data
-                </th>
-
-                <th className="border p-3">
-                  Zero Usage Months
-                </th>
-
-                <th className="border p-3">
-                  Std Deviation
-                </th>
-
-                {months.map(
-                  (month: any) => (
-                    <th
-                      key={month}
-                      className="border p-3"
-                    >
-                      {month}
-                    </th>
-                  )
-                )}
-
-              </tr>
-            </thead>
-
-            <tbody>
-
-              {data.map(
-                (
-                  row: any,
-                  index: number
-                ) => {
-
-                  const usageValues =
-                    months.map(
-                      (month: any) =>
-                        Number(
-                          row[month] || 0
-                        )
-                    )
-
-                  const maxValue =
-                    Math.max(
-                      ...usageValues
-                    )
-
-                  const minValue =
-                    Math.min(
-                      ...usageValues
-                    )
-
-                  const averageValue = (
-                    usageValues.reduce(
-                      (
-                        a: number,
-                        b: number
-                      ) => a + b,
-                      0
-                    ) /
-                    usageValues.length
-                  ).toFixed(2)
-
-                  const zeroMonths =
-                    usageValues.filter(
-                      (
-                        value: number
-                      ) => value === 0
-                    ).length
-
-                  const variance =
-                    usageValues.reduce(
-                      (
-                        acc: number,
-                        value: number
-                      ) =>
-                        acc +
-                        Math.pow(
-                          value -
-                            Number(
-                              averageValue
-                            ),
-                          2
-                        ),
-                      0
-                    ) /
-                    usageValues.length
-
-                  const standardDeviation =
-                    Math.sqrt(
-                      variance
-                    ).toFixed(2)
-
-                  return (
-                    <tr key={index}>
-
-                      <td className="border p-3">
-                        {row.sim_no}
-                      </td>
-
-                      <td className="border p-3">
-                        {row.msisdn}
-                      </td>
-
-                      <td className="border p-3">
-                        {row.sim_status}
-                      </td>
-
-                      <td className="border p-3">
-                        {row.plan}
-                      </td>
-
-                      <td className="border p-3 text-center">
-                        {minValue}
-                      </td>
-
-                      <td className="border p-3 text-center">
-                        {maxValue}
-                      </td>
-
-                      <td className="border p-3 text-center">
-                        {averageValue}
-                      </td>
-
-                      <td className="border p-3 text-center">
-                        {zeroMonths}
-                      </td>
-
-                      <td className="border p-3 text-center">
-                        {standardDeviation}
-                      </td>
-
-                      {months.map(
-                        (
-                          month: any
-                        ) => {
-
-                          const value =
-                            Number(
-                              row[
-                                month
-                              ] || 0
-                            )
-
-                          return (
-                            <td
-                              key={
-                                month
-                              }
-                              className={`
-                                border
-                                p-3
-                                text-center
-                                ${
-                                  value ===
-                                  maxValue
-                                    ? 'bg-green-300 font-bold'
-                                    : ''
-                                }
-                              `}
-                            >
-                              {value}
-                            </td>
-                          )
-                        }
-                      )}
-
-                    </tr>
-                  )
-                }
-              )}
-
-            </tbody>
-
-          </table>
-
-        </div>
+        <p className="text-gray-600">
+          Login successful
+        </p>
 
       </div>
 
