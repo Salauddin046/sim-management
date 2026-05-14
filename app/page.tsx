@@ -633,7 +633,7 @@ export default function Home() {
               e.target.value
             )
           }
-          placeholder="Enter SIM or Phone numbers"
+          placeholder="Enter SIM numbers"
           className="
             w-full
             max-w-lg
@@ -725,6 +725,389 @@ export default function Home() {
             </option>
 
           </select>
+
+        </div>
+
+        <div className="
+          overflow-auto
+          border
+          rounded-lg
+          max-h-[650px]
+        ">
+
+          <table className="
+            w-full
+            border-collapse
+            text-xs
+          ">
+
+            <thead className="
+              bg-gray-200
+              sticky
+              top-0
+              z-10
+            ">
+
+              <tr>
+
+                {[
+                  {
+                    label: 'SIM',
+                    key: 'sim_no',
+                  },
+
+                  {
+                    label: 'Phone Number',
+                    key: 'msisdn',
+                  },
+
+                  {
+                    label: 'Status',
+                    key: 'sim_status',
+                  },
+
+                  {
+                    label: 'Plan',
+                    key: 'plan',
+                  },
+                ].map(
+                  (
+                    header: any
+                  ) => (
+
+                    <th
+                      key={
+                        header.key
+                      }
+                      className="
+                        border
+                        p-1
+                        min-w-[120px]
+                      "
+                    >
+
+                      <div className="
+                        flex
+                        flex-col
+                        gap-1
+                      ">
+
+                        <span>
+                          {
+                            header.label
+                          }
+                        </span>
+
+                        <select
+                          className="
+                            border
+                            rounded
+                            text-[10px]
+                          "
+                          onChange={(e) => {
+
+                            const value =
+                              e.target.value
+
+                            if (
+                              value ===
+                              'reset'
+                            ) {
+
+                              setData(
+                                originalData
+                              )
+
+                              return
+                            }
+
+                            sortData(
+                              header.key,
+                              value
+                            )
+                          }}
+                        >
+
+                          <option value="">
+                            Filter
+                          </option>
+
+                          <option value="asc">
+                            A-Z
+                          </option>
+
+                          <option value="desc">
+                            Z-A
+                          </option>
+
+                          <option value="reset">
+                            Reset
+                          </option>
+
+                        </select>
+
+                      </div>
+
+                    </th>
+                  )
+                )}
+
+                <th className="border p-1">
+                  Min Data (MB)
+                </th>
+
+                <th className="border p-1">
+                  Max Data (MB)
+                </th>
+
+                <th className="border p-1">
+                  Total Data (MB)
+                </th>
+
+                <th className="border p-1">
+                  Avg Data (MB)
+                </th>
+
+                <th className="border p-1">
+                  Data Used Months
+                </th>
+
+                <th className="border p-1">
+                  Zero Data Used Months
+                </th>
+
+                {months.map(
+                  (month) => (
+
+                    <th
+                      key={month}
+                      className="
+                        border
+                        p-1
+                        min-w-[70px]
+                        max-w-[70px]
+                        text-[10px]
+                      "
+                    >
+
+                      <div className="
+                        flex
+                        flex-col
+                        gap-1
+                      ">
+
+                        <span>
+                          {month} (MB)
+                        </span>
+
+                        <select
+                          className="
+                            border
+                            rounded
+                            text-[10px]
+                          "
+                          onChange={(e) => {
+
+                            const value =
+                              e.target.value
+
+                            if (
+                              value ===
+                              'reset'
+                            ) {
+
+                              setData(
+                                originalData
+                              )
+
+                              return
+                            }
+
+                            sortData(
+                              month,
+                              value,
+                              true
+                            )
+                          }}
+                        >
+
+                          <option value="">
+                            Filter
+                          </option>
+
+                          <option value="asc">
+                            Low-High
+                          </option>
+
+                          <option value="desc">
+                            High-Low
+                          </option>
+
+                          <option value="reset">
+                            Reset
+                          </option>
+
+                        </select>
+
+                      </div>
+
+                    </th>
+                  )
+                )}
+
+              </tr>
+
+            </thead>
+
+            <tbody>
+
+              {data.map(
+                (
+                  row: any,
+                  index: number
+                ) => {
+
+                  const usageValues =
+                    months.map(
+                      (month) =>
+                        Number(
+                          row[
+                            month
+                          ] || 0
+                        )
+                    )
+
+                  const min =
+                    Math.min(
+                      ...usageValues
+                    )
+
+                  const max =
+                    Math.max(
+                      ...usageValues
+                    )
+
+                  const total =
+                    usageValues.reduce(
+                      (
+                        a,
+                        b
+                      ) => a + b,
+                      0
+                    )
+
+                  const avg =
+                    (
+                      total /
+                      usageValues.length
+                    ).toFixed(2)
+
+                  const used =
+                    usageValues.filter(
+                      (
+                        value
+                      ) =>
+                        value > 0
+                    ).length
+
+                  const zero =
+                    usageValues.filter(
+                      (
+                        value
+                      ) =>
+                        value === 0
+                    ).length
+
+                  return (
+
+                    <tr
+                      key={index}
+                      className="
+                        hover:bg-gray-50
+                      "
+                    >
+
+                      <td className="border p-1 text-center">
+                        {row.sim_no}
+                      </td>
+
+                      <td className="border p-1 text-center">
+                        {row.msisdn}
+                      </td>
+
+                      <td className="border p-1 text-center">
+                        {row.sim_status}
+                      </td>
+
+                      <td className="border p-1 text-center">
+                        {row.plan}
+                      </td>
+
+                      <td className="border p-1 text-center">
+                        {min}
+                      </td>
+
+                      <td className="border p-1 text-center">
+                        {max}
+                      </td>
+
+                      <td className="border p-1 text-center">
+                        {total}
+                      </td>
+
+                      <td className="border p-1 text-center">
+                        {avg}
+                      </td>
+
+                      <td className="border p-1 text-center">
+                        {used}
+                      </td>
+
+                      <td className="border p-1 text-center">
+                        {zero}
+                      </td>
+
+                      {months.map(
+                        (month) => {
+
+                          const value =
+                            Number(
+                              row[
+                                month
+                              ] || 0
+                            )
+
+                          return (
+
+                            <td
+                              key={month}
+                              className={`
+                                border
+                                p-1
+                                text-center
+                                text-[10px]
+                                ${
+                                  value ===
+                                  max
+                                    ? 'bg-green-300 font-bold'
+                                    : ''
+                                }
+                              `}
+                            >
+                              {value}
+                            </td>
+                          )
+                        }
+                      )}
+
+                    </tr>
+                  )
+                }
+              )}
+
+            </tbody>
+
+          </table>
 
         </div>
 
