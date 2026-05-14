@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 
 export default function Home() {
 
@@ -24,6 +24,14 @@ export default function Home() {
 
   const [toMonth, setToMonth] =
     useState('')
+
+  const [profileOpen, setProfileOpen] =
+    useState(false)
+
+  const [loggedUser] =
+    useState<any>({
+      username: 'Admin',
+    })
 
   const searchBulk = async () => {
 
@@ -185,61 +193,6 @@ export default function Home() {
       )
   }
 
-  const handleSort = (
-    key: string,
-    direction: string
-  ) => {
-
-    const sorted =
-      [...data]
-
-    sorted.sort(
-      (
-        a: any,
-        b: any
-      ) => {
-
-        const valueA =
-          a[key] || 0
-
-        const valueB =
-          b[key] || 0
-
-        if (
-          typeof valueA ===
-          'string'
-        ) {
-
-          return direction ===
-            'asc'
-            ? valueA.localeCompare(
-                valueB
-              )
-            : valueB.localeCompare(
-                valueA
-              )
-        }
-
-        return direction ===
-          'asc'
-          ? Number(
-              valueA
-            ) -
-              Number(
-                valueB
-              )
-          : Number(
-              valueB
-            ) -
-              Number(
-                valueA
-              )
-      }
-    )
-
-    setData(sorted)
-  }
-
   const downloadCSV = () => {
 
     const headers = [
@@ -389,20 +342,108 @@ export default function Home() {
         <div className="flex justify-between items-center mb-4">
 
           <h1 className="text-2xl font-bold">
-            Datix Master
+            Telecom Dashboard
           </h1>
 
-          <button
-            className="
-              bg-black
-              text-white
-              px-4
-              py-2
-              rounded-lg
-            "
-          >
-            Profile
-          </button>
+          <div className="relative">
+
+            <button
+              onClick={() =>
+                setProfileOpen(
+                  !profileOpen
+                )
+              }
+              className="
+                bg-black
+                text-white
+                px-3
+                py-2
+                rounded-lg
+                text-sm
+                flex
+                items-center
+                gap-2
+              "
+            >
+
+              <div
+                className="
+                  w-7
+                  h-7
+                  rounded-full
+                  bg-white
+                  text-black
+                  flex
+                  items-center
+                  justify-center
+                  font-bold
+                "
+              >
+                {loggedUser?.username
+                  ?.charAt(0)
+                  ?.toUpperCase()}
+              </div>
+
+              <span>
+                {
+                  loggedUser?.username
+                }
+              </span>
+
+            </button>
+
+            {profileOpen && (
+
+              <div
+                className="
+                  absolute
+                  right-0
+                  mt-2
+                  w-52
+                  bg-white
+                  border
+                  rounded-lg
+                  shadow-lg
+                  z-50
+                "
+              >
+
+                <div className="p-3 border-b">
+
+                  <p className="font-semibold text-sm">
+                    {
+                      loggedUser?.username
+                    }
+                  </p>
+
+                </div>
+
+                <button
+                  onClick={() => {
+
+                    localStorage.removeItem(
+                      'user'
+                    )
+
+                    window.location.reload()
+                  }}
+                  className="
+                    w-full
+                    text-left
+                    px-4
+                    py-3
+                    hover:bg-gray-100
+                    text-red-600
+                    text-sm
+                  "
+                >
+                  Logout
+                </button>
+
+              </div>
+            )}
+
+          </div>
 
         </div>
 
@@ -410,7 +451,7 @@ export default function Home() {
 
           <textarea
             rows={4}
-            placeholder="Enter SIM or Phone numbers"
+            placeholder="Enter SIM numbers"
             value={input}
             onChange={(e) =>
               setInput(
@@ -428,10 +469,6 @@ export default function Home() {
               resize-none
             "
           />
-
-          <p className="text-xs text-gray-500 mt-1">
-            Maximum 1000 SIM numbers
-          </p>
 
         </div>
 
@@ -517,106 +554,7 @@ export default function Home() {
 
           </select>
 
-          {filterType ===
-            'custom' && (
-            <>
-              <select
-                value={
-                  fromMonth
-                }
-                onChange={(
-                  e
-                ) =>
-                  setFromMonth(
-                    e.target
-                      .value
-                  )
-                }
-                className="
-                  border
-                  rounded-lg
-                  px-3
-                  py-2
-                  text-sm
-                "
-              >
-
-                <option value="">
-                  From Month
-                </option>
-
-                {allMonths.map(
-                  (
-                    month: any
-                  ) => (
-                    <option
-                      key={
-                        month
-                      }
-                      value={
-                        month
-                      }
-                    >
-                      {month}
-                    </option>
-                  )
-                )}
-
-              </select>
-
-              <select
-                value={
-                  toMonth
-                }
-                onChange={(
-                  e
-                ) =>
-                  setToMonth(
-                    e.target
-                      .value
-                  )
-                }
-                className="
-                  border
-                  rounded-lg
-                  px-3
-                  py-2
-                  text-sm
-                "
-              >
-
-                <option value="">
-                  To Month
-                </option>
-
-                {allMonths.map(
-                  (
-                    month: any
-                  ) => (
-                    <option
-                      key={
-                        month
-                      }
-                      value={
-                        month
-                      }
-                    >
-                      {month}
-                    </option>
-                  )
-                )}
-
-              </select>
-            </>
-          )}
-
         </div>
-
-        {loading && (
-          <p className="mb-3 text-sm">
-            Loading...
-          </p>
-        )}
 
         <div className="
           overflow-auto
@@ -641,148 +579,44 @@ export default function Home() {
 
               <tr>
 
-                {[
-                  {
-                    label:
-                      'SIM',
-                    key:
-                      'sim_no',
-                  },
+                <th className="border p-1 min-w-[120px]">
+                  SIM Number
+                </th>
 
-                  {
-                    label:
-                      'Phone Number',
-                    key:
-                      'msisdn',
-                  },
+                <th className="border p-1 min-w-[120px]">
+                  Phone Number
+                </th>
 
-                  {
-                    label:
-                      'Status',
-                    key:
-                      'sim_status',
-                  },
+                <th className="border p-1 min-w-[100px]">
+                  Status
+                </th>
 
-                  {
-                    label:
-                      'Plan',
-                    key:
-                      'plan',
-                  },
-                ].map(
-                  (
-                    header: any
-                  ) => (
+                <th className="border p-1 min-w-[100px]">
+                  Plan
+                </th>
 
-                    <th
-                      key={
-                        header.key
-                      }
-                      className="
-                        border
-                        p-1
-                        min-w-[120px]
-                      "
-                    >
-
-                      <div className="
-                        flex
-                        flex-col
-                        gap-1
-                      ">
-
-                        <span className="
-                          font-semibold
-                          text-[11px]
-                        ">
-                          {
-                            header.label
-                          }
-                        </span>
-
-                        <select
-                          className="
-                            border
-                            rounded
-                            px-1
-                            py-1
-                            text-[10px]
-                          "
-                          onChange={(
-                            e
-                          ) => {
-
-                            const value =
-                              e
-                                .target
-                                .value
-
-                            if (
-                              value ===
-                              'asc'
-                            ) {
-
-                              handleSort(
-                                header.key,
-                                'asc'
-                              )
-                            }
-
-                            if (
-                              value ===
-                              'desc'
-                            ) {
-
-                              handleSort(
-                                header.key,
-                                'desc'
-                              )
-                            }
-                          }}
-                        >
-
-                          <option value="">
-                            Filter
-                          </option>
-
-                          <option value="asc">
-                            A → Z
-                          </option>
-
-                          <option value="desc">
-                            Z → A
-                          </option>
-
-                        </select>
-
-                      </div>
-
-                    </th>
-                  )
-                )}
-
-                <th className="border p-1">
+                <th className="border p-1 min-w-[70px]">
                   Min Data (MB)
                 </th>
 
-                <th className="border p-1">
+                <th className="border p-1 min-w-[70px]">
                   Max Data (MB)
                 </th>
 
-                <th className="border p-1">
+                <th className="border p-1 min-w-[70px]">
                   Total Data (MB)
                 </th>
 
-                <th className="border p-1">
-                  Avg Data
+                <th className="border p-1 min-w-[70px]">
+                  Avg Data (MB)
                 </th>
 
-                <th className="border p-1">
-                  Data Consumed Month
+                <th className="border p-1 min-w-[70px]">
+                  Count of Data Used Month
                 </th>
 
-                <th className="border p-1">
-                  Zero Data consumed month
+                <th className="border p-1 min-w-[70px]">
+                  Count of Zero Data used Month
                 </th>
 
                 {months.map(
@@ -797,200 +631,12 @@ export default function Home() {
                       className="
                         border
                         p-1
-                        min-w-[140px]
+                        min-w-[70px]
+                        max-w-[70px]
+                        text-[10px]
                       "
                     >
-
-                      <div className="
-                        flex
-                        flex-col
-                        gap-1
-                      ">
-
-                        <span className="
-                          text-[11px]
-                          font-semibold
-                        ">
-                          {month} (MB)
-                        </span>
-
-                        <select
-                          className="
-                            border
-                            rounded
-                            px-1
-                            py-1
-                            text-[10px]
-                          "
-                          onChange={(
-                            e
-                          ) => {
-
-                            const value =
-                              e
-                                .target
-                                .value
-
-                            const sorted =
-                              [
-                                ...data,
-                              ]
-
-                            if (
-                              value ===
-                              'asc'
-                            ) {
-
-                              sorted.sort(
-                                (
-                                  a: any,
-                                  b: any
-                                ) =>
-                                  Number(
-                                    a[
-                                      month
-                                    ] ||
-                                      0
-                                  ) -
-                                  Number(
-                                    b[
-                                      month
-                                    ] ||
-                                      0
-                                  )
-                              )
-                            }
-
-                            if (
-                              value ===
-                              'desc'
-                            ) {
-
-                              sorted.sort(
-                                (
-                                  a: any,
-                                  b: any
-                                ) =>
-                                  Number(
-                                    b[
-                                      month
-                                    ] ||
-                                      0
-                                  ) -
-                                  Number(
-                                    a[
-                                      month
-                                    ] ||
-                                      0
-                                  )
-                              )
-                            }
-
-                            if (
-                              value ===
-                              'green'
-                            ) {
-
-                              const filtered =
-                                sorted.filter(
-                                  (
-                                    row: any
-                                  ) =>
-                                    Number(
-                                      row[
-                                        month
-                                      ] ||
-                                        0
-                                    ) > 0
-                                )
-
-                              setData(
-                                filtered
-                              )
-
-                              return
-                            }
-
-                            setData(
-                              sorted
-                            )
-                          }}
-                        >
-
-                          <option value="">
-                            Filter
-                          </option>
-
-                          <option value="asc">
-                            Low → High
-                          </option>
-
-                          <option value="desc">
-                            High → Low
-                          </option>
-
-                          <option value="green">
-                            Highlight
-                          </option>
-
-                        </select>
-
-                        <input
-                          type="number"
-                          placeholder="Value"
-                          className="
-                            border
-                            rounded
-                            px-1
-                            py-1
-                            text-[10px]
-                          "
-                          onChange={(
-                            e
-                          ) => {
-
-                            const filterValue =
-                              Number(
-                                e
-                                  .target
-                                  .value
-                              )
-
-                            if (
-                              !e
-                                .target
-                                .value
-                            ) {
-
-                              setData(
-                                originalData
-                              )
-
-                              return
-                            }
-
-                            const filtered =
-                              originalData.filter(
-                                (
-                                  row: any
-                                ) =>
-                                  Number(
-                                    row[
-                                      month
-                                    ] ||
-                                      0
-                                  ) ===
-                                  filterValue
-                              )
-
-                            setData(
-                              filtered
-                            )
-                          }}
-                        />
-
-                      </div>
-
+                      {month} (MB)
                     </th>
                   )
                 )}
@@ -1069,90 +715,49 @@ export default function Home() {
                       "
                     >
 
-                      <td className="
-                        border
-                        p-1
-                        text-center
-                      ">
+                      <td className="border p-1 text-center">
                         {row.sim_no}
                       </td>
 
-                      <td className="
-                        border
-                        p-1
-                        text-center
-                      ">
+                      <td className="border p-1 text-center">
                         {row.msisdn}
                       </td>
 
-                      <td className="
-                        border
-                        p-1
-                        text-center
-                      ">
+                      <td className="border p-1 text-center">
                         {
                           row.sim_status
                         }
                       </td>
 
-                      <td className="
-                        border
-                        p-1
-                        text-center
-                      ">
+                      <td className="border p-1 text-center">
                         {row.plan}
                       </td>
 
-                      <td className="
-                        border
-                        p-1
-                        text-center
-                      ">
+                      <td className="border p-1 text-center">
                         {minValue}
                       </td>
 
-                      <td className="
-                        border
-                        p-1
-                        text-center
-                      ">
+                      <td className="border p-1 text-center">
                         {maxValue}
                       </td>
 
-                      <td className="
-                        border
-                        p-1
-                        text-center
-                        font-semibold
-                      ">
+                      <td className="border p-1 text-center">
                         {totalUsage}
                       </td>
 
-                      <td className="
-                        border
-                        p-1
-                        text-center
-                      ">
+                      <td className="border p-1 text-center">
                         {
                           averageValue
                         }
                       </td>
 
-                      <td className="
-                        border
-                        p-1
-                        text-center
-                      ">
+                      <td className="border p-1 text-center">
                         {
                           consumedMonths
                         }
                       </td>
 
-                      <td className="
-                        border
-                        p-1
-                        text-center
-                      ">
+                      <td className="border p-1 text-center">
                         {zeroMonths}
                       </td>
 
@@ -1178,7 +783,7 @@ export default function Home() {
                                 border
                                 p-1
                                 text-center
-                                text-[11px]
+                                text-[10px]
                                 ${
                                   value ===
                                   maxValue
