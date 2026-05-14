@@ -31,6 +31,15 @@ export default function Home() {
 
   const [loading, setLoading] = useState(false)
 
+  const [filterType, setFilterType] =
+    useState('6months')
+
+  const [fromMonth, setFromMonth] =
+    useState('')
+
+  const [toMonth, setToMonth] =
+    useState('')
+
   useEffect(() => {
     generateCaptcha()
   }, [])
@@ -283,7 +292,7 @@ export default function Home() {
         }
 
         grouped[key][row.usage_month] =
-          row.used_data_mb
+          Number(row.used_data_mb || 0)
       })
 
       setData(Object.values(grouped))
@@ -295,7 +304,7 @@ export default function Home() {
     setLoading(false)
   }
 
-  const months = Array.from(
+  const allMonths = Array.from(
     new Set(
       data.flatMap((row: any) =>
         Object.keys(row).filter(
@@ -315,6 +324,30 @@ export default function Home() {
       new Date(b).getTime()
     )
   })
+
+  let months = [...allMonths]
+
+  if (filterType === '6months') {
+    months = allMonths.slice(-6)
+  }
+
+  if (filterType === '1year') {
+    months = allMonths.slice(-12)
+  }
+
+  if (
+    filterType === 'custom' &&
+    fromMonth &&
+    toMonth
+  ) {
+    months = allMonths.filter(
+      (month: any) =>
+        new Date(month) >=
+          new Date(fromMonth) &&
+        new Date(month) <=
+          new Date(toMonth)
+    )
+  }
 
   const logout = () => {
     setLoggedIn(false)
@@ -518,6 +551,86 @@ export default function Home() {
 
       <div className="bg-white rounded-2xl shadow-lg p-6">
 
+        <div className="flex gap-4 mb-4 flex-wrap">
+
+          <select
+            value={filterType}
+            onChange={(e) =>
+              setFilterType(
+                e.target.value
+              )
+            }
+            className="border border-gray-300 rounded-lg p-3"
+          >
+            <option value="6months">
+              Last 6 Months
+            </option>
+
+            <option value="1year">
+              Last 1 Year
+            </option>
+
+            <option value="custom">
+              Custom Range
+            </option>
+          </select>
+
+          {filterType === 'custom' && (
+            <>
+              <select
+                value={fromMonth}
+                onChange={(e) =>
+                  setFromMonth(
+                    e.target.value
+                  )
+                }
+                className="border border-gray-300 rounded-lg p-3"
+              >
+                <option value="">
+                  From Month
+                </option>
+
+                {allMonths.map(
+                  (month: any) => (
+                    <option
+                      key={month}
+                      value={month}
+                    >
+                      {month}
+                    </option>
+                  )
+                )}
+              </select>
+
+              <select
+                value={toMonth}
+                onChange={(e) =>
+                  setToMonth(
+                    e.target.value
+                  )
+                }
+                className="border border-gray-300 rounded-lg p-3"
+              >
+                <option value="">
+                  To Month
+                </option>
+
+                {allMonths.map(
+                  (month: any) => (
+                    <option
+                      key={month}
+                      value={month}
+                    >
+                      {month}
+                    </option>
+                  )
+                )}
+              </select>
+            </>
+          )}
+
+        </div>
+
         <textarea
           rows={8}
           placeholder="Search upto 1000 SIM or phone numbers"
@@ -572,6 +685,14 @@ export default function Home() {
                   Max Data
                 </th>
 
+                <th className="border p-3">
+                  Avg Data
+                </th>
+
+                <th className="border p-3">
+                  Zero Usage Months
+                </th>
+
                 {months.map(
                   (month: any) => (
                     <th
@@ -612,6 +733,24 @@ export default function Home() {
                       ...usageValues
                     )
 
+                  const averageValue = (
+                    usageValues.reduce(
+                      (
+                        a: number,
+                        b: number
+                      ) => a + b,
+                      0
+                    ) /
+                    usageValues.length
+                  ).toFixed(2)
+
+                  const zeroMonths =
+                    usageValues.filter(
+                      (
+                        value: number
+                      ) => value === 0
+                    ).length
+
                   return (
                     <tr key={index}>
 
@@ -637,6 +776,14 @@ export default function Home() {
 
                       <td className="border p-3 text-center">
                         {maxValue}
+                      </td>
+
+                      <td className="border p-3 text-center">
+                        {averageValue}
+                      </td>
+
+                      <td className="border p-3 text-center">
+                        {zeroMonths}
                       </td>
 
                       {months.map(
@@ -668,9 +815,7 @@ export default function Home() {
                                 }
                               `}
                             >
-                              {row[
-                                month
-                              ] || '-'}
+                              {value}
                             </td>
                           )
                         }
