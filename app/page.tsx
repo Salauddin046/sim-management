@@ -738,7 +738,7 @@ export default function Home() {
         <div className="flex justify-between items-center mb-6 relative">
 
           <h1 className="text-4xl font-bold">
-            Telecom Dashboard
+            Data Usage Dashboard
           </h1>
 
           <div className="relative">
@@ -806,7 +806,31 @@ export default function Home() {
 
         </div>
 
-        <div className="flex gap-4 flex-wrap items-center mb-4">
+        <textarea
+          rows={8}
+          placeholder="Search upto 1000 SIM numbers"
+          value={input}
+          onChange={(e) =>
+            setInput(e.target.value)
+          }
+          className="w-full border border-gray-300 rounded-xl p-4 mb-4"
+        />
+
+        <div className="flex gap-4 flex-wrap mb-6 items-center">
+
+          <button
+            onClick={searchBulk}
+            className="bg-black text-white px-6 py-3 rounded-lg"
+          >
+            Search
+          </button>
+
+          <button
+            onClick={downloadCSV}
+            className="bg-green-600 text-white px-6 py-3 rounded-lg"
+          >
+            Download CSV
+          </button>
 
           <select
             value={filterType}
@@ -886,255 +910,11 @@ export default function Home() {
 
         </div>
 
-        <textarea
-          rows={8}
-          placeholder="Search upto 1000 SIM numbers"
-          value={input}
-          onChange={(e) =>
-            setInput(e.target.value)
-          }
-          className="w-full border border-gray-300 rounded-xl p-4 mb-4"
-        />
-
-        <div className="flex gap-4 flex-wrap mb-6">
-
-          <button
-            onClick={searchBulk}
-            className="bg-black text-white px-6 py-3 rounded-lg"
-          >
-            Search
-          </button>
-
-          <button
-            onClick={downloadCSV}
-            className="bg-green-600 text-white px-6 py-3 rounded-lg"
-          >
-            Download CSV
-          </button>
-
-        </div>
-
         {loading && (
           <p className="mb-4 text-lg">
             Loading...
           </p>
         )}
-
-        <div className="overflow-auto rounded-xl border border-gray-300">
-
-          <table className="w-full border-collapse text-sm">
-
-            <thead className="bg-gray-200 sticky top-0">
-
-              <tr>
-
-                <th className="border p-3">
-                  SIM Number
-                </th>
-
-                <th className="border p-3">
-                  MSISDN
-                </th>
-
-                <th className="border p-3">
-                  Status
-                </th>
-
-                <th className="border p-3">
-                  Plan
-                </th>
-
-                <th className="border p-3">
-                  Min Data
-                </th>
-
-                <th className="border p-3">
-                  Max Data
-                </th>
-
-                <th className="border p-3">
-                  Avg Data
-                </th>
-
-                <th className="border p-3">
-                  Zero Months
-                </th>
-
-                <th className="border p-3">
-                  Std Deviation
-                </th>
-
-                {months.map(
-                  (month: any) => (
-                    <th
-                      key={month}
-                      className="border p-3"
-                    >
-                      {month}
-                    </th>
-                  )
-                )}
-
-              </tr>
-
-            </thead>
-
-            <tbody>
-
-              {data.map(
-                (
-                  row: any,
-                  index: number
-                ) => {
-
-                  const usageValues =
-                    months.map(
-                      (month: any) =>
-                        Number(
-                          row[month] || 0
-                        )
-                    )
-
-                  const maxValue =
-                    Math.max(
-                      ...usageValues
-                    )
-
-                  const minValue =
-                    Math.min(
-                      ...usageValues
-                    )
-
-                  const averageValue = (
-                    usageValues.reduce(
-                      (
-                        a: number,
-                        b: number
-                      ) => a + b,
-                      0
-                    ) /
-                    usageValues.length
-                  ).toFixed(2)
-
-                  const zeroMonths =
-                    usageValues.filter(
-                      (
-                        value: number
-                      ) => value === 0
-                    ).length
-
-                  const variance =
-                    usageValues.reduce(
-                      (
-                        acc: number,
-                        value: number
-                      ) =>
-                        acc +
-                        Math.pow(
-                          value -
-                            Number(
-                              averageValue
-                            ),
-                          2
-                        ),
-                      0
-                    ) /
-                    usageValues.length
-
-                  const standardDeviation =
-                    Math.sqrt(
-                      variance
-                    ).toFixed(2)
-
-                  return (
-
-                    <tr
-                      key={index}
-                      className="hover:bg-gray-50"
-                    >
-
-                      <td className="border p-3">
-                        {row.sim_no}
-                      </td>
-
-                      <td className="border p-3">
-                        {row.msisdn}
-                      </td>
-
-                      <td className="border p-3">
-                        {row.sim_status}
-                      </td>
-
-                      <td className="border p-3">
-                        {row.plan}
-                      </td>
-
-                      <td className="border p-3 text-center">
-                        {minValue}
-                      </td>
-
-                      <td className="border p-3 text-center">
-                        {maxValue}
-                      </td>
-
-                      <td className="border p-3 text-center">
-                        {averageValue}
-                      </td>
-
-                      <td className="border p-3 text-center">
-                        {zeroMonths}
-                      </td>
-
-                      <td className="border p-3 text-center">
-                        {standardDeviation}
-                      </td>
-
-                      {months.map(
-                        (
-                          month: any
-                        ) => {
-
-                          const value =
-                            Number(
-                              row[
-                                month
-                              ] || 0
-                            )
-
-                          return (
-
-                            <td
-                              key={
-                                month
-                              }
-                              className={`
-                                border
-                                p-3
-                                text-center
-                                ${
-                                  value ===
-                                  maxValue
-                                    ? 'bg-green-300 font-bold'
-                                    : ''
-                                }
-                              `}
-                            >
-                              {value}
-                            </td>
-                          )
-                        }
-                      )}
-
-                    </tr>
-                  )
-                }
-              )}
-
-            </tbody>
-
-          </table>
-
-        </div>
 
       </div>
 
