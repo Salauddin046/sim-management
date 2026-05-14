@@ -24,20 +24,10 @@ export default function Home() {
     useState(false)
 
   const [loggedUser, setLoggedUser] =
-    useState<any>({
-      username: '',
-      name: '',
-      email: '',
-    })
+    useState<any>(null)
 
   const [filterType, setFilterType] =
     useState('all')
-
-  const [fromMonth, setFromMonth] =
-    useState('')
-
-  const [toMonth, setToMonth] =
-    useState('')
 
   useEffect(() => {
 
@@ -46,16 +36,12 @@ export default function Home() {
         'user'
       )
 
-    if (!user) {
+    if (user) {
 
-      window.location.href = '/'
-
-      return
+      setLoggedUser(
+        JSON.parse(user)
+      )
     }
-
-    setLoggedUser(
-      JSON.parse(user)
-    )
 
     let timeout: any
 
@@ -69,7 +55,7 @@ export default function Home() {
         'Session expired'
       )
 
-      window.location.href = '/'
+      window.location.reload()
     }
 
     const resetTimer = () => {
@@ -99,11 +85,6 @@ export default function Home() {
       resetTimer
     )
 
-    window.addEventListener(
-      'scroll',
-      resetTimer
-    )
-
     return () => {
 
       clearTimeout(timeout)
@@ -120,11 +101,6 @@ export default function Home() {
 
       window.removeEventListener(
         'click',
-        resetTimer
-      )
-
-      window.removeEventListener(
-        'scroll',
         resetTimer
       )
     }
@@ -283,31 +259,11 @@ export default function Home() {
         )
       }
 
-      if (
-        filterType ===
-          'custom' &&
-        fromMonth &&
-        toMonth
-      ) {
-
-        return allMonths.filter(
-          (
-            month: any
-          ) =>
-            month >=
-              fromMonth &&
-            month <=
-              toMonth
-        )
-      }
-
       return allMonths
 
     }, [
       allMonths,
       filterType,
-      fromMonth,
-      toMonth,
     ])
 
   const sortData = (
@@ -373,7 +329,7 @@ export default function Home() {
 
     sessionStorage.clear()
 
-    window.location.href = '/'
+    window.location.reload()
   }
 
   const downloadCSV = () => {
@@ -518,7 +474,7 @@ export default function Home() {
         <div className="flex justify-between items-center mb-4">
 
           <h1 className="text-2xl font-bold">
-            Telecom Dashboard
+            Datix Dashboard
           </h1>
 
           <div className="relative">
@@ -554,12 +510,13 @@ export default function Home() {
               ">
                 {loggedUser?.username
                   ?.charAt(0)
-                  ?.toUpperCase()}
+                  ?.toUpperCase() || 'U'}
               </div>
 
               <span>
                 {
-                  loggedUser?.username
+                  loggedUser?.username ||
+                  'User'
                 }
               </span>
 
@@ -676,7 +633,7 @@ export default function Home() {
               e.target.value
             )
           }
-          placeholder="Enter SIM numbers"
+          placeholder="Enter SIM or Phone numbers"
           className="
             w-full
             max-w-lg
@@ -768,377 +725,6 @@ export default function Home() {
             </option>
 
           </select>
-
-        </div>
-
-        <div className="
-          overflow-auto
-          border
-          rounded-lg
-          max-h-[650px]
-        ">
-
-          <table className="
-            w-full
-            border-collapse
-            text-xs
-          ">
-
-            <thead className="
-              bg-gray-200
-              sticky
-              top-0
-            ">
-
-              <tr>
-
-                {[
-                  {
-                    label: 'SIM',
-                    key: 'sim_no',
-                  },
-                  {
-                    label: 'MSISDN',
-                    key: 'msisdn',
-                  },
-                  {
-                    label: 'Status',
-                    key: 'sim_status',
-                  },
-                  {
-                    label: 'Plan',
-                    key: 'plan',
-                  },
-                ].map(
-                  (
-                    header: any
-                  ) => (
-
-                    <th
-                      key={
-                        header.key
-                      }
-                      className="
-                        border
-                        p-1
-                        min-w-[120px]
-                      "
-                    >
-
-                      <div className="
-                        flex
-                        flex-col
-                        gap-1
-                      ">
-
-                        <span>
-                          {
-                            header.label
-                          }
-                        </span>
-
-                        <select
-                          className="
-                            border
-                            rounded
-                            text-[10px]
-                          "
-                          onChange={(e) => {
-
-                            const value =
-                              e.target.value
-
-                            if (
-                              value ===
-                              'reset'
-                            ) {
-
-                              setData(
-                                originalData
-                              )
-
-                              return
-                            }
-
-                            sortData(
-                              header.key,
-                              value
-                            )
-                          }}
-                        >
-
-                          <option value="">
-                            Filter
-                          </option>
-
-                          <option value="asc">
-                            A-Z
-                          </option>
-
-                          <option value="desc">
-                            Z-A
-                          </option>
-
-                        </select>
-
-                      </div>
-
-                    </th>
-                  )
-                )}
-
-                <th className="border p-1">
-                  Min
-                </th>
-
-                <th className="border p-1">
-                  Max
-                </th>
-
-                <th className="border p-1">
-                  Total
-                </th>
-
-                <th className="border p-1">
-                  Avg
-                </th>
-
-                <th className="border p-1">
-                  Used
-                </th>
-
-                <th className="border p-1">
-                  Zero
-                </th>
-
-                {months.map(
-                  (month) => (
-
-                    <th
-                      key={month}
-                      className="
-                        border
-                        p-1
-                        min-w-[70px]
-                        max-w-[70px]
-                        text-[10px]
-                      "
-                    >
-
-                      <div className="
-                        flex
-                        flex-col
-                        gap-1
-                      ">
-
-                        <span>
-                          {month} (MB)
-                        </span>
-
-                        <select
-                          className="
-                            border
-                            rounded
-                            text-[10px]
-                          "
-                          onChange={(e) => {
-
-                            const value =
-                              e.target.value
-
-                            if (
-                              value ===
-                              'reset'
-                            ) {
-
-                              setData(
-                                originalData
-                              )
-
-                              return
-                            }
-
-                            sortData(
-                              month,
-                              value,
-                              true
-                            )
-                          }}
-                        >
-
-                          <option value="">
-                            Filter
-                          </option>
-
-                          <option value="asc">
-                            Low-High
-                          </option>
-
-                          <option value="desc">
-                            High-Low
-                          </option>
-
-                        </select>
-
-                      </div>
-
-                    </th>
-                  )
-                )}
-
-              </tr>
-
-            </thead>
-
-            <tbody>
-
-              {data.map(
-                (
-                  row: any,
-                  index: number
-                ) => {
-
-                  const usageValues =
-                    months.map(
-                      (month) =>
-                        Number(
-                          row[
-                            month
-                          ] || 0
-                        )
-                    )
-
-                  const min =
-                    Math.min(
-                      ...usageValues
-                    )
-
-                  const max =
-                    Math.max(
-                      ...usageValues
-                    )
-
-                  const total =
-                    usageValues.reduce(
-                      (
-                        a,
-                        b
-                      ) => a + b,
-                      0
-                    )
-
-                  const avg =
-                    (
-                      total /
-                      usageValues.length
-                    ).toFixed(2)
-
-                  const used =
-                    usageValues.filter(
-                      (
-                        value
-                      ) =>
-                        value > 0
-                    ).length
-
-                  const zero =
-                    usageValues.filter(
-                      (
-                        value
-                      ) =>
-                        value === 0
-                    ).length
-
-                  return (
-
-                    <tr
-                      key={index}
-                      className="
-                        hover:bg-gray-50
-                      "
-                    >
-
-                      <td className="border p-1 text-center">
-                        {row.sim_no}
-                      </td>
-
-                      <td className="border p-1 text-center">
-                        {row.msisdn}
-                      </td>
-
-                      <td className="border p-1 text-center">
-                        {row.sim_status}
-                      </td>
-
-                      <td className="border p-1 text-center">
-                        {row.plan}
-                      </td>
-
-                      <td className="border p-1 text-center">
-                        {min}
-                      </td>
-
-                      <td className="border p-1 text-center">
-                        {max}
-                      </td>
-
-                      <td className="border p-1 text-center">
-                        {total}
-                      </td>
-
-                      <td className="border p-1 text-center">
-                        {avg}
-                      </td>
-
-                      <td className="border p-1 text-center">
-                        {used}
-                      </td>
-
-                      <td className="border p-1 text-center">
-                        {zero}
-                      </td>
-
-                      {months.map(
-                        (month) => {
-
-                          const value =
-                            Number(
-                              row[
-                                month
-                              ] || 0
-                            )
-
-                          return (
-
-                            <td
-                              key={month}
-                              className={`
-                                border
-                                p-1
-                                text-center
-                                text-[10px]
-                                ${
-                                  value ===
-                                  max
-                                    ? 'bg-green-300 font-bold'
-                                    : ''
-                                }
-                              `}
-                            >
-                              {value}
-                            </td>
-                          )
-                        }
-                      )}
-
-                    </tr>
-                  )
-                }
-              )}
-
-            </tbody>
-
-          </table>
 
         </div>
 
