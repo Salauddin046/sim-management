@@ -32,7 +32,11 @@ export default function Home() {
     useState(false)
 
   const [loggedUser, setLoggedUser] =
-    useState<any>(null)
+    useState<any>({
+      username: '',
+      name: '',
+      email: '',
+    })
 
   useEffect(() => {
 
@@ -41,32 +45,41 @@ export default function Home() {
         'user'
       )
 
-    if (user) {
+    if (!user) {
 
-      setLoggedUser(
-        JSON.parse(user)
-      )
+      window.location.href = '/'
+
+      return
     }
 
+    const parsedUser =
+      JSON.parse(user)
+
+    setLoggedUser(parsedUser)
+
     let timeout: any
+
+    const logoutUser = () => {
+
+      localStorage.clear()
+
+      sessionStorage.clear()
+
+      alert(
+        'Session expired. Logged out automatically.'
+      )
+
+      window.location.href = '/'
+    }
 
     const resetTimer = () => {
 
       clearTimeout(timeout)
 
-      timeout = setTimeout(() => {
-
-        localStorage.removeItem(
-          'user'
-        )
-
-        alert(
-          'Session expired. Logged out automatically.'
-        )
-
-        window.location.reload()
-
-      }, 10 * 60 * 1000)
+      timeout = setTimeout(
+        logoutUser,
+        10 * 60 * 1000
+      )
     }
 
     resetTimer()
@@ -292,11 +305,43 @@ export default function Home() {
         b: any
       ) => {
 
-        const valueA =
-          a[key] || ''
+        let valueA =
+          a[key]
 
-        const valueB =
-          b[key] || ''
+        let valueB =
+          b[key]
+
+        if (
+          valueA ===
+          undefined
+        ) {
+          valueA = ''
+        }
+
+        if (
+          valueB ===
+          undefined
+        ) {
+          valueB = ''
+        }
+
+        const isNumber =
+          !isNaN(
+            Number(valueA)
+          ) &&
+          !isNaN(
+            Number(valueB)
+          )
+
+        if (isNumber) {
+
+          return direction ===
+            'asc'
+            ? Number(valueA) -
+                Number(valueB)
+            : Number(valueB) -
+                Number(valueA)
+        }
 
         return direction ===
           'asc'
@@ -468,7 +513,7 @@ export default function Home() {
         <div className="flex justify-between items-center mb-4">
 
           <h1 className="text-2xl font-bold">
-            Datix Master
+            Datiz Master
           </h1>
 
           <div className="relative">
@@ -587,11 +632,11 @@ export default function Home() {
                 <button
                   onClick={() => {
 
-                    localStorage.removeItem(
-                      'user'
-                    )
+                    localStorage.clear()
 
-                    window.location.reload()
+                    sessionStorage.clear()
+
+                    window.location.href = '/'
                   }}
                   className="
                     w-full
@@ -719,6 +764,427 @@ export default function Home() {
             </option>
 
           </select>
+
+        </div>
+
+        <div className="
+          overflow-auto
+          rounded-lg
+          border
+          border-gray-300
+          max-h-[650px]
+        ">
+
+          <table className="
+            w-full
+            border-collapse
+            text-xs
+          ">
+
+            <thead className="
+              bg-gray-200
+              sticky
+              top-0
+              z-10
+            ">
+
+              <tr>
+
+                {[
+                  {
+                    label: 'SIM',
+                    key: 'sim_no',
+                  },
+
+                  {
+                    label: 'Phone Number',
+                    key: 'msisdn',
+                  },
+
+                  {
+                    label: 'Status',
+                    key: 'sim_status',
+                  },
+
+                  {
+                    label: 'Plan',
+                    key: 'plan',
+                  },
+                ].map(
+                  (
+                    header: any
+                  ) => (
+
+                    <th
+                      key={
+                        header.key
+                      }
+                      className="
+                        border
+                        p-1
+                        min-w-[120px]
+                      "
+                    >
+
+                      <div className="
+                        flex
+                        flex-col
+                        gap-1
+                      ">
+
+                        <span className="
+                          text-[11px]
+                          font-semibold
+                        ">
+                          {
+                            header.label
+                          }
+                        </span>
+
+                        <select
+                          className="
+                            border
+                            rounded
+                            text-[10px]
+                            px-1
+                            py-1
+                          "
+                          onChange={(e) => {
+
+                            const value =
+                              e.target.value
+
+                            if (
+                              value === 'reset'
+                            ) {
+
+                              setData(
+                                originalData
+                              )
+
+                              return
+                            }
+
+                            handleSort(
+                              header.key,
+                              value
+                            )
+                          }}
+                        >
+
+                          <option value="">
+                            Filter
+                          </option>
+
+                          <option value="asc">
+                            A → Z
+                          </option>
+
+                          <option value="desc">
+                            Z → A
+                          </option>
+
+                          <option value="reset">
+                            Reset
+                          </option>
+
+                        </select>
+
+                      </div>
+
+                    </th>
+                  )
+                )}
+
+                <th className="border p-1">
+                  Min Data (MB)
+                </th>
+
+                <th className="border p-1">
+                  Max Data (MB)
+                </th>
+
+                <th className="border p-1">
+                  Total Data (MB)
+                </th>
+
+                <th className="border p-1">
+                  Avg Data (MB)
+                </th>
+
+                <th className="border p-1">
+                  Data used Month
+                </th>
+
+                <th className="border p-1">
+                  Zero Data Used Month
+                </th>
+
+                {months.map(
+                  (month: any) => (
+
+                    <th
+                      key={month}
+                      className="
+                        border
+                        p-1
+                        min-w-[70px]
+                        max-w-[70px]
+                        text-[10px]
+                      "
+                    >
+
+                      <div className="
+                        flex
+                        flex-col
+                        gap-1
+                      ">
+
+                        <span>
+                          {month} (MB)
+                        </span>
+
+                        <select
+                          className="
+                            border
+                            rounded
+                            text-[10px]
+                            px-1
+                            py-1
+                          "
+                          onChange={(e) => {
+
+                            const value =
+                              e.target.value
+
+                            if (
+                              value === 'reset'
+                            ) {
+
+                              setData(
+                                originalData
+                              )
+
+                              return
+                            }
+
+                            const sorted =
+                              [...data]
+
+                            sorted.sort(
+                              (
+                                a: any,
+                                b: any
+                              ) => {
+
+                                const valueA =
+                                  Number(
+                                    a[
+                                      month
+                                    ] || 0
+                                  )
+
+                                const valueB =
+                                  Number(
+                                    b[
+                                      month
+                                    ] || 0
+                                  )
+
+                                return value ===
+                                  'asc'
+                                  ? valueA -
+                                      valueB
+                                  : valueB -
+                                      valueA
+                              }
+                            )
+
+                            setData(
+                              sorted
+                            )
+                          }}
+                        >
+
+                          <option value="">
+                            Filter
+                          </option>
+
+                          <option value="asc">
+                            Low → High
+                          </option>
+
+                          <option value="desc">
+                            High → Low
+                          </option>
+
+                          <option value="reset">
+                            Reset
+                          </option>
+
+                        </select>
+
+                      </div>
+
+                    </th>
+                  )
+                )}
+
+              </tr>
+
+            </thead>
+
+            <tbody>
+
+              {data.map(
+                (
+                  row: any,
+                  index: number
+                ) => {
+
+                  const usageValues =
+                    months.map(
+                      (
+                        month: any
+                      ) =>
+                        Number(
+                          row[
+                            month
+                          ] || 0
+                        )
+                    )
+
+                  const maxValue =
+                    Math.max(
+                      ...usageValues
+                    )
+
+                  const minValue =
+                    Math.min(
+                      ...usageValues
+                    )
+
+                  const totalUsage =
+                    usageValues.reduce(
+                      (
+                        a: number,
+                        b: number
+                      ) => a + b,
+                      0
+                    )
+
+                  const averageValue =
+                    (
+                      totalUsage /
+                      usageValues.length
+                    ).toFixed(2)
+
+                  const consumedMonths =
+                    usageValues.filter(
+                      (
+                        value: number
+                      ) =>
+                        value > 0
+                    ).length
+
+                  const zeroMonths =
+                    usageValues.filter(
+                      (
+                        value: number
+                      ) =>
+                        value === 0
+                    ).length
+
+                  return (
+
+                    <tr
+                      key={index}
+                      className="
+                        hover:bg-gray-50
+                      "
+                    >
+
+                      <td className="border p-1 text-center">
+                        {row.sim_no}
+                      </td>
+
+                      <td className="border p-1 text-center">
+                        {row.msisdn}
+                      </td>
+
+                      <td className="border p-1 text-center">
+                        {row.sim_status}
+                      </td>
+
+                      <td className="border p-1 text-center">
+                        {row.plan}
+                      </td>
+
+                      <td className="border p-1 text-center">
+                        {minValue}
+                      </td>
+
+                      <td className="border p-1 text-center">
+                        {maxValue}
+                      </td>
+
+                      <td className="border p-1 text-center">
+                        {totalUsage}
+                      </td>
+
+                      <td className="border p-1 text-center">
+                        {averageValue}
+                      </td>
+
+                      <td className="border p-1 text-center">
+                        {consumedMonths}
+                      </td>
+
+                      <td className="border p-1 text-center">
+                        {zeroMonths}
+                      </td>
+
+                      {months.map(
+                        (month: any) => {
+
+                          const value =
+                            Number(
+                              row[
+                                month
+                              ] || 0
+                            )
+
+                          return (
+
+                            <td
+                              key={month}
+                              className={`
+                                border
+                                p-1
+                                text-center
+                                text-[10px]
+                                ${
+                                  value ===
+                                  maxValue
+                                    ? 'bg-green-300 font-bold'
+                                    : ''
+                                }
+                              `}
+                            >
+                              {value}
+                            </td>
+                          )
+                        }
+                      )}
+
+                    </tr>
+                  )
+                }
+              )}
+
+            </tbody>
+
+          </table>
 
         </div>
 
