@@ -21,9 +21,6 @@ export default function Home() {
   const [captchaInput, setCaptchaInput] =
     useState('')
 
-  const [selectedModule, setSelectedModule] =
-    useState('')
-
   const [profileOpen, setProfileOpen] =
     useState(false)
 
@@ -198,10 +195,11 @@ export default function Home() {
   }
 
   const handleForgotPassword = async () => {
-    if (!email) {
-      setMessage('Enter registered email')
-      return
-    }
+    const mail = prompt(
+      'Enter your registered email'
+    )
+
+    if (!mail) return
 
     try {
       const response = await fetch(
@@ -213,7 +211,7 @@ export default function Home() {
               'application/json',
           },
           body: JSON.stringify({
-            email,
+            email: mail,
           }),
         }
       )
@@ -321,7 +319,6 @@ export default function Home() {
   const logout = () => {
     setLoggedIn(false)
     setUser(null)
-    setSelectedModule('')
   }
 
   if (!loggedIn) {
@@ -356,18 +353,6 @@ export default function Home() {
                 className="w-full border border-gray-300 rounded-lg p-3 mb-4"
               />
             </>
-          )}
-
-          {isLogin && (
-            <input
-              type="email"
-              placeholder="Registered Email"
-              value={email}
-              onChange={(e) =>
-                setEmail(e.target.value)
-              }
-              className="w-full border border-gray-300 rounded-lg p-3 mb-4"
-            />
           )}
 
           <input
