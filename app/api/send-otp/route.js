@@ -63,7 +63,7 @@ export async function POST(req) {
         ">
 
           <h2>
-            Telecom Dashboard OTP
+            SIM Managment Sign in OTP
           </h2>
 
           <h1 style="
