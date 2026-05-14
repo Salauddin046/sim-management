@@ -379,7 +379,7 @@ export default function Home() {
 
     const headers = [
       'SIM Number',
-      'MSISDN',
+      'Phone Number',
       'Status',
       'Plan',
       'Min Data',
@@ -641,7 +641,7 @@ export default function Home() {
         <div className="flex justify-between items-center mb-6">
 
           <h1 className="text-4xl font-bold">
-            Telecom Dashboard
+            Datix Master
           </h1>
 
           <button
