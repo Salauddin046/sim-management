@@ -14,6 +14,17 @@ export async function POST(req) {
 
     const { email } = body
 
+    if (!email) {
+      return Response.json(
+        {
+          error: 'Email is required',
+        },
+        {
+          status: 400,
+        }
+      )
+    }
+
     const otp = Math.floor(
       100000 + Math.random() * 900000
     ).toString()
@@ -29,7 +40,7 @@ export async function POST(req) {
           <h1>${otp}</h1>
 
           <p>
-            This OTP is valid for signup verification.
+            Use this OTP to complete signup.
           </p>
         </div>
       `,
@@ -41,11 +52,12 @@ export async function POST(req) {
     })
 
   } catch (error) {
-    console.error('OTP ERROR:', error)
+
+    console.error(error)
 
     return Response.json(
       {
-        error: 'OTP failed',
+        error: error.message,
       },
       {
         status: 500,
