@@ -141,7 +141,7 @@ export default function Home() {
 
       if (signupResponse.ok) {
         setMessage(
-          'Signup request sent to admin'
+          'Account created successfully'
         )
 
         setIsLogin(true)
@@ -693,6 +693,10 @@ export default function Home() {
                   Zero Usage Months
                 </th>
 
+                <th className="border p-3">
+                  Std Deviation
+                </th>
+
                 {months.map(
                   (month: any) => (
                     <th
@@ -751,6 +755,29 @@ export default function Home() {
                       ) => value === 0
                     ).length
 
+                  const variance =
+                    usageValues.reduce(
+                      (
+                        acc: number,
+                        value: number
+                      ) =>
+                        acc +
+                        Math.pow(
+                          value -
+                            Number(
+                              averageValue
+                            ),
+                          2
+                        ),
+                      0
+                    ) /
+                    usageValues.length
+
+                  const standardDeviation =
+                    Math.sqrt(
+                      variance
+                    ).toFixed(2)
+
                   return (
                     <tr key={index}>
 
@@ -784,6 +811,10 @@ export default function Home() {
 
                       <td className="border p-3 text-center">
                         {zeroMonths}
+                      </td>
+
+                      <td className="border p-3 text-center">
+                        {standardDeviation}
                       </td>
 
                       {months.map(
