@@ -1,1195 +1,624 @@
 'use client'
 
-import {
-  useEffect,
-  useState,
-} from 'react'
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
+
+// ---------- Types ----------
+
+type SimRow = {
+  sim_no: string
+  msisdn: string
+  sim_status: string
+  plan: string
+  usage: Record<string, number> // "Mar 2025" -> MB
+}
+
+type ApiRow = {
+  sim_no: string
+  msisdn: string
+  sim_status: string
+  plan: string
+  usage_month: string
+  used_data_mb: number | string | null
+}
+
+type LoggedUser = {
+  username: string
+  name: string
+  email: string
+} | null
+
+type SortDirection = 'asc' | 'desc' | null
+
+type SortState = {
+  key: string // either a base column key or a month string
+  direction: SortDirection
+}
+
+type FilterType = 'all' | '6months' | '1year' | 'custom'
+
+// ---------- Month parsing ----------
+// Input format from API: "Mar 2025"
+// We parse to a sortable numeric key: 2025 * 12 + monthIndex
+
+const MONTH_MAP: Record<string, number> = {
+  jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5,
+  jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11,
+}
+
+function monthToSortKey(month: string): number {
+  const parts = month.trim().split(/\s+/)
+  if (parts.length !== 2) return Number.NaN
+  const m = MONTH_MAP[parts[0].slice(0, 3).toLowerCase()]
+  const y = Number(parts[1])
+  if (m === undefined || Number.isNaN(y)) return Number.NaN
+  return y * 12 + m
+}
+
+function compareMonths(a: string, b: string): number {
+  const ka = monthToSortKey(a)
+  const kb = monthToSortKey(b)
+  if (Number.isNaN(ka) && Number.isNaN(kb)) return a.localeCompare(b)
+  if (Number.isNaN(ka)) return 1
+  if (Number.isNaN(kb)) return -1
+  return ka - kb
+}
+
+// "Mar 2025" -> HTML <input type="month"> value "2025-03"
+function monthToInputValue(month: string): string {
+  const parts = month.trim().split(/\s+/)
+  if (parts.length !== 2) return ''
+  const m = MONTH_MAP[parts[0].slice(0, 3).toLowerCase()]
+  if (m === undefined) return ''
+  return `${parts[1]}-${String(m + 1).padStart(2, '0')}`
+}
+
+// "2025-03" -> sortable key for comparison with month strings
+function inputValueToSortKey(value: string): number {
+  if (!value) return Number.NaN
+  const [y, m] = value.split('-').map(Number)
+  if (!y || !m) return Number.NaN
+  return y * 12 + (m - 1)
+}
+
+// ---------- CSV escaping ----------
+
+function csvEscape(value: unknown): string {
+  if (value === null || value === undefined) return ''
+  const s = String(value)
+  if (/[",\n\r]/.test(s)) {
+    return `"${s.replace(/"/g, '""')}"`
+  }
+  return s
+}
+
+// ---------- Row aggregates ----------
+
+type RowAggregates = {
+  min: number | null
+  max: number | null
+  total: number
+  avg: number | null
+  consumedMonths: number
+  zeroMonths: number
+  missingMonths: number
+}
+
+function computeAggregates(row: SimRow, months: string[]): RowAggregates {
+  if (months.length === 0) {
+    return { min: null, max: null, total: 0, avg: null, consumedMonths: 0, zeroMonths: 0, missingMonths: 0 }
+  }
+
+  let total = 0
+  let consumed = 0
+  let zero = 0
+  let missing = 0
+  let min: number | null = null
+  let max: number | null = null
+
+  for (const m of months) {
+    const v = row.usage[m]
+    if (v === undefined) {
+      missing++
+      continue
+    }
+    total += v
+    if (v > 0) consumed++
+    else zero++
+    if (min === null || v < min) min = v
+    if (max === null || v > max) max = v
+  }
+
+  const present = months.length - missing
+  const avg = present > 0 ? total / present : null
+
+  return { min, max, total, avg, consumedMonths: consumed, zeroMonths: zero, missingMonths: missing }
+}
+
+// ---------- Component ----------
+
+const IDLE_TIMEOUT_MS = 10 * 60 * 1000
+const MAX_SIM_NUMBERS = 1000
+const BASE_COLUMNS = ['sim_no', 'msisdn', 'sim_status', 'plan'] as const
 
 export default function Home() {
+  const [input, setInput] = useState('')
+  const [rows, setRows] = useState<SimRow[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const [input, setInput] =
-    useState('')
+  const [filterType, setFilterType] = useState<FilterType>('all')
+  const [fromMonth, setFromMonth] = useState('') // "2025-03" from <input type="month">
+  const [toMonth, setToMonth] = useState('')
 
-  const [data, setData] =
-    useState<any[]>([])
+  const [sort, setSort] = useState<SortState>({ key: '', direction: null })
 
-  const [originalData, setOriginalData] =
-    useState<any[]>([])
+  const [profileOpen, setProfileOpen] = useState(false)
+  const profileRef = useRef<HTMLDivElement>(null)
 
-  const [loading, setLoading] =
-    useState(false)
+  const [loggedUser, setLoggedUser] = useState<LoggedUser>(null)
+  const [authChecked, setAuthChecked] = useState(false)
 
-  const [filterType, setFilterType] =
-    useState('all')
-
-  const [fromMonth, setFromMonth] =
-    useState('')
-
-  const [toMonth, setToMonth] =
-    useState('')
-
-  const [profileOpen, setProfileOpen] =
-    useState(false)
-
-  const [loggedUser, setLoggedUser] =
-    useState<any>({
-      username: '',
-      name: '',
-      email: '',
-    })
+  // ---------- Auth bootstrap + idle timeout ----------
+  // NOTE: this client-side check is NOT real authentication. Server-side
+  // session validation on /api/sim is required. This block only restores
+  // the user object for UI display and auto-clears it after inactivity.
 
   useEffect(() => {
-
-    const user =
-      localStorage.getItem(
-        'user'
-      )
-
-    if (!user) {
-
+    const raw = localStorage.getItem('user')
+    if (!raw) {
       window.location.href = '/'
-
       return
     }
-
-    const parsedUser =
-      JSON.parse(user)
-
-    setLoggedUser(parsedUser)
-
-    let timeout: any
-
-    const logoutUser = () => {
-
+    try {
+      setLoggedUser(JSON.parse(raw))
+      setAuthChecked(true)
+    } catch {
       localStorage.clear()
+      window.location.href = '/'
+    }
+  }, [])
 
+  useEffect(() => {
+    if (!authChecked) return
+
+    let timeout: ReturnType<typeof setTimeout>
+
+    const logout = () => {
+      localStorage.clear()
       sessionStorage.clear()
-
-      alert(
-        'Session expired. Logged out automatically.'
-      )
-
       window.location.href = '/'
     }
 
-    const resetTimer = () => {
-
+    const reset = () => {
       clearTimeout(timeout)
-
-      timeout = setTimeout(
-        logoutUser,
-        10 * 60 * 1000
-      )
+      timeout = setTimeout(logout, IDLE_TIMEOUT_MS)
     }
 
-    resetTimer()
-
-    window.addEventListener(
-      'mousemove',
-      resetTimer
-    )
-
-    window.addEventListener(
-      'keydown',
-      resetTimer
-    )
-
-    window.addEventListener(
-      'click',
-      resetTimer
-    )
-
-    window.addEventListener(
-      'scroll',
-      resetTimer
-    )
+    reset()
+    const events = ['mousemove', 'keydown', 'click', 'scroll'] as const
+    events.forEach((e) => window.addEventListener(e, reset))
 
     return () => {
-
       clearTimeout(timeout)
-
-      window.removeEventListener(
-        'mousemove',
-        resetTimer
-      )
-
-      window.removeEventListener(
-        'keydown',
-        resetTimer
-      )
-
-      window.removeEventListener(
-        'click',
-        resetTimer
-      )
-
-      window.removeEventListener(
-        'scroll',
-        resetTimer
-      )
+      events.forEach((e) => window.removeEventListener(e, reset))
     }
+  }, [authChecked])
 
-  }, [])
+  // ---------- Profile dropdown: close on outside click ----------
 
-  const searchBulk = async () => {
+  useEffect(() => {
+    if (!profileOpen) return
+    const handler = (e: MouseEvent) => {
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
+        setProfileOpen(false)
+      }
+    }
+    window.addEventListener('mousedown', handler)
+    return () => window.removeEventListener('mousedown', handler)
+  }, [profileOpen])
 
+  // ---------- Search ----------
+
+  const handleSearch = useCallback(async () => {
     const numbers = input
       .split('\n')
-      .map((num) => num.trim())
+      .map((n) => n.trim())
       .filter(Boolean)
 
     if (!numbers.length) {
-
-      alert(
-        'Please enter SIM numbers'
-      )
-
+      setError('Enter at least one SIM number.')
+      return
+    }
+    if (numbers.length > MAX_SIM_NUMBERS) {
+      setError(`Too many numbers. Max ${MAX_SIM_NUMBERS} per search.`)
       return
     }
 
+    setError(null)
     setLoading(true)
 
     try {
+      const res = await fetch('/api/sim', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ numbers }),
+      })
+      if (!res.ok) throw new Error(`Server returned ${res.status}`)
 
-      const response = await fetch(
-        '/api/sim',
-        {
-          method: 'POST',
+      const apiRows: ApiRow[] = await res.json()
+      const grouped: Record<string, SimRow> = {}
 
-          headers: {
-            'Content-Type':
-              'application/json',
-          },
-
-          body: JSON.stringify({
-            numbers,
-          }),
-        }
-      )
-
-      const result =
-        await response.json()
-
-      const grouped: any = {}
-
-      result.forEach((row: any) => {
-
-        const key =
-          row.sim_no
-
-        if (!grouped[key]) {
-
-          grouped[key] = {
-            sim_no:
-              row.sim_no,
-
-            msisdn:
-              row.msisdn,
-
-            sim_status:
-              row.sim_status,
-
-            plan:
-              row.plan,
+      for (const r of apiRows) {
+        if (!grouped[r.sim_no]) {
+          grouped[r.sim_no] = {
+            sim_no: r.sim_no,
+            msisdn: r.msisdn,
+            sim_status: r.sim_status,
+            plan: r.plan,
+            usage: {},
           }
         }
-
-        grouped[key][
-          row.usage_month
-        ] = Number(
-          row.used_data_mb || 0
-        )
-      })
-
-      const finalData =
-        Object.values(grouped)
-
-      setData(finalData)
-
-      setOriginalData(finalData)
-
-    } catch (error) {
-
-      console.error(error)
-
-      alert(
-        'Search failed'
-      )
-    }
-
-    setLoading(false)
-  }
-
-  const allMonths = Array.from(
-    new Set(
-      data.flatMap((row: any) =>
-        Object.keys(row).filter(
-          (key) =>
-            ![
-              'sim_no',
-              'msisdn',
-              'sim_status',
-              'plan',
-            ].includes(key)
-        )
-      )
-    )
-  ).sort(
-    (
-      a: any,
-      b: any
-    ) => {
-
-      const dateA =
-        new Date(a)
-
-      const dateB =
-        new Date(b)
-
-      return (
-        dateA.getTime() -
-        dateB.getTime()
-      )
-    }
-  )
-
-  let months =
-    [...allMonths]
-
-  if (
-    filterType ===
-    '6months'
-  ) {
-
-    months =
-      allMonths.slice(-6)
-  }
-
-  if (
-    filterType ===
-    '1year'
-  ) {
-
-    months =
-      allMonths.slice(-12)
-  }
-
-  if (
-    filterType ===
-      'custom' &&
-    fromMonth &&
-    toMonth
-  ) {
-
-    months =
-      allMonths.filter(
-        (month: any) =>
-          month >=
-            fromMonth &&
-          month <=
-            toMonth
-      )
-  }
-
-  const handleSort = (
-    key: string,
-    direction: string
-  ) => {
-
-    const sorted =
-      [...data]
-
-    sorted.sort(
-      (
-        a: any,
-        b: any
-      ) => {
-
-        let valueA =
-          a[key]
-
-        let valueB =
-          b[key]
-
-        if (
-          valueA ===
-          undefined
-        ) {
-          valueA = ''
-        }
-
-        if (
-          valueB ===
-          undefined
-        ) {
-          valueB = ''
-        }
-
-        const isNumber =
-          !isNaN(
-            Number(valueA)
-          ) &&
-          !isNaN(
-            Number(valueB)
-          )
-
-        if (isNumber) {
-
-          return direction ===
-            'asc'
-            ? Number(valueA) -
-                Number(valueB)
-            : Number(valueB) -
-                Number(valueA)
-        }
-
-        return direction ===
-          'asc'
-          ? valueA
-              .toString()
-              .localeCompare(
-                valueB.toString()
-              )
-          : valueB
-              .toString()
-              .localeCompare(
-                valueA.toString()
-              )
+        grouped[r.sim_no].usage[r.usage_month] = Number(r.used_data_mb || 0)
       }
-    )
 
-    setData(sorted)
+      setRows(Object.values(grouped))
+      // Reset sort and filters on new search so user sees clean state
+      setSort({ key: '', direction: null })
+    } catch (err) {
+      console.error(err)
+      setError('Search failed. Please try again.')
+    } finally {
+      setLoading(false)
+    }
+  }, [input])
+
+  // ---------- Derived: months in scope ----------
+
+  const allMonths = useMemo(() => {
+    const set = new Set<string>()
+    for (const r of rows) {
+      for (const m of Object.keys(r.usage)) set.add(m)
+    }
+    return Array.from(set).sort(compareMonths)
+  }, [rows])
+
+  const visibleMonths = useMemo(() => {
+    if (filterType === '6months') return allMonths.slice(-6)
+    if (filterType === '1year') return allMonths.slice(-12)
+    if (filterType === 'custom') {
+      const from = inputValueToSortKey(fromMonth)
+      const to = inputValueToSortKey(toMonth)
+      if (Number.isNaN(from) || Number.isNaN(to)) return allMonths
+      return allMonths.filter((m) => {
+        const k = monthToSortKey(m)
+        return k >= from && k <= to
+      })
+    }
+    return allMonths
+  }, [allMonths, filterType, fromMonth, toMonth])
+
+  // ---------- Derived: per-row aggregates ----------
+
+  const aggregatesByRow = useMemo(() => {
+    const map = new Map<string, RowAggregates>()
+    for (const r of rows) map.set(r.sim_no, computeAggregates(r, visibleMonths))
+    return map
+  }, [rows, visibleMonths])
+
+  // ---------- Derived: sorted view ----------
+
+  const sortedRows = useMemo(() => {
+    if (!sort.direction || !sort.key) return rows
+
+    const dir = sort.direction === 'asc' ? 1 : -1
+    const out = [...rows]
+
+    out.sort((a, b) => {
+      let va: string | number
+      let vb: string | number
+
+      if (BASE_COLUMNS.includes(sort.key as typeof BASE_COLUMNS[number])) {
+        va = (a as unknown as Record<string, string>)[sort.key] ?? ''
+        vb = (b as unknown as Record<string, string>)[sort.key] ?? ''
+      } else {
+        // month column
+        va = a.usage[sort.key] ?? -1
+        vb = b.usage[sort.key] ?? -1
+      }
+
+      if (typeof va === 'number' && typeof vb === 'number') return (va - vb) * dir
+      return String(va).localeCompare(String(vb)) * dir
+    })
+
+    return out
+  }, [rows, sort])
+
+  // ---------- Sort toggle ----------
+
+  const toggleSort = useCallback((key: string) => {
+    setSort((prev) => {
+      if (prev.key !== key) return { key, direction: 'asc' }
+      if (prev.direction === 'asc') return { key, direction: 'desc' }
+      return { key: '', direction: null }
+    })
+  }, [])
+
+  const sortIndicator = (key: string) => {
+    if (sort.key !== key) return ''
+    return sort.direction === 'asc' ? ' ▲' : ' ▼'
   }
 
-  const downloadCSV = () => {
+  // ---------- CSV download ----------
+
+  const downloadCSV = useCallback(() => {
+    if (!sortedRows.length) {
+      setError('Nothing to export.')
+      return
+    }
 
     const headers = [
-      'SIM Number',
-      'MSISDN',
-      'Status',
-      'Plan',
-      'Min Data',
-      'Max Data',
-      'Total Data',
-      'Avg Data',
-      'Consumed Months',
-      'Zero Months',
-      ...months.map(
-        (month: any) =>
-          `${month} (MB)`
-      ),
+      'SIM Number', 'MSISDN', 'Status', 'Plan',
+      'Min Data (MB)', 'Max Data (MB)', 'Total Data (MB)', 'Avg Data (MB)',
+      'Consumed Months', 'Zero Months', 'Missing Months',
+      ...visibleMonths.map((m) => `${m} (MB)`),
     ]
 
-    const rows =
-      data.map(
-        (row: any) => {
+    const lines = [headers.map(csvEscape).join(',')]
 
-          const usageValues =
-            months.map(
-              (
-                month: any
-              ) =>
-                Number(
-                  row[
-                    month
-                  ] || 0
-                )
-            )
+    for (const r of sortedRows) {
+      const a = aggregatesByRow.get(r.sim_no)!
+      const row = [
+        r.sim_no, r.msisdn, r.sim_status, r.plan,
+        a.min ?? '', a.max ?? '', a.total, a.avg !== null ? a.avg.toFixed(2) : '',
+        a.consumedMonths, a.zeroMonths, a.missingMonths,
+        ...visibleMonths.map((m) => (r.usage[m] !== undefined ? r.usage[m] : '')),
+      ]
+      lines.push(row.map(csvEscape).join(','))
+    }
 
-          const maxValue =
-            Math.max(
-              ...usageValues
-            )
-
-          const minValue =
-            Math.min(
-              ...usageValues
-            )
-
-          const totalUsage =
-            usageValues.reduce(
-              (
-                a: number,
-                b: number
-              ) => a + b,
-              0
-            )
-
-          const averageValue =
-            (
-              totalUsage /
-              usageValues.length
-            ).toFixed(2)
-
-          const consumedMonths =
-            usageValues.filter(
-              (
-                value: number
-              ) =>
-                value > 0
-            ).length
-
-          const zeroMonths =
-            usageValues.filter(
-              (
-                value: number
-              ) =>
-                value === 0
-            ).length
-
-          return [
-            row.sim_no,
-            row.msisdn,
-            row.sim_status,
-            row.plan,
-            minValue,
-            maxValue,
-            totalUsage,
-            averageValue,
-            consumedMonths,
-            zeroMonths,
-            ...months.map(
-              (
-                month: any
-              ) =>
-                row[
-                  month
-                ] || 0
-            ),
-          ]
-        }
-      )
-
-    const csvContent =
-      [
-        headers.join(','),
-        ...rows.map(
-          (e: any) =>
-            e.join(',')
-        ),
-      ].join('\n')
-
-    const blob =
-      new Blob(
-        [csvContent],
-        {
-          type:
-            'text/csv;charset=utf-8;',
-        }
-      )
-
-    const link =
-      document.createElement(
-        'a'
-      )
-
-    const url =
-      URL.createObjectURL(
-        blob
-      )
-
-    const timestamp =
-      new Date()
-        .toISOString()
-        .replace(
-          /[:.]/g,
-          '-'
-        )
-
+    const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    const ts = new Date().toISOString().replace(/[:.]/g, '-')
     link.href = url
-
-    link.download =
-      `sim_usage_report_${timestamp}.csv`
-
+    link.download = `sim_usage_report_${ts}.csv`
     link.click()
+    setTimeout(() => URL.revokeObjectURL(url), 1000)
+  }, [sortedRows, visibleMonths, aggregatesByRow])
+
+  // ---------- Reset ----------
+
+  const resetView = useCallback(() => {
+    setSort({ key: '', direction: null })
+    setFilterType('all')
+    setFromMonth('')
+    setToMonth('')
+  }, [])
+
+  const logout = useCallback(() => {
+    localStorage.clear()
+    sessionStorage.clear()
+    window.location.href = '/'
+  }, [])
+
+  // ---------- Render ----------
+
+  if (!authChecked) {
+    return <div className="min-h-screen bg-gray-100 flex items-center justify-center text-sm text-gray-600">Loading…</div>
   }
 
   return (
-
     <div className="min-h-screen bg-gray-100 p-4">
-
       <div className="bg-white rounded-xl shadow-lg p-4">
-
+        {/* Header */}
         <div className="flex justify-between items-center mb-4">
+          <h1 className="text-2xl font-bold">Datiz Master</h1>
 
-          <h1 className="text-2xl font-bold">
-            Datiz Master
-          </h1>
-
-          <div className="relative">
-
+          <div className="relative" ref={profileRef}>
             <button
-              onClick={() =>
-                setProfileOpen(
-                  !profileOpen
-                )
-              }
-              className="
-                bg-black
-                text-white
-                px-3
-                py-2
-                rounded-lg
-                text-sm
-                flex
-                items-center
-                gap-2
-              "
+              onClick={() => setProfileOpen((o) => !o)}
+              className="bg-black text-white px-3 py-2 rounded-lg text-sm flex items-center gap-2"
             >
-
-              <div
-                className="
-                  w-7
-                  h-7
-                  rounded-full
-                  bg-white
-                  text-black
-                  flex
-                  items-center
-                  justify-center
-                  font-bold
-                "
-              >
-                {loggedUser?.username
-                  ?.charAt(0)
-                  ?.toUpperCase() || 'U'}
+              <div className="w-7 h-7 rounded-full bg-white text-black flex items-center justify-center font-bold">
+                {loggedUser?.username?.charAt(0)?.toUpperCase() || 'U'}
               </div>
-
-              <span>
-                {
-                  loggedUser?.username ||
-                  'User'
-                }
-              </span>
-
+              <span>{loggedUser?.username || 'User'}</span>
             </button>
 
             {profileOpen && (
-
-              <div
-                className="
-                  absolute
-                  right-0
-                  mt-2
-                  w-72
-                  bg-white
-                  border
-                  rounded-lg
-                  shadow-lg
-                  z-50
-                "
-              >
-
+              <div className="absolute right-0 mt-2 w-72 bg-white border rounded-lg shadow-lg z-50">
                 <div className="p-4 border-b space-y-3">
-
-                  <div>
-
-                    <p className="text-[11px] text-gray-500">
-                      Username
-                    </p>
-
-                    <p className="font-semibold text-sm break-all">
-                      {
-                        loggedUser?.username ||
-                        '-'
-                      }
-                    </p>
-
-                  </div>
-
-                  <div>
-
-                    <p className="text-[11px] text-gray-500">
-                      Name
-                    </p>
-
-                    <p className="font-semibold text-sm break-all">
-                      {
-                        loggedUser?.name ||
-                        '-'
-                      }
-                    </p>
-
-                  </div>
-
-                  <div>
-
-                    <p className="text-[11px] text-gray-500">
-                      Email
-                    </p>
-
-                    <p className="font-semibold text-sm break-all">
-                      {
-                        loggedUser?.email ||
-                        '-'
-                      }
-                    </p>
-
-                  </div>
-
+                  <Field label="Username" value={loggedUser?.username} />
+                  <Field label="Name" value={loggedUser?.name} />
+                  <Field label="Email" value={loggedUser?.email} />
                 </div>
-
                 <button
-                  onClick={() => {
-
-                    localStorage.clear()
-
-                    sessionStorage.clear()
-
-                    window.location.href = '/'
-                  }}
-                  className="
-                    w-full
-                    text-left
-                    px-4
-                    py-3
-                    hover:bg-gray-100
-                    text-red-600
-                    text-sm
-                  "
+                  onClick={logout}
+                  className="w-full text-left px-4 py-3 hover:bg-gray-100 text-red-600 text-sm"
                 >
                   Logout
                 </button>
-
               </div>
             )}
-
           </div>
-
         </div>
 
+        {/* Search input */}
         <div className="mb-4">
-
           <textarea
             rows={4}
-            placeholder="Enter SIM numbers"
+            placeholder={`Enter SIM numbers, one per line (max ${MAX_SIM_NUMBERS})`}
             value={input}
-            onChange={(e) =>
-              setInput(
-                e.target.value
-              )
-            }
-            className="
-              w-full
-              max-w-lg
-              border
-              border-gray-300
-              rounded-lg
-              p-2
-              text-sm
-              resize-none
-            "
+            onChange={(e) => setInput(e.target.value)}
+            className="w-full max-w-lg border border-gray-300 rounded-lg p-2 text-sm resize-none"
           />
-
         </div>
 
-        <div className="flex flex-wrap gap-3 mb-4">
-
+        {/* Controls */}
+        <div className="flex flex-wrap items-center gap-3 mb-4">
           <button
-            onClick={searchBulk}
-            className="
-              bg-black
-              text-white
-              px-4
-              py-2
-              rounded-lg
-              text-sm
-            "
+            onClick={handleSearch}
+            disabled={loading}
+            className="bg-black text-white px-4 py-2 rounded-lg text-sm disabled:opacity-50"
           >
-            Search
+            {loading ? 'Searching…' : 'Search'}
           </button>
 
           <button
             onClick={downloadCSV}
-            className="
-              bg-green-600
-              text-white
-              px-4
-              py-2
-              rounded-lg
-              text-sm
-            "
+            disabled={!sortedRows.length}
+            className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm disabled:opacity-50"
           >
             Download CSV
           </button>
 
           <button
-            onClick={() =>
-              setData(
-                originalData
-              )
-            }
-            className="
-              bg-gray-500
-              text-white
-              px-4
-              py-2
-              rounded-lg
-              text-sm
-            "
+            onClick={resetView}
+            className="bg-gray-500 text-white px-4 py-2 rounded-lg text-sm"
           >
-            Reset Filter
+            Reset View
           </button>
 
           <select
             value={filterType}
-            onChange={(e) =>
-              setFilterType(
-                e.target.value
-              )
-            }
-            className="
-              border
-              rounded-lg
-              px-3
-              py-2
-              text-sm
-            "
+            onChange={(e) => setFilterType(e.target.value as FilterType)}
+            className="border rounded-lg px-3 py-2 text-sm"
           >
-
-            <option value="all">
-              All Months
-            </option>
-
-            <option value="6months">
-              Last 6 Months
-            </option>
-
-            <option value="1year">
-              Last 1 Year
-            </option>
-
-            <option value="custom">
-              Month Range
-            </option>
-
+            <option value="all">All Months</option>
+            <option value="6months">Last 6 Months</option>
+            <option value="1year">Last 1 Year</option>
+            <option value="custom">Month Range</option>
           </select>
 
+          {filterType === 'custom' && (
+            <>
+              <input
+                type="month"
+                value={fromMonth}
+                onChange={(e) => setFromMonth(e.target.value)}
+                className="border rounded-lg px-3 py-2 text-sm"
+                aria-label="From month"
+              />
+              <span className="text-sm text-gray-500">to</span>
+              <input
+                type="month"
+                value={toMonth}
+                onChange={(e) => setToMonth(e.target.value)}
+                className="border rounded-lg px-3 py-2 text-sm"
+                aria-label="To month"
+              />
+            </>
+          )}
         </div>
 
-        <div className="
-          overflow-auto
-          rounded-lg
-          border
-          border-gray-300
-          max-h-[650px]
-        ">
+        {error && (
+          <div className="mb-4 px-3 py-2 bg-red-50 border border-red-200 text-red-700 text-sm rounded">
+            {error}
+          </div>
+        )}
 
-          <table className="
-            w-full
-            border-collapse
-            text-xs
-          ">
-
-            <thead className="
-              bg-gray-200
-              sticky
-              top-0
-              z-10
-            ">
-
-              <tr>
-
-                {[
-                  {
-                    label: 'SIM',
-                    key: 'sim_no',
-                  },
-
-                  {
-                    label: 'Phone Number',
-                    key: 'msisdn',
-                  },
-
-                  {
-                    label: 'Status',
-                    key: 'sim_status',
-                  },
-
-                  {
-                    label: 'Plan',
-                    key: 'plan',
-                  },
-                ].map(
-                  (
-                    header: any
-                  ) => (
-
+        {/* Table */}
+        <div className="overflow-auto rounded-lg border border-gray-300 max-h-[650px]">
+          {sortedRows.length === 0 ? (
+            <div className="p-8 text-center text-sm text-gray-500">
+              {loading ? 'Loading…' : 'No data. Enter SIM numbers and click Search.'}
+            </div>
+          ) : (
+            <table className="w-full border-collapse text-xs">
+              <thead className="bg-gray-200 sticky top-0 z-10">
+                <tr>
+                  <SortableTh label="SIM" sortKey="sim_no" current={sort} onClick={toggleSort} indicator={sortIndicator('sim_no')} />
+                  <SortableTh label="Phone Number" sortKey="msisdn" current={sort} onClick={toggleSort} indicator={sortIndicator('msisdn')} />
+                  <SortableTh label="Status" sortKey="sim_status" current={sort} onClick={toggleSort} indicator={sortIndicator('sim_status')} />
+                  <SortableTh label="Plan" sortKey="plan" current={sort} onClick={toggleSort} indicator={sortIndicator('plan')} />
+                  <th className="border p-1">Min (MB)</th>
+                  <th className="border p-1">Max (MB)</th>
+                  <th className="border p-1">Total (MB)</th>
+                  <th className="border p-1">Avg (MB)</th>
+                  <th className="border p-1">Used Months</th>
+                  <th className="border p-1">Zero Months</th>
+                  <th className="border p-1">Missing</th>
+                  {visibleMonths.map((m) => (
                     <th
-                      key={
-                        header.key
-                      }
-                      className="
-                        border
-                        p-1
-                        min-w-[120px]
-                      "
+                      key={m}
+                      onClick={() => toggleSort(m)}
+                      className="border p-1 min-w-[80px] text-[10px] cursor-pointer select-none hover:bg-gray-300"
+                      title={`Click to sort by ${m}`}
                     >
-
-                      <div className="
-                        flex
-                        flex-col
-                        gap-1
-                      ">
-
-                        <span className="
-                          text-[11px]
-                          font-semibold
-                        ">
-                          {
-                            header.label
-                          }
-                        </span>
-
-                        <select
-                          className="
-                            border
-                            rounded
-                            text-[10px]
-                            px-1
-                            py-1
-                          "
-                          onChange={(e) => {
-
-                            const value =
-                              e.target.value
-
-                            if (
-                              value === 'reset'
-                            ) {
-
-                              setData(
-                                originalData
-                              )
-
-                              return
-                            }
-
-                            handleSort(
-                              header.key,
-                              value
-                            )
-                          }}
-                        >
-
-                          <option value="">
-                            Filter
-                          </option>
-
-                          <option value="asc">
-                            A → Z
-                          </option>
-
-                          <option value="desc">
-                            Z → A
-                          </option>
-
-                          <option value="reset">
-                            Reset
-                          </option>
-
-                        </select>
-
-                      </div>
-
+                      {m}{sortIndicator(m)}
                     </th>
-                  )
-                )}
+                  ))}
+                </tr>
+              </thead>
 
-                <th className="border p-1">
-                  Min Data (MB)
-                </th>
-
-                <th className="border p-1">
-                  Max Data (MB)
-                </th>
-
-                <th className="border p-1">
-                  Total Data (MB)
-                </th>
-
-                <th className="border p-1">
-                  Avg Data (MB)
-                </th>
-
-                <th className="border p-1">
-                  Data used Month
-                </th>
-
-                <th className="border p-1">
-                  Zero Data Used Month
-                </th>
-
-                {months.map(
-                  (month: any) => (
-
-                    <th
-                      key={month}
-                      className="
-                        border
-                        p-1
-                        min-w-[70px]
-                        max-w-[70px]
-                        text-[10px]
-                      "
-                    >
-
-                      <div className="
-                        flex
-                        flex-col
-                        gap-1
-                      ">
-
-                        <span>
-                          {month} (MB)
-                        </span>
-
-                        <select
-                          className="
-                            border
-                            rounded
-                            text-[10px]
-                            px-1
-                            py-1
-                          "
-                          onChange={(e) => {
-
-                            const value =
-                              e.target.value
-
-                            if (
-                              value === 'reset'
-                            ) {
-
-                              setData(
-                                originalData
-                              )
-
-                              return
-                            }
-
-                            const sorted =
-                              [...data]
-
-                            sorted.sort(
-                              (
-                                a: any,
-                                b: any
-                              ) => {
-
-                                const valueA =
-                                  Number(
-                                    a[
-                                      month
-                                    ] || 0
-                                  )
-
-                                const valueB =
-                                  Number(
-                                    b[
-                                      month
-                                    ] || 0
-                                  )
-
-                                return value ===
-                                  'asc'
-                                  ? valueA -
-                                      valueB
-                                  : valueB -
-                                      valueA
-                              }
-                            )
-
-                            setData(
-                              sorted
-                            )
-                          }}
-                        >
-
-                          <option value="">
-                            Filter
-                          </option>
-
-                          <option value="asc">
-                            Low → High
-                          </option>
-
-                          <option value="desc">
-                            High → Low
-                          </option>
-
-                          <option value="reset">
-                            Reset
-                          </option>
-
-                        </select>
-
-                      </div>
-
-                    </th>
-                  )
-                )}
-
-              </tr>
-
-            </thead>
-
-            <tbody>
-
-              {data.map(
-                (
-                  row: any,
-                  index: number
-                ) => {
-
-                  const usageValues =
-                    months.map(
-                      (
-                        month: any
-                      ) =>
-                        Number(
-                          row[
-                            month
-                          ] || 0
-                        )
-                    )
-
-                  const maxValue =
-                    Math.max(
-                      ...usageValues
-                    )
-
-                  const minValue =
-                    Math.min(
-                      ...usageValues
-                    )
-
-                  const totalUsage =
-                    usageValues.reduce(
-                      (
-                        a: number,
-                        b: number
-                      ) => a + b,
-                      0
-                    )
-
-                  const averageValue =
-                    (
-                      totalUsage /
-                      usageValues.length
-                    ).toFixed(2)
-
-                  const consumedMonths =
-                    usageValues.filter(
-                      (
-                        value: number
-                      ) =>
-                        value > 0
-                    ).length
-
-                  const zeroMonths =
-                    usageValues.filter(
-                      (
-                        value: number
-                      ) =>
-                        value === 0
-                    ).length
-
+              <tbody>
+                {sortedRows.map((r) => {
+                  const a = aggregatesByRow.get(r.sim_no)!
                   return (
-
-                    <tr
-                      key={index}
-                      className="
-                        hover:bg-gray-50
-                      "
-                    >
-
-                      <td className="border p-1 text-center">
-                        {row.sim_no}
-                      </td>
-
-                      <td className="border p-1 text-center">
-                        {row.msisdn}
-                      </td>
-
-                      <td className="border p-1 text-center">
-                        {row.sim_status}
-                      </td>
-
-                      <td className="border p-1 text-center">
-                        {row.plan}
-                      </td>
-
-                      <td className="border p-1 text-center">
-                        {minValue}
-                      </td>
-
-                      <td className="border p-1 text-center">
-                        {maxValue}
-                      </td>
-
-                      <td className="border p-1 text-center">
-                        {totalUsage}
-                      </td>
-
-                      <td className="border p-1 text-center">
-                        {averageValue}
-                      </td>
-
-                      <td className="border p-1 text-center">
-                        {consumedMonths}
-                      </td>
-
-                      <td className="border p-1 text-center">
-                        {zeroMonths}
-                      </td>
-
-                      {months.map(
-                        (month: any) => {
-
-                          const value =
-                            Number(
-                              row[
-                                month
-                              ] || 0
-                            )
-
-                          return (
-
-                            <td
-                              key={month}
-                              className={`
-                                border
-                                p-1
-                                text-center
-                                text-[10px]
-                                ${
-                                  value ===
-                                  maxValue
-                                    ? 'bg-green-300 font-bold'
-                                    : ''
-                                }
-                              `}
-                            >
-                              {value}
-                            </td>
-                          )
-                        }
-                      )}
-
+                    <tr key={r.sim_no} className="hover:bg-gray-50">
+                      <td className="border p-1 text-center">{r.sim_no}</td>
+                      <td className="border p-1 text-center">{r.msisdn}</td>
+                      <td className="border p-1 text-center">{r.sim_status}</td>
+                      <td className="border p-1 text-center">{r.plan}</td>
+                      <td className="border p-1 text-center">{a.min ?? '—'}</td>
+                      <td className="border p-1 text-center">{a.max ?? '—'}</td>
+                      <td className="border p-1 text-center">{a.total}</td>
+                      <td className="border p-1 text-center">{a.avg !== null ? a.avg.toFixed(2) : '—'}</td>
+                      <td className="border p-1 text-center">{a.consumedMonths}</td>
+                      <td className="border p-1 text-center">{a.zeroMonths}</td>
+                      <td className="border p-1 text-center">{a.missingMonths}</td>
+                      {visibleMonths.map((m) => {
+                        const value = r.usage[m]
+                        const isMax = a.max !== null && value === a.max && value > 0
+                        return (
+                          <td
+                            key={m}
+                            className={`border p-1 text-center text-[10px] ${isMax ? 'bg-green-300 font-bold' : ''}`}
+                          >
+                            {value !== undefined ? value : '—'}
+                          </td>
+                        )
+                      })}
                     </tr>
                   )
-                }
-              )}
-
-            </tbody>
-
-          </table>
-
+                })}
+              </tbody>
+            </table>
+          )}
         </div>
-
       </div>
-
     </div>
+  )
+}
+
+// ---------- Small components ----------
+
+function Field({ label, value }: { label: string; value: string | undefined }) {
+  return (
+    <div>
+      <p className="text-[11px] text-gray-500">{label}</p>
+      <p className="font-semibold text-sm break-all">{value || '-'}</p>
+    </div>
+  )
+}
+
+function SortableTh({
+  label, sortKey, current, onClick, indicator,
+}: {
+  label: string
+  sortKey: string
+  current: SortState
+  onClick: (key: string) => void
+  indicator: string
+}) {
+  const active = current.key === sortKey
+  return (
+    <th
+      onClick={() => onClick(sortKey)}
+      className={`border p-2 min-w-[120px] cursor-pointer select-none text-[11px] font-semibold hover:bg-gray-300 ${active ? 'bg-gray-300' : ''}`}
+      title={`Click to sort by ${label}`}
+    >
+      {label}{indicator}
+    </th>
   )
 }
