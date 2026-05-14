@@ -4,11 +4,22 @@ import { useEffect, useState } from 'react'
 
 export default function Home() {
 
-  const [isLogin, setIsLogin] = useState(true)
-  const [loggedIn, setLoggedIn] = useState(false)
+  const [isLogin, setIsLogin] =
+    useState(true)
+
+  const [loggedIn, setLoggedIn] =
+    useState(false)
+
+  const [profileOpen, setProfileOpen] =
+    useState(false)
+
+  const [loggedUser, setLoggedUser] =
+    useState<any>(null)
 
   const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
+
+  const [email, setEmail] =
+    useState('')
 
   const [username, setUsername] =
     useState('')
@@ -33,11 +44,11 @@ export default function Home() {
   const [captchaInput, setCaptchaInput] =
     useState('')
 
-  const [input, setInput] = useState('')
+  const [input, setInput] =
+    useState('')
 
-  const [data, setData] = useState<any[]>(
-    []
-  )
+  const [data, setData] =
+    useState<any[]>([])
 
   const [loading, setLoading] =
     useState(false)
@@ -72,10 +83,14 @@ export default function Home() {
     }
 
     setCaptcha(text)
+
+    setCaptchaInput('')
   }
 
   const sendOtp = async () => {
 
+    setOtp('')
+    setGeneratedOtp('')
     setMessage('')
 
     try {
@@ -100,7 +115,9 @@ export default function Home() {
 
       if (response.ok) {
 
-        setGeneratedOtp(result.otp)
+        setGeneratedOtp(
+          result.otp.toString()
+        )
 
         setOtpSent(true)
 
@@ -173,6 +190,8 @@ export default function Home() {
 
           setOtpSent(false)
 
+          generateCaptcha()
+
         } else {
 
           setMessage(result.error)
@@ -227,7 +246,13 @@ export default function Home() {
 
         setLoggedIn(true)
 
+        setLoggedUser(result.user)
+
+        generateCaptcha()
+
       } else {
+
+        generateCaptcha()
 
         setMessage(result.error)
       }
@@ -235,6 +260,8 @@ export default function Home() {
     } catch (error) {
 
       console.error(error)
+
+      generateCaptcha()
 
       setMessage('Login failed')
     }
@@ -388,12 +415,10 @@ export default function Home() {
   let months = [...allMonths]
 
   if (filterType === '6months') {
-
     months = allMonths.slice(-6)
   }
 
   if (filterType === '1year') {
-
     months = allMonths.slice(-12)
   }
 
@@ -410,6 +435,145 @@ export default function Home() {
         new Date(month) <=
           new Date(toMonth)
     )
+  }
+
+  const downloadCSV = () => {
+
+    if (!data.length) {
+
+      setMessage('No data found')
+
+      return
+    }
+
+    const headers = [
+      'SIM Number',
+      'MSISDN',
+      'Status',
+      'Plan',
+      'Min Data',
+      'Max Data',
+      'Avg Data',
+      'Zero Months',
+      'Std Deviation',
+      ...months,
+    ]
+
+    const rows = data.map(
+      (row: any) => {
+
+        const usageValues =
+          months.map(
+            (month: any) =>
+              Number(
+                row[month] || 0
+              )
+          )
+
+        const maxValue =
+          Math.max(...usageValues)
+
+        const minValue =
+          Math.min(...usageValues)
+
+        const averageValue = (
+          usageValues.reduce(
+            (
+              a: number,
+              b: number
+            ) => a + b,
+            0
+          ) /
+          usageValues.length
+        ).toFixed(2)
+
+        const zeroMonths =
+          usageValues.filter(
+            (
+              value: number
+            ) => value === 0
+          ).length
+
+        const variance =
+          usageValues.reduce(
+            (
+              acc: number,
+              value: number
+            ) =>
+              acc +
+              Math.pow(
+                value -
+                  Number(
+                    averageValue
+                  ),
+                2
+              ),
+            0
+          ) /
+          usageValues.length
+
+        const standardDeviation =
+          Math.sqrt(
+            variance
+          ).toFixed(2)
+
+        return [
+          row.sim_no,
+          row.msisdn,
+          row.sim_status,
+          row.plan,
+          minValue,
+          maxValue,
+          averageValue,
+          zeroMonths,
+          standardDeviation,
+          ...months.map(
+            (month: any) =>
+              row[month] || 0
+          ),
+        ]
+      }
+    )
+
+    const csvContent =
+      [
+        headers.join(','),
+        ...rows.map((e: any) =>
+          e.join(',')
+        ),
+      ].join('\n')
+
+    const blob = new Blob(
+      [csvContent],
+      {
+        type:
+          'text/csv;charset=utf-8;',
+      }
+    )
+
+    const link =
+      document.createElement('a')
+
+    const url =
+      URL.createObjectURL(blob)
+
+    const timestamp =
+      new Date()
+        .toISOString()
+        .replace(/[:.]/g, '-')
+
+    link.setAttribute('href', url)
+
+    link.setAttribute(
+      'download',
+      `sim_usage_report_${timestamp}.csv`
+    )
+
+    document.body.appendChild(link)
+
+    link.click()
+
+    document.body.removeChild(link)
   }
 
   if (!loggedIn) {
@@ -571,24 +735,78 @@ export default function Home() {
 
       <div className="bg-white rounded-2xl shadow-lg p-6">
 
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex justify-between items-center mb-6 relative">
 
           <h1 className="text-4xl font-bold">
             Telecom Dashboard
           </h1>
 
-          <button
-            onClick={() =>
-              setLoggedIn(false)
-            }
-            className="bg-red-500 text-white px-4 py-2 rounded-lg"
-          >
-            Logout
-          </button>
+          <div className="relative">
+
+            <button
+              onClick={() =>
+                setProfileOpen(
+                  !profileOpen
+                )
+              }
+              className="w-12 h-12 rounded-full bg-black text-white text-xl font-bold"
+            >
+              {loggedUser?.username
+                ?.charAt(0)
+                ?.toUpperCase() || 'U'}
+            </button>
+
+            {profileOpen && (
+
+              <div className="absolute right-0 mt-3 bg-white border border-gray-300 rounded-xl shadow-lg w-72 p-5 z-50">
+
+                <h2 className="font-bold text-xl mb-4">
+                  Profile
+                </h2>
+
+                <div className="space-y-2">
+
+                  <p>
+                    <strong>Name:</strong>{' '}
+                    {loggedUser?.name || '-'}
+                  </p>
+
+                  <p>
+                    <strong>Email:</strong>{' '}
+                    {loggedUser?.email || '-'}
+                  </p>
+
+                  <p>
+                    <strong>Username:</strong>{' '}
+                    {loggedUser?.username || '-'}
+                  </p>
+
+                </div>
+
+                <button
+                  onClick={() => {
+
+                    setLoggedIn(false)
+
+                    setLoggedUser(null)
+
+                    setProfileOpen(false)
+
+                    generateCaptcha()
+                  }}
+                  className="w-full bg-red-500 text-white py-2 rounded-lg mt-5"
+                >
+                  Logout
+                </button>
+
+              </div>
+            )}
+
+          </div>
 
         </div>
 
-        <div className="flex gap-4 mb-4 flex-wrap">
+        <div className="flex gap-4 flex-wrap items-center mb-4">
 
           <select
             value={filterType}
@@ -597,7 +815,7 @@ export default function Home() {
                 e.target.value
               )
             }
-            className="border border-gray-300 rounded-lg p-3"
+            className="border border-gray-300 rounded-lg px-4 py-3"
           >
             <option value="6months">
               Last 6 Months
@@ -621,7 +839,7 @@ export default function Home() {
                     e.target.value
                   )
                 }
-                className="border border-gray-300 rounded-lg p-3"
+                className="border border-gray-300 rounded-lg px-4 py-3"
               >
                 <option value="">
                   From Month
@@ -646,7 +864,7 @@ export default function Home() {
                     e.target.value
                   )
                 }
-                className="border border-gray-300 rounded-lg p-3"
+                className="border border-gray-300 rounded-lg px-4 py-3"
               >
                 <option value="">
                   To Month
@@ -675,29 +893,40 @@ export default function Home() {
           onChange={(e) =>
             setInput(e.target.value)
           }
-          className="w-full border border-gray-300 rounded-lg p-4 mb-4"
+          className="w-full border border-gray-300 rounded-xl p-4 mb-4"
         />
 
-        <button
-          onClick={searchBulk}
-          className="bg-black text-white px-6 py-3 rounded-lg mb-6"
-        >
-          Search
-        </button>
+        <div className="flex gap-4 flex-wrap mb-6">
+
+          <button
+            onClick={searchBulk}
+            className="bg-black text-white px-6 py-3 rounded-lg"
+          >
+            Search
+          </button>
+
+          <button
+            onClick={downloadCSV}
+            className="bg-green-600 text-white px-6 py-3 rounded-lg"
+          >
+            Download CSV
+          </button>
+
+        </div>
 
         {loading && (
-          <p className="mb-4">
+          <p className="mb-4 text-lg">
             Loading...
           </p>
         )}
 
-        <div className="overflow-x-auto">
+        <div className="overflow-auto rounded-xl border border-gray-300">
 
-          <table className="w-full border-collapse border border-gray-300 text-sm">
+          <table className="w-full border-collapse text-sm">
 
-            <thead>
+            <thead className="bg-gray-200 sticky top-0">
 
-              <tr className="bg-gray-200">
+              <tr>
 
                 <th className="border p-3">
                   SIM Number
@@ -819,7 +1048,10 @@ export default function Home() {
 
                   return (
 
-                    <tr key={index}>
+                    <tr
+                      key={index}
+                      className="hover:bg-gray-50"
+                    >
 
                       <td className="border p-3">
                         {row.sim_no}
@@ -872,7 +1104,9 @@ export default function Home() {
                           return (
 
                             <td
-                              key={month}
+                              key={
+                                month
+                              }
                               className={`
                                 border
                                 p-3
