@@ -3,16 +3,33 @@
 import { useState } from 'react'
 
 export default function Home() {
+  const [loggedIn, setLoggedIn] = useState(false)
+
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+
   const [input, setInput] = useState('')
   const [data, setData] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
+  const login = () => {
+    if (
+      username === 'admin' &&
+      password === 'admin123'
+    ) {
+      setLoggedIn(true)
+      setError('')
+    } else {
+      setError('Invalid username or password')
+    }
+  }
+
   const searchBulk = async () => {
     setError('')
 
     const numbers = input
-      .split('\n')
+      .split('\\n')
       .map((num) => num.trim())
       .filter(Boolean)
 
@@ -65,58 +82,6 @@ export default function Home() {
     setLoading(false)
   }
 
-  const downloadCSV = () => {
-    if (!data.length) return
-
-    const months = Array.from(
-      new Set(
-        data.flatMap((row: any) =>
-          Object.keys(row).filter(
-            (key) =>
-              !['sim_no', 'msisdn', 'sim_status', 'plan'].includes(key)
-          )
-        )
-      )
-    )
-
-    const headers = [
-      'SIM Number',
-      'Phone Number',
-      'Status',
-      'Plan',
-      ...months,
-    ]
-
-    const rows = data.map((row: any) => [
-      row.sim_no,
-      row.msisdn,
-      row.sim_status,
-      row.plan,
-      ...months.map((month: any) => row[month] || ''),
-    ])
-
-    const csvContent = [headers, ...rows]
-      .map((e) => e.join(','))
-      .join('\n')
-
-    const blob = new Blob([csvContent], {
-      type: 'text/csv;charset=utf-8;',
-    })
-
-    const link = document.createElement('a')
-
-    const url = URL.createObjectURL(blob)
-
-    link.setAttribute('href', url)
-    link.setAttribute('download', 'sim_usage_data.csv')
-
-    document.body.appendChild(link)
-
-    link.click()
-
-    document.body.removeChild(link)
-  }
-
   const months = Array.from(
     new Set(
       data.flatMap((row: any) =>
@@ -127,6 +92,48 @@ export default function Home() {
       )
     )
   )
+
+  if (!loggedIn) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
+
+          <h1 className="text-2xl font-bold mb-6 text-center">
+            Login
+          </h1>
+
+          <input
+            type="text"
+            placeholder="Username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            className="w-full border border-gray-300 rounded-lg p-3 mb-4"
+          />
+
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full border border-gray-300 rounded-lg p-3 mb-4"
+          />
+
+          <button
+            onClick={login}
+            className="w-full bg-black text-white py-3 rounded-lg"
+          >
+            Login
+          </button>
+
+          {error && (
+            <p className="text-red-600 mt-4 text-center">
+              {error}
+            </p>
+          )}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
@@ -149,20 +156,7 @@ export default function Home() {
           >
             Search
           </button>
-
-          <button
-            onClick={downloadCSV}
-            className="bg-green-600 text-white px-6 py-3 rounded-lg"
-          >
-            Download CSV
-          </button>
         </div>
-
-        {error && (
-          <p className="text-red-600 mb-4">
-            {error}
-          </p>
-        )}
 
         {loading && (
           <p className="mb-4">
