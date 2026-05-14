@@ -17,7 +17,7 @@ export default function Home() {
       .filter(Boolean)
 
     if (!numbers.length) {
-      setError('Please enter MSISDN or SIM numbers')
+      setError('Please enter Phone Number or SIM numbers')
       return
     }
 
@@ -81,7 +81,7 @@ export default function Home() {
 
     const headers = [
       'SIM Number',
-      'MSISDN',
+      'Phone',
       'Status',
       'Plan',
       ...months,
@@ -108,7 +108,7 @@ export default function Home() {
     const url = URL.createObjectURL(blob)
 
     link.setAttribute('href', url)
-    link.setAttribute('download', 'sim_search_data.csv')
+    link.setAttribute('download', 'sim_usage_data.csv')
 
     document.body.appendChild(link)
 
@@ -135,7 +135,7 @@ export default function Home() {
         <div className="mb-4">
           <textarea
             rows={10}
-            placeholder="Search upto 1000 MSISDN or SIM numbers"
+            placeholder="Search upto 1000 Phone or SIM numbers"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             className="w-full border border-gray-300 rounded-lg p-4 outline-none"
