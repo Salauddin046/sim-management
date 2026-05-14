@@ -81,7 +81,7 @@ export default function Home() {
 
     const headers = [
       'SIM Number',
-      'Phone',
+      'Phone Number',
       'Status',
       'Plan',
       ...months,
