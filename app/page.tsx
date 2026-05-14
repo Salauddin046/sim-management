@@ -379,7 +379,7 @@ export default function Home() {
 
     const headers = [
       'SIM Number',
-      'Phone Number',
+      'MSISDN',
       'Status',
       'Plan',
       'Min Data',
@@ -754,7 +754,7 @@ export default function Home() {
                 </th>
 
                 <th className="border p-3">
-                  MSISDN
+                  Phone Number
                 </th>
 
                 <th className="border p-3">
@@ -782,11 +782,11 @@ export default function Home() {
                 </th>
 
                 <th className="border p-3">
-                  Consumed Months
+                  Data Consumed Months
                 </th>
 
                 <th className="border p-3">
-                  Zero Months
+                  Zero Conusmed Months
                 </th>
 
                 {months.map(
