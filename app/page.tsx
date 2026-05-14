@@ -3,43 +3,88 @@
 import { useState } from 'react'
 
 export default function Home() {
+  const [isLogin, setIsLogin] = useState(true)
   const [loggedIn, setLoggedIn] = useState(false)
 
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
 
+  const [message, setMessage] = useState('')
+
   const [input, setInput] = useState('')
   const [data, setData] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
 
-  const login = () => {
-    if (
-      username === 'admin' &&
-      password === 'admin123'
-    ) {
-      setLoggedIn(true)
-      setError('')
-    } else {
-      setError('Invalid username or password')
+  const handleSignup = async () => {
+    setMessage('')
+
+    try {
+      const response = await fetch('/api/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username,
+          password,
+        }),
+      })
+
+      const result = await response.json()
+
+      if (response.ok) {
+        setMessage('Signup successful. Please login.')
+        setIsLogin(true)
+      } else {
+        setMessage(result.error)
+      }
+    } catch (error) {
+      console.error(error)
+      setMessage('Signup failed')
+    }
+  }
+
+  const handleLogin = async () => {
+    setMessage('')
+
+    try {
+      const response = await fetch('/api/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username,
+          password,
+        }),
+      })
+
+      const result = await response.json()
+
+      if (response.ok) {
+        setLoggedIn(true)
+      } else {
+        setMessage(result.error)
+      }
+    } catch (error) {
+      console.error(error)
+      setMessage('Login failed')
     }
   }
 
   const searchBulk = async () => {
-    setError('')
-
     const numbers = input
-      .split('\\n')
+      .split('\n')
       .map((num) => num.trim())
       .filter(Boolean)
 
     if (!numbers.length) {
-      setError('Please enter Phone Number or SIM numbers')
+      setMessage('Please enter Phone or SIM numbers')
       return
     }
 
     if (numbers.length > 1000) {
-      setError('Maximum 1000 searches allowed at one time')
+      setMessage('Maximum 1000 searches allowed')
       return
     }
 
@@ -76,7 +121,7 @@ export default function Home() {
       setData(Object.values(grouped))
     } catch (error) {
       console.error(error)
-      setError('Search failed')
+      setMessage('Search failed')
     }
 
     setLoading(false)
@@ -99,7 +144,7 @@ export default function Home() {
         <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
 
           <h1 className="text-2xl font-bold mb-6 text-center">
-            Login
+            {isLogin ? 'Login' : 'Signup'}
           </h1>
 
           <input
@@ -118,16 +163,34 @@ export default function Home() {
             className="w-full border border-gray-300 rounded-lg p-3 mb-4"
           />
 
+          {isLogin ? (
+            <button
+              onClick={handleLogin}
+              className="w-full bg-black text-white py-3 rounded-lg"
+            >
+              Login
+            </button>
+          ) : (
+            <button
+              onClick={handleSignup}
+              className="w-full bg-green-600 text-white py-3 rounded-lg"
+            >
+              Signup
+            </button>
+          )}
+
           <button
-            onClick={login}
-            className="w-full bg-black text-white py-3 rounded-lg"
+            onClick={() => setIsLogin(!isLogin)}
+            className="w-full mt-4 text-blue-600"
           >
-            Login
+            {isLogin
+              ? 'Create new account'
+              : 'Already have account? Login'}
           </button>
 
-          {error && (
-            <p className="text-red-600 mt-4 text-center">
-              {error}
+          {message && (
+            <p className="text-center mt-4 text-red-600">
+              {message}
             </p>
           )}
         </div>
@@ -149,14 +212,12 @@ export default function Home() {
           />
         </div>
 
-        <div className="flex gap-4 mb-4 flex-wrap">
-          <button
-            onClick={searchBulk}
-            className="bg-black text-white px-6 py-3 rounded-lg"
-          >
-            Search
-          </button>
-        </div>
+        <button
+          onClick={searchBulk}
+          className="bg-black text-white px-6 py-3 rounded-lg mb-4"
+        >
+          Search
+        </button>
 
         {loading && (
           <p className="mb-4">
@@ -169,7 +230,7 @@ export default function Home() {
             <thead>
               <tr className="bg-gray-200">
                 <th className="border p-3">SIM Number</th>
-                <th className="border p-3">MSISDN</th>
+                <th className="border p-3">Phone Number</th>
                 <th className="border p-3">Status</th>
                 <th className="border p-3">Plan</th>
 
