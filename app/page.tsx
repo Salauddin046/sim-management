@@ -651,7 +651,7 @@ export default function Home() {
 
                   {
                     label:
-                      'MSISDN',
+                      'Phone Number',
                     key:
                       'msisdn',
                   },
@@ -762,27 +762,27 @@ export default function Home() {
                 )}
 
                 <th className="border p-1">
-                  Min
+                  Min Data (MB)
                 </th>
 
                 <th className="border p-1">
-                  Max
+                  Max Data (MB)
                 </th>
 
                 <th className="border p-1">
-                  Total
+                  Total Data (MB)
                 </th>
 
                 <th className="border p-1">
-                  Avg
+                  Avg Data
                 </th>
 
                 <th className="border p-1">
-                  Used
+                  Data Consumed Month
                 </th>
 
                 <th className="border p-1">
-                  Zero
+                  Zero Data consumed onth
                 </th>
 
                 {months.map(
@@ -811,7 +811,7 @@ export default function Home() {
                           text-[11px]
                           font-semibold
                         ">
-                          {month}
+                          {month} (MB)
                         </span>
 
                         <select
