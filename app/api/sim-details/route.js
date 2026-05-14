@@ -1,7 +1,5 @@
-import { NextResponse } from 'next/server'
-
 export async function GET(
-  request: Request
+  request
 ) {
 
   try {
@@ -19,7 +17,7 @@ export async function GET(
 
     if (!sim) {
 
-      return NextResponse.json(
+      return Response.json(
         {
           error:
             'SIM number required',
@@ -63,7 +61,7 @@ export async function GET(
     const data =
       await response.json()
 
-    return NextResponse.json({
+    return Response.json({
 
       status:
         data?.status ||
@@ -75,7 +73,8 @@ export async function GET(
         data?.data?.plan ||
         '-',
 
-      fullData: data,
+      fullData:
+        data,
     })
 
   } catch (error) {
@@ -85,7 +84,7 @@ export async function GET(
       error
     )
 
-    return NextResponse.json(
+    return Response.json(
       {
         status: '-',
         plan: '-',
