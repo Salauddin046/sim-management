@@ -11,8 +11,11 @@ export default function Home() {
 
   const [message, setMessage] = useState('')
 
+  const [selectedModule, setSelectedModule] = useState('')
+
   const [input, setInput] = useState('')
   const [data, setData] = useState<any[]>([])
+
   const [loading, setLoading] = useState(false)
 
   const handleSignup = async () => {
@@ -33,7 +36,7 @@ export default function Home() {
       const result = await response.json()
 
       if (response.ok) {
-        setMessage('Signup successful. Please login.')
+        setMessage('Signup request sent to admin')
         setIsLogin(true)
       } else {
         setMessage(result.error)
@@ -73,6 +76,8 @@ export default function Home() {
   }
 
   const searchBulk = async () => {
+    setMessage('')
+
     const numbers = input
       .split('\n')
       .map((num) => num.trim())
@@ -136,14 +141,17 @@ export default function Home() {
         )
       )
     )
-  )
+  ).sort((a: any, b: any) => {
+    return new Date(a).getTime() - new Date(b).getTime()
+  })
 
   if (!loggedIn) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
 
-          <h1 className="text-2xl font-bold mb-6 text-center">
+        <div className="bg-white p-8 rounded-2xl shadow-lg w-full max-w-md">
+
+          <h1 className="text-3xl font-bold text-center mb-6">
             {isLogin ? 'Login' : 'Signup'}
           </h1>
 
@@ -184,7 +192,7 @@ export default function Home() {
             className="w-full mt-4 text-blue-600"
           >
             {isLogin
-              ? 'Create new account'
+              ? 'Create New Account'
               : 'Already have account? Login'}
           </button>
 
@@ -193,31 +201,108 @@ export default function Home() {
               {message}
             </p>
           )}
+
         </div>
+
+      </div>
+    )
+  }
+
+  if (loggedIn && selectedModule !== 'sim') {
+    return (
+      <div className="min-h-screen bg-gray-100 p-8">
+
+        <h1 className="text-3xl font-bold mb-8">
+          Dashboard
+        </h1>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+          <div
+            onClick={() => setSelectedModule('sim')}
+            className="
+              bg-white
+              rounded-2xl
+              shadow-lg
+              p-8
+              cursor-pointer
+              hover:shadow-2xl
+              transition
+            "
+          >
+            <h2 className="text-2xl font-bold mb-4">
+              SIM Usage
+            </h2>
+
+            <p className="text-gray-600">
+              Search SIM and Phone usage data
+            </p>
+          </div>
+
+        </div>
+
       </div>
     )
   }
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
-      <div className="max-w-7xl mx-auto bg-white rounded-xl shadow-lg p-6">
+
+      <div className="max-w-7xl mx-auto bg-white rounded-2xl shadow-lg p-6">
+
+        <div className="flex justify-between items-center mb-6">
+
+          <h1 className="text-2xl font-bold">
+            SIM Usage Analytics
+          </h1>
+
+          <button
+            onClick={() => setSelectedModule('')}
+            className="bg-gray-200 px-4 py-2 rounded-lg"
+          >
+            Back To Dashboard
+          </button>
+
+        </div>
 
         <div className="mb-4">
+
           <textarea
             rows={10}
             placeholder="Search upto 1000 Phone or SIM numbers"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg p-4 outline-none"
+            className="
+              w-full
+              border
+              border-gray-300
+              rounded-lg
+              p-4
+              outline-none
+            "
           />
+
         </div>
 
         <button
           onClick={searchBulk}
-          className="bg-black text-white px-6 py-3 rounded-lg mb-4"
+          className="
+            bg-black
+            text-white
+            px-6
+            py-3
+            rounded-lg
+            mb-4
+          "
         >
           Search
         </button>
+
+        {message && (
+          <p className="text-red-600 mb-4">
+            {message}
+          </p>
+        )}
 
         {loading && (
           <p className="mb-4">
@@ -226,56 +311,135 @@ export default function Home() {
         )}
 
         <div className="overflow-x-auto">
+
           <table className="w-full border-collapse border border-gray-300 text-sm">
+
             <thead>
               <tr className="bg-gray-200">
-                <th className="border p-3">SIM Number</th>
-                <th className="border p-3">Phone Number</th>
-                <th className="border p-3">Status</th>
-                <th className="border p-3">Plan</th>
+
+                <th className="border p-3">
+                  SIM Number
+                </th>
+
+                <th className="border p-3">
+                  MSISDN
+                </th>
+
+                <th className="border p-3">
+                  Status
+                </th>
+
+                <th className="border p-3">
+                  Plan
+                </th>
+
+                <th className="border p-3">
+                  Min Data
+                </th>
+
+                <th className="border p-3">
+                  Max Data
+                </th>
 
                 {months.map((month: any) => (
-                  <th key={month} className="border p-3">
+                  <th
+                    key={month}
+                    className="border p-3"
+                  >
                     {month}
                   </th>
                 ))}
+
               </tr>
             </thead>
 
             <tbody>
-              {data.length > 0 ? (
-                data.map((row: any, index: number) => (
-                  <tr key={index}>
-                    <td className="border p-3">{row.sim_no}</td>
-                    <td className="border p-3">{row.msisdn}</td>
-                    <td className="border p-3">{row.sim_status}</td>
-                    <td className="border p-3">{row.plan}</td>
 
-                    {months.map((month: any) => (
-                      <td
-                        key={month}
-                        className="border p-3 text-center"
-                      >
-                        {row[month] || '-'}
+              {data.length > 0 ? (
+                data.map((row: any, index: number) => {
+
+                  const usageValues = months.map(
+                    (month: any) =>
+                      Number(row[month] || 0)
+                  )
+
+                  const maxValue = Math.max(...usageValues)
+                  const minValue = Math.min(...usageValues)
+
+                  return (
+                    <tr key={index}>
+
+                      <td className="border p-3">
+                        {row.sim_no}
                       </td>
-                    ))}
-                  </tr>
-                ))
+
+                      <td className="border p-3">
+                        {row.msisdn}
+                      </td>
+
+                      <td className="border p-3">
+                        {row.sim_status}
+                      </td>
+
+                      <td className="border p-3">
+                        {row.plan}
+                      </td>
+
+                      <td className="border p-3 text-center">
+                        {minValue}
+                      </td>
+
+                      <td className="border p-3 text-center">
+                        {maxValue}
+                      </td>
+
+                      {months.map((month: any) => {
+
+                        const value = Number(
+                          row[month] || 0
+                        )
+
+                        return (
+                          <td
+                            key={month}
+                            className={`
+                              border
+                              p-3
+                              text-center
+                              ${
+                                value === maxValue
+                                  ? 'bg-green-300 font-bold'
+                                  : ''
+                              }
+                            `}
+                          >
+                            {row[month] || '-'}
+                          </td>
+                        )
+                      })}
+
+                    </tr>
+                  )
+                })
               ) : (
                 <tr>
                   <td
-                    colSpan={months.length + 4}
+                    colSpan={months.length + 6}
                     className="border p-4 text-center"
                   >
                     No data found
                   </td>
                 </tr>
               )}
+
             </tbody>
+
           </table>
+
         </div>
 
       </div>
+
     </div>
   )
 }
