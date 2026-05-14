@@ -379,7 +379,7 @@ export default function Home() {
 
     const headers = [
       'SIM Number',
-      'Phone Number',
+      'MSISDN',
       'Status',
       'Plan',
       'Min Data',
@@ -620,19 +620,6 @@ export default function Home() {
             </button>
           )}
 
-          <button
-            onClick={() =>
-              setIsLogin(
-                !isLogin
-              )
-            }
-            className="w-full mt-4 text-blue-600"
-          >
-            {isLogin
-              ? 'Create New Account'
-              : 'Already have account? Login'}
-          </button>
-
           {message && (
             <p className="text-center mt-4 text-red-600">
               {message}
@@ -654,25 +641,21 @@ export default function Home() {
         <div className="flex justify-between items-center mb-6">
 
           <h1 className="text-4xl font-bold">
-            Datix Master
+            Telecom Dashboard
           </h1>
 
-          <div className="relative">
-
-            <button
-              onClick={() =>
-                setProfileOpen(
-                  !profileOpen
-                )
-              }
-              className="w-12 h-12 rounded-full bg-black text-white"
-            >
-              {loggedUser?.username
-                ?.charAt(0)
-                ?.toUpperCase() || 'U'}
-            </button>
-
-          </div>
+          <button
+            onClick={() =>
+              setProfileOpen(
+                !profileOpen
+              )
+            }
+            className="w-12 h-12 rounded-full bg-black text-white"
+          >
+            {loggedUser?.username
+              ?.charAt(0)
+              ?.toUpperCase() || 'U'}
+          </button>
 
         </div>
 
@@ -757,6 +740,215 @@ export default function Home() {
             Loading...
           </p>
         )}
+
+        <div className="overflow-auto rounded-xl border border-gray-300">
+
+          <table className="w-full border-collapse text-sm">
+
+            <thead className="bg-gray-200">
+
+              <tr>
+
+                <th className="border p-3">
+                  SIM Number
+                </th>
+
+                <th className="border p-3">
+                  MSISDN
+                </th>
+
+                <th className="border p-3">
+                  Status
+                </th>
+
+                <th className="border p-3">
+                  Plan
+                </th>
+
+                <th className="border p-3">
+                  Min Data (MB)
+                </th>
+
+                <th className="border p-3">
+                  Max Data (MB)
+                </th>
+
+                <th className="border p-3">
+                  Total Data (MB)
+                </th>
+
+                <th className="border p-3">
+                  Avg Data (MB)
+                </th>
+
+                <th className="border p-3">
+                  Consumed Months
+                </th>
+
+                <th className="border p-3">
+                  Zero Months
+                </th>
+
+                {months.map(
+                  (month: any) => (
+                    <th
+                      key={month}
+                      className="border p-3"
+                    >
+                      {month} (MB)
+                    </th>
+                  )
+                )}
+
+              </tr>
+
+            </thead>
+
+            <tbody>
+
+              {data.map(
+                (
+                  row: any,
+                  index: number
+                ) => {
+
+                  const usageValues =
+                    months.map(
+                      (month: any) =>
+                        Number(
+                          row[month] || 0
+                        )
+                    )
+
+                  const maxValue =
+                    Math.max(
+                      ...usageValues
+                    )
+
+                  const minValue =
+                    Math.min(
+                      ...usageValues
+                    )
+
+                  const totalUsage =
+                    usageValues.reduce(
+                      (
+                        a: number,
+                        b: number
+                      ) => a + b,
+                      0
+                    )
+
+                  const averageValue = (
+                    totalUsage /
+                    usageValues.length
+                  ).toFixed(2)
+
+                  const consumedMonths =
+                    usageValues.filter(
+                      (
+                        value: number
+                      ) => value > 0
+                    ).length
+
+                  const zeroMonths =
+                    usageValues.filter(
+                      (
+                        value: number
+                      ) => value === 0
+                    ).length
+
+                  return (
+
+                    <tr
+                      key={index}
+                      className="hover:bg-gray-50"
+                    >
+
+                      <td className="border p-3">
+                        {row.sim_no}
+                      </td>
+
+                      <td className="border p-3">
+                        {row.msisdn}
+                      </td>
+
+                      <td className="border p-3">
+                        {row.sim_status}
+                      </td>
+
+                      <td className="border p-3">
+                        {row.plan}
+                      </td>
+
+                      <td className="border p-3 text-center">
+                        {minValue}
+                      </td>
+
+                      <td className="border p-3 text-center">
+                        {maxValue}
+                      </td>
+
+                      <td className="border p-3 text-center font-semibold">
+                        {totalUsage}
+                      </td>
+
+                      <td className="border p-3 text-center">
+                        {averageValue}
+                      </td>
+
+                      <td className="border p-3 text-center">
+                        {consumedMonths}
+                      </td>
+
+                      <td className="border p-3 text-center">
+                        {zeroMonths}
+                      </td>
+
+                      {months.map(
+                        (
+                          month: any
+                        ) => {
+
+                          const value =
+                            Number(
+                              row[
+                                month
+                              ] || 0
+                            )
+
+                          return (
+
+                            <td
+                              key={month}
+                              className={`
+                                border
+                                p-3
+                                text-center
+                                ${
+                                  value ===
+                                  maxValue
+                                    ? 'bg-green-300 font-bold'
+                                    : ''
+                                }
+                              `}
+                            >
+                              {value}
+                            </td>
+                          )
+                        }
+                      )}
+
+                    </tr>
+                  )
+                }
+              )}
+
+            </tbody>
+
+          </table>
+
+        </div>
 
       </div>
 
