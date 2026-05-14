@@ -6,12 +6,19 @@ export default function Home() {
   const [isLogin, setIsLogin] = useState(true)
   const [loggedIn, setLoggedIn] = useState(false)
 
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
 
   const [message, setMessage] = useState('')
 
   const [selectedModule, setSelectedModule] = useState('')
+
+  const [profileOpen, setProfileOpen] = useState(false)
+
+  const [user, setUser] = useState<any>(null)
 
   const [input, setInput] = useState('')
   const [data, setData] = useState<any[]>([])
@@ -28,6 +35,8 @@ export default function Home() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          name,
+          email,
           username,
           password,
         }),
@@ -66,12 +75,44 @@ export default function Home() {
 
       if (response.ok) {
         setLoggedIn(true)
+        setUser(result.user)
       } else {
         setMessage(result.error)
       }
     } catch (error) {
       console.error(error)
       setMessage('Login failed')
+    }
+  }
+
+  const handleForgotPassword = async () => {
+    if (!email) {
+      setMessage('Please enter registered email')
+      return
+    }
+
+    try {
+      const response = await fetch(
+        '/api/forgot-password',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email,
+          }),
+        }
+      )
+
+      const result = await response.json()
+
+      setMessage(
+        result.message || result.error
+      )
+    } catch (error) {
+      console.error(error)
+      setMessage('Failed')
     }
   }
 
@@ -84,25 +125,35 @@ export default function Home() {
       .filter(Boolean)
 
     if (!numbers.length) {
-      setMessage('Please enter Phone or SIM numbers')
+      setMessage(
+        'Please enter Phone or SIM numbers'
+      )
       return
     }
 
     if (numbers.length > 1000) {
-      setMessage('Maximum 1000 searches allowed')
+      setMessage(
+        'Maximum 1000 searches allowed'
+      )
       return
     }
 
     setLoading(true)
 
     try {
-      const response = await fetch('/api/sim', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ numbers }),
-      })
+      const response = await fetch(
+        '/api/sim',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type':
+              'application/json',
+          },
+          body: JSON.stringify({
+            numbers,
+          }),
+        }
+      )
 
       const result = await response.json()
 
@@ -120,7 +171,8 @@ export default function Home() {
           }
         }
 
-        grouped[key][row.usage_month] = row.used_data_mb
+        grouped[key][row.usage_month] =
+          row.used_data_mb
       })
 
       setData(Object.values(grouped))
@@ -137,13 +189,27 @@ export default function Home() {
       data.flatMap((row: any) =>
         Object.keys(row).filter(
           (key) =>
-            !['sim_no', 'msisdn', 'sim_status', 'plan'].includes(key)
+            ![
+              'sim_no',
+              'msisdn',
+              'sim_status',
+              'plan',
+            ].includes(key)
         )
       )
     )
   ).sort((a: any, b: any) => {
-    return new Date(a).getTime() - new Date(b).getTime()
+    return (
+      new Date(a).getTime() -
+      new Date(b).getTime()
+    )
   })
+
+  const logout = () => {
+    setLoggedIn(false)
+    setUser(null)
+    setSelectedModule('')
+  }
 
   if (!loggedIn) {
     return (
@@ -155,11 +221,49 @@ export default function Home() {
             {isLogin ? 'Login' : 'Signup'}
           </h1>
 
+          {!isLogin && (
+            <>
+              <input
+                type="text"
+                placeholder="Full Name"
+                value={name}
+                onChange={(e) =>
+                  setName(e.target.value)
+                }
+                className="w-full border border-gray-300 rounded-lg p-3 mb-4"
+              />
+
+              <input
+                type="email"
+                placeholder="Email Address"
+                value={email}
+                onChange={(e) =>
+                  setEmail(e.target.value)
+                }
+                className="w-full border border-gray-300 rounded-lg p-3 mb-4"
+              />
+            </>
+          )}
+
+          {isLogin && (
+            <input
+              type="email"
+              placeholder="Registered Email"
+              value={email}
+              onChange={(e) =>
+                setEmail(e.target.value)
+              }
+              className="w-full border border-gray-300 rounded-lg p-3 mb-4"
+            />
+          )}
+
           <input
             type="text"
             placeholder="Username"
             value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            onChange={(e) =>
+              setUsername(e.target.value)
+            }
             className="w-full border border-gray-300 rounded-lg p-3 mb-4"
           />
 
@@ -167,7 +271,9 @@ export default function Home() {
             type="password"
             placeholder="Password"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={(e) =>
+              setPassword(e.target.value)
+            }
             className="w-full border border-gray-300 rounded-lg p-3 mb-4"
           />
 
@@ -187,8 +293,19 @@ export default function Home() {
             </button>
           )}
 
+          {isLogin && (
+            <button
+              onClick={handleForgotPassword}
+              className="w-full mt-4 text-blue-600"
+            >
+              Forgot Password?
+            </button>
+          )}
+
           <button
-            onClick={() => setIsLogin(!isLogin)}
+            onClick={() =>
+              setIsLogin(!isLogin)
+            }
             className="w-full mt-4 text-blue-600"
           >
             {isLogin
@@ -208,18 +325,71 @@ export default function Home() {
     )
   }
 
-  if (loggedIn && selectedModule !== 'sim') {
+  if (
+    loggedIn &&
+    selectedModule !== 'sim'
+  ) {
     return (
       <div className="min-h-screen bg-gray-100 p-8">
 
-        <h1 className="text-3xl font-bold mb-8">
-          Dashboard
-        </h1>
+        <div className="flex justify-between items-center mb-8">
+
+          <h1 className="text-3xl font-bold">
+            Dashboard
+          </h1>
+
+          <div className="flex gap-4">
+
+            <button
+              onClick={() =>
+                setProfileOpen(
+                  !profileOpen
+                )
+              }
+              className="bg-white px-4 py-2 rounded-lg shadow"
+            >
+              {user?.name || 'Profile'}
+            </button>
+
+            <button
+              onClick={logout}
+              className="bg-red-500 text-white px-4 py-2 rounded-lg"
+            >
+              Logout
+            </button>
+
+          </div>
+
+        </div>
+
+        {profileOpen && (
+          <div className="bg-white rounded-xl shadow p-6 mb-6">
+
+            <h2 className="text-2xl font-bold mb-4">
+              Profile
+            </h2>
+
+            <p className="mb-2">
+              <b>Name:</b> {user?.name}
+            </p>
+
+            <p className="mb-2">
+              <b>Email:</b> {user?.email}
+            </p>
+
+            <p className="mb-2">
+              <b>Username:</b> {user?.username}
+            </p>
+
+          </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
           <div
-            onClick={() => setSelectedModule('sim')}
+            onClick={() =>
+              setSelectedModule('sim')
+            }
             className="
               bg-white
               rounded-2xl
@@ -257,7 +427,9 @@ export default function Home() {
           </h1>
 
           <button
-            onClick={() => setSelectedModule('')}
+            onClick={() =>
+              setSelectedModule('')
+            }
             className="bg-gray-200 px-4 py-2 rounded-lg"
           >
             Back To Dashboard
@@ -271,7 +443,9 @@ export default function Home() {
             rows={10}
             placeholder="Search upto 1000 Phone or SIM numbers"
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={(e) =>
+              setInput(e.target.value)
+            }
             className="
               w-full
               border
@@ -341,14 +515,16 @@ export default function Home() {
                   Max Data
                 </th>
 
-                {months.map((month: any) => (
-                  <th
-                    key={month}
-                    className="border p-3"
-                  >
-                    {month}
-                  </th>
-                ))}
+                {months.map(
+                  (month: any) => (
+                    <th
+                      key={month}
+                      className="border p-3"
+                    >
+                      {month}
+                    </th>
+                  )
+                )}
 
               </tr>
             </thead>
@@ -356,75 +532,105 @@ export default function Home() {
             <tbody>
 
               {data.length > 0 ? (
-                data.map((row: any, index: number) => {
+                data.map(
+                  (
+                    row: any,
+                    index: number
+                  ) => {
 
-                  const usageValues = months.map(
-                    (month: any) =>
-                      Number(row[month] || 0)
-                  )
+                    const usageValues =
+                      months.map(
+                        (month: any) =>
+                          Number(
+                            row[month] || 0
+                          )
+                      )
 
-                  const maxValue = Math.max(...usageValues)
-                  const minValue = Math.min(...usageValues)
+                    const maxValue =
+                      Math.max(
+                        ...usageValues
+                      )
 
-                  return (
-                    <tr key={index}>
+                    const minValue =
+                      Math.min(
+                        ...usageValues
+                      )
 
-                      <td className="border p-3">
-                        {row.sim_no}
-                      </td>
+                    return (
+                      <tr key={index}>
 
-                      <td className="border p-3">
-                        {row.msisdn}
-                      </td>
+                        <td className="border p-3">
+                          {row.sim_no}
+                        </td>
 
-                      <td className="border p-3">
-                        {row.sim_status}
-                      </td>
+                        <td className="border p-3">
+                          {row.msisdn}
+                        </td>
 
-                      <td className="border p-3">
-                        {row.plan}
-                      </td>
+                        <td className="border p-3">
+                          {row.sim_status}
+                        </td>
 
-                      <td className="border p-3 text-center">
-                        {minValue}
-                      </td>
+                        <td className="border p-3">
+                          {row.plan}
+                        </td>
 
-                      <td className="border p-3 text-center">
-                        {maxValue}
-                      </td>
+                        <td className="border p-3 text-center">
+                          {minValue}
+                        </td>
 
-                      {months.map((month: any) => {
+                        <td className="border p-3 text-center">
+                          {maxValue}
+                        </td>
 
-                        const value = Number(
-                          row[month] || 0
-                        )
+                        {months.map(
+                          (
+                            month: any
+                          ) => {
 
-                        return (
-                          <td
-                            key={month}
-                            className={`
-                              border
-                              p-3
-                              text-center
-                              ${
-                                value === maxValue
-                                  ? 'bg-green-300 font-bold'
-                                  : ''
-                              }
-                            `}
-                          >
-                            {row[month] || '-'}
-                          </td>
-                        )
-                      })}
+                            const value =
+                              Number(
+                                row[
+                                  month
+                                ] || 0
+                              )
 
-                    </tr>
-                  )
-                })
+                            return (
+                              <td
+                                key={
+                                  month
+                                }
+                                className={`
+                                  border
+                                  p-3
+                                  text-center
+                                  ${
+                                    value ===
+                                    maxValue
+                                      ? 'bg-green-300 font-bold'
+                                      : ''
+                                  }
+                                `}
+                              >
+                                {row[
+                                  month
+                                ] || '-'}
+                              </td>
+                            )
+                          }
+                        )}
+
+                      </tr>
+                    )
+                  }
+                )
               ) : (
                 <tr>
                   <td
-                    colSpan={months.length + 6}
+                    colSpan={
+                      months.length +
+                      6
+                    }
                     className="border p-4 text-center"
                   >
                     No data found
