@@ -723,113 +723,228 @@ export default function Home() {
             Reset Filter
           </button>
 
-          <select
-            value={filterType}
-            onChange={(e) =>
-              setFilterType(
-                e.target.value
-              )
-            }
-            className="
-              border
-              rounded-lg
-              px-3
-              py-2
-            "
-          >
+        </div>
 
-            <option value="all">
-              All Months
-            </option>
+        <div className="
+          overflow-auto
+          border
+          rounded-lg
+          max-h-[650px]
+        ">
 
-            <option value="6months">
-              Last 6 Months
-            </option>
+          <table className="
+            w-full
+            border-collapse
+            text-xs
+          ">
 
-            <option value="1year">
-              Last 1 Year
-            </option>
+            <thead className="
+              bg-gray-200
+              sticky
+              top-0
+              z-10
+            ">
 
-            <option value="custom">
-              Month Range
-            </option>
+              <tr>
 
-          </select>
+                <th className="border p-1">
+                  SIM
+                </th>
 
-          {filterType ===
-            'custom' && (
-            <>
-              <select
-                value={fromMonth}
-                onChange={(e) =>
-                  setFromMonth(
-                    e.target.value
-                  )
-                }
-                className="
-                  border
-                  rounded-lg
-                  px-3
-                  py-2
-                "
-              >
+                <th className="border p-1">
+                  MSISDN
+                </th>
 
-                <option value="">
-                  From Month
-                </option>
+                <th className="border p-1">
+                  Status
+                </th>
 
-                {allMonths.map(
-                  (
-                    month
-                  ) => (
+                <th className="border p-1">
+                  Plan
+                </th>
 
-                    <option
+                <th className="border p-1">
+                  Min
+                </th>
+
+                <th className="border p-1">
+                  Max
+                </th>
+
+                <th className="border p-1">
+                  Total
+                </th>
+
+                <th className="border p-1">
+                  Avg
+                </th>
+
+                <th className="border p-1">
+                  Used
+                </th>
+
+                <th className="border p-1">
+                  Zero
+                </th>
+
+                {months.map(
+                  (month) => (
+
+                    <th
                       key={month}
-                      value={month}
+                      className="
+                        border
+                        p-1
+                        min-w-[80px]
+                        text-[10px]
+                      "
                     >
-                      {month}
-                    </option>
+                      {month} (MB)
+                    </th>
                   )
                 )}
 
-              </select>
+              </tr>
 
-              <select
-                value={toMonth}
-                onChange={(e) =>
-                  setToMonth(
-                    e.target.value
+            </thead>
+
+            <tbody>
+
+              {data.map(
+                (
+                  row: any,
+                  index: number
+                ) => {
+
+                  const usageValues =
+                    months.map(
+                      (month) =>
+                        Number(
+                          row[
+                            month
+                          ] || 0
+                        )
+                    )
+
+                  const min =
+                    Math.min(
+                      ...usageValues
+                    )
+
+                  const max =
+                    Math.max(
+                      ...usageValues
+                    )
+
+                  const total =
+                    usageValues.reduce(
+                      (
+                        a,
+                        b
+                      ) => a + b,
+                      0
+                    )
+
+                  const avg =
+                    (
+                      total /
+                      usageValues.length
+                    ).toFixed(2)
+
+                  const used =
+                    usageValues.filter(
+                      (
+                        value
+                      ) =>
+                        value > 0
+                    ).length
+
+                  const zero =
+                    usageValues.filter(
+                      (
+                        value
+                      ) =>
+                        value === 0
+                    ).length
+
+                  return (
+
+                    <tr
+                      key={index}
+                      className="
+                        hover:bg-gray-50
+                      "
+                    >
+
+                      <td className="border p-1 text-center">
+                        {row.sim_no}
+                      </td>
+
+                      <td className="border p-1 text-center">
+                        {row.msisdn}
+                      </td>
+
+                      <td className="border p-1 text-center">
+                        {row.sim_status}
+                      </td>
+
+                      <td className="border p-1 text-center">
+                        {row.plan}
+                      </td>
+
+                      <td className="border p-1 text-center">
+                        {min}
+                      </td>
+
+                      <td className="border p-1 text-center">
+                        {max}
+                      </td>
+
+                      <td className="border p-1 text-center">
+                        {total.toFixed(2)}
+                      </td>
+
+                      <td className="border p-1 text-center">
+                        {avg}
+                      </td>
+
+                      <td className="border p-1 text-center">
+                        {used}
+                      </td>
+
+                      <td className="border p-1 text-center">
+                        {zero}
+                      </td>
+
+                      {months.map(
+                        (month) => (
+
+                          <td
+                            key={month}
+                            className="
+                              border
+                              p-1
+                              text-center
+                              text-[10px]
+                            "
+                          >
+                            {
+                              row[
+                                month
+                              ] || 0
+                            }
+                          </td>
+                        )
+                      )}
+
+                    </tr>
                   )
                 }
-                className="
-                  border
-                  rounded-lg
-                  px-3
-                  py-2
-                "
-              >
+              )}
 
-                <option value="">
-                  To Month
-                </option>
+            </tbody>
 
-                {allMonths.map(
-                  (
-                    month
-                  ) => (
-
-                    <option
-                      key={month}
-                      value={month}
-                    >
-                      {month}
-                    </option>
-                  )
-                )}
-
-              </select>
-            </>
-          )}
+          </table>
 
         </div>
 
