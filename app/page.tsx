@@ -413,7 +413,7 @@ export default function Home() {
             row.plan,
             min,
             max,
-            total,
+            total.toFixed(2),
             avg,
             used,
             zero,
@@ -1052,7 +1052,7 @@ export default function Home() {
                       </td>
 
                       <td className="border p-1 text-center">
-                        {total}
+                        {total.toFixed(2)}
                       </td>
 
                       <td className="border p-1 text-center">
