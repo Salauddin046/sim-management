@@ -4,45 +4,6 @@ import { useEffect, useState } from 'react'
 
 export default function Home() {
 
-  const [isLogin, setIsLogin] =
-    useState(true)
-
-  const [loggedIn, setLoggedIn] =
-    useState(false)
-
-  const [loggedUser, setLoggedUser] =
-    useState<any>(null)
-
-  const [name, setName] =
-    useState('')
-
-  const [email, setEmail] =
-    useState('')
-
-  const [username, setUsername] =
-    useState('')
-
-  const [password, setPassword] =
-    useState('')
-
-  const [otp, setOtp] =
-    useState('')
-
-  const [generatedOtp, setGeneratedOtp] =
-    useState('')
-
-  const [otpSent, setOtpSent] =
-    useState(false)
-
-  const [message, setMessage] =
-    useState('')
-
-  const [captcha, setCaptcha] =
-    useState('')
-
-  const [captchaInput, setCaptchaInput] =
-    useState('')
-
   const [input, setInput] =
     useState('')
 
@@ -56,198 +17,13 @@ export default function Home() {
     useState(false)
 
   const [filterType, setFilterType] =
-    useState('6months')
+    useState('all')
 
   const [fromMonth, setFromMonth] =
     useState('')
 
   const [toMonth, setToMonth] =
     useState('')
-
-  useEffect(() => {
-    generateCaptcha()
-  }, [])
-
-  const generateCaptcha = () => {
-
-    const chars =
-      'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
-
-    let text = ''
-
-    for (let i = 0; i < 6; i++) {
-
-      text += chars.charAt(
-        Math.floor(
-          Math.random() * chars.length
-        )
-      )
-    }
-
-    setCaptcha(text)
-
-    setCaptchaInput('')
-  }
-
-  const sendOtp = async () => {
-
-    try {
-
-      const response = await fetch(
-        '/api/send-otp',
-        {
-          method: 'POST',
-
-          headers: {
-            'Content-Type':
-              'application/json',
-          },
-
-          body: JSON.stringify({
-            email,
-          }),
-        }
-      )
-
-      const result =
-        await response.json()
-
-      if (response.ok) {
-
-        setGeneratedOtp(
-          result.otp.toString()
-        )
-
-        setOtpSent(true)
-
-        setMessage(
-          'OTP sent successfully'
-        )
-
-      } else {
-
-        setMessage(result.error)
-      }
-
-    } catch (error) {
-
-      console.error(error)
-
-      setMessage('OTP failed')
-    }
-  }
-
-  const verifyOtpAndSignup =
-    async () => {
-
-      if (otp !== generatedOtp) {
-
-        setMessage('Invalid OTP')
-
-        return
-      }
-
-      try {
-
-        const response = await fetch(
-          '/api/signup',
-          {
-            method: 'POST',
-
-            headers: {
-              'Content-Type':
-                'application/json',
-            },
-
-            body: JSON.stringify({
-              name,
-              email,
-              username,
-              password,
-            }),
-          }
-        )
-
-        const result =
-          await response.json()
-
-        if (response.ok) {
-
-          setMessage(
-            'Signup successful'
-          )
-
-          setIsLogin(true)
-
-          setOtpSent(false)
-
-        } else {
-
-          setMessage(result.error)
-        }
-
-      } catch (error) {
-
-        console.error(error)
-
-        setMessage('Signup failed')
-      }
-    }
-
-  const handleLogin = async () => {
-
-    if (
-      captchaInput.toUpperCase() !==
-      captcha
-    ) {
-
-      setMessage('Invalid CAPTCHA')
-
-      generateCaptcha()
-
-      return
-    }
-
-    try {
-
-      const response = await fetch(
-        '/api/login',
-        {
-          method: 'POST',
-
-          headers: {
-            'Content-Type':
-              'application/json',
-          },
-
-          body: JSON.stringify({
-            username,
-            password,
-          }),
-        }
-      )
-
-      const result =
-        await response.json()
-
-      if (response.ok) {
-
-        setLoggedIn(true)
-
-        setLoggedUser(result.user)
-
-      } else {
-
-        setMessage(result.error)
-      }
-
-    } catch (error) {
-
-      console.error(error)
-
-      setMessage('Login failed')
-    }
-  }
 
   const searchBulk = async () => {
 
@@ -258,7 +34,7 @@ export default function Home() {
 
     if (!numbers.length) {
 
-      setMessage(
+      alert(
         'Please enter SIM numbers'
       )
 
@@ -292,16 +68,23 @@ export default function Home() {
 
       result.forEach((row: any) => {
 
-        const key = row.sim_no
+        const key =
+          row.sim_no
 
         if (!grouped[key]) {
 
           grouped[key] = {
-            sim_no: row.sim_no,
-            msisdn: row.msisdn,
+            sim_no:
+              row.sim_no,
+
+            msisdn:
+              row.msisdn,
+
             sim_status:
               row.sim_status,
-            plan: row.plan,
+
+            plan:
+              row.plan,
           }
         }
 
@@ -323,7 +106,9 @@ export default function Home() {
 
       console.error(error)
 
-      setMessage('Search failed')
+      alert(
+        'Search failed'
+      )
     }
 
     setLoading(false)
@@ -362,27 +147,42 @@ export default function Home() {
     }
   )
 
-  let months = [...allMonths]
+  let months =
+    [...allMonths]
 
-  if (filterType === '6months') {
-    months = allMonths.slice(-6)
-  }
+  if (
+    filterType ===
+    '6months'
+  ) {
 
-  if (filterType === '1year') {
-    months = allMonths.slice(-12)
+    months =
+      allMonths.slice(-6)
   }
 
   if (
-    filterType === 'custom' &&
+    filterType ===
+    '1year'
+  ) {
+
+    months =
+      allMonths.slice(-12)
+  }
+
+  if (
+    filterType ===
+      'custom' &&
     fromMonth &&
     toMonth
   ) {
 
-    months = allMonths.filter(
-      (month: any) =>
-        month >= fromMonth &&
-        month <= toMonth
-    )
+    months =
+      allMonths.filter(
+        (month: any) =>
+          month >=
+            fromMonth &&
+          month <=
+            toMonth
+      )
   }
 
   const handleSort = (
@@ -390,7 +190,8 @@ export default function Home() {
     direction: string
   ) => {
 
-    const sorted = [...data]
+    const sorted =
+      [...data]
 
     sorted.sort(
       (
@@ -405,10 +206,12 @@ export default function Home() {
           b[key] || 0
 
         if (
-          typeof valueA === 'string'
+          typeof valueA ===
+          'string'
         ) {
 
-          return direction === 'asc'
+          return direction ===
+            'asc'
             ? valueA.localeCompare(
                 valueB
               )
@@ -417,11 +220,20 @@ export default function Home() {
               )
         }
 
-        return direction === 'asc'
-          ? Number(valueA) -
-              Number(valueB)
-          : Number(valueB) -
-              Number(valueA)
+        return direction ===
+          'asc'
+          ? Number(
+              valueA
+            ) -
+              Number(
+                valueB
+              )
+          : Number(
+              valueB
+            ) -
+              Number(
+                valueA
+              )
       }
     )
 
@@ -444,96 +256,121 @@ export default function Home() {
       ...months,
     ]
 
-    const rows = data.map(
-      (row: any) => {
+    const rows =
+      data.map(
+        (row: any) => {
 
-        const usageValues =
-          months.map(
-            (month: any) =>
-              Number(
-                row[month] || 0
-              )
-          )
+          const usageValues =
+            months.map(
+              (
+                month: any
+              ) =>
+                Number(
+                  row[
+                    month
+                  ] || 0
+                )
+            )
 
-        const maxValue =
-          Math.max(...usageValues)
+          const maxValue =
+            Math.max(
+              ...usageValues
+            )
 
-        const minValue =
-          Math.min(...usageValues)
+          const minValue =
+            Math.min(
+              ...usageValues
+            )
 
-        const totalUsage =
-          usageValues.reduce(
+          const totalUsage =
+            usageValues.reduce(
+              (
+                a: number,
+                b: number
+              ) => a + b,
+              0
+            )
+
+          const averageValue =
             (
-              a: number,
-              b: number
-            ) => a + b,
-            0
-          )
+              totalUsage /
+              usageValues.length
+            ).toFixed(2)
 
-        const averageValue = (
-          totalUsage /
-          usageValues.length
-        ).toFixed(2)
+          const consumedMonths =
+            usageValues.filter(
+              (
+                value: number
+              ) =>
+                value > 0
+            ).length
 
-        const consumedMonths =
-          usageValues.filter(
-            (
-              value: number
-            ) => value > 0
-          ).length
+          const zeroMonths =
+            usageValues.filter(
+              (
+                value: number
+              ) =>
+                value === 0
+            ).length
 
-        const zeroMonths =
-          usageValues.filter(
-            (
-              value: number
-            ) => value === 0
-          ).length
-
-        return [
-          row.sim_no,
-          row.msisdn,
-          row.sim_status,
-          row.plan,
-          minValue,
-          maxValue,
-          totalUsage,
-          averageValue,
-          consumedMonths,
-          zeroMonths,
-          ...months.map(
-            (month: any) =>
-              row[month] || 0
-          ),
-        ]
-      }
-    )
+          return [
+            row.sim_no,
+            row.msisdn,
+            row.sim_status,
+            row.plan,
+            minValue,
+            maxValue,
+            totalUsage,
+            averageValue,
+            consumedMonths,
+            zeroMonths,
+            ...months.map(
+              (
+                month: any
+              ) =>
+                row[
+                  month
+                ] || 0
+            ),
+          ]
+        }
+      )
 
     const csvContent =
       [
         headers.join(','),
-        ...rows.map((e: any) =>
-          e.join(',')
+        ...rows.map(
+          (e: any) =>
+            e.join(',')
         ),
       ].join('\n')
 
-    const blob = new Blob(
-      [csvContent],
-      {
-        type:
-          'text/csv;charset=utf-8;',
-      }
-    )
+    const blob =
+      new Blob(
+        [csvContent],
+        {
+          type:
+            'text/csv;charset=utf-8;',
+        }
+      )
 
     const link =
-      document.createElement('a')
+      document.createElement(
+        'a'
+      )
 
     const url =
-      URL.createObjectURL(blob)
+      URL.createObjectURL(
+        blob
+      )
 
     const timestamp =
       new Date()
         .toISOString()
-        .replace(/[:.]/g, '-')
+        .replace(
+          /[:.]/g,
+          '-'
+        )
 
     link.href = url
 
@@ -543,234 +380,105 @@ export default function Home() {
     link.click()
   }
 
-  if (!loggedIn) {
-
-    return (
-
-      <div className="min-h-screen flex items-center justify-center bg-gray-100">
-
-        <div className="bg-white p-8 rounded-2xl shadow-lg w-full max-w-md">
-
-          <h1 className="text-3xl font-bold text-center mb-6">
-            {isLogin
-              ? 'Login'
-              : 'Signup'}
-          </h1>
-
-          {!isLogin && (
-            <>
-              <input
-                type="text"
-                placeholder="Full Name"
-                value={name}
-                onChange={(e) =>
-                  setName(
-                    e.target.value
-                  )
-                }
-                className="w-full border p-3 rounded-lg mb-4"
-              />
-
-              <input
-                type="email"
-                placeholder="Email"
-                value={email}
-                onChange={(e) =>
-                  setEmail(
-                    e.target.value
-                  )
-                }
-                className="w-full border p-3 rounded-lg mb-4"
-              />
-            </>
-          )}
-
-          <input
-            type="text"
-            placeholder="Username"
-            value={username}
-            onChange={(e) =>
-              setUsername(
-                e.target.value
-              )
-            }
-            className="w-full border p-3 rounded-lg mb-4"
-          />
-
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) =>
-              setPassword(
-                e.target.value
-              )
-            }
-            className="w-full border p-3 rounded-lg mb-4"
-          />
-
-          {!isLogin && otpSent && (
-            <input
-              type="text"
-              placeholder="Enter OTP"
-              value={otp}
-              onChange={(e) =>
-                setOtp(
-                  e.target.value
-                )
-              }
-              className="w-full border p-3 rounded-lg mb-4"
-            />
-          )}
-
-          {isLogin && (
-            <>
-              <div className="bg-gray-200 text-center p-3 rounded-lg mb-3 font-bold tracking-widest">
-                {captcha}
-              </div>
-
-              <input
-                type="text"
-                placeholder="Enter CAPTCHA"
-                value={captchaInput}
-                onChange={(e) =>
-                  setCaptchaInput(
-                    e.target.value
-                  )
-                }
-                className="w-full border p-3 rounded-lg mb-4"
-              />
-            </>
-          )}
-
-          {isLogin ? (
-
-            <button
-              onClick={handleLogin}
-              className="w-full bg-black text-white py-3 rounded-lg"
-            >
-              Login
-            </button>
-
-          ) : otpSent ? (
-
-            <button
-              onClick={
-                verifyOtpAndSignup
-              }
-              className="w-full bg-green-600 text-white py-3 rounded-lg"
-            >
-              Verify OTP & Signup
-            </button>
-
-          ) : (
-
-            <button
-              onClick={sendOtp}
-              className="w-full bg-blue-600 text-white py-3 rounded-lg"
-            >
-              Send OTP
-            </button>
-          )}
-
-          <button
-            onClick={() =>
-              setIsLogin(!isLogin)
-            }
-            className="w-full mt-4 text-blue-600"
-          >
-            {isLogin
-              ? 'Create New Account'
-              : 'Already have account? Login'}
-          </button>
-
-          {message && (
-            <p className="text-center mt-4 text-red-600">
-              {message}
-            </p>
-          )}
-
-        </div>
-
-      </div>
-    )
-  }
-
   return (
 
-    <div className="min-h-screen bg-gray-100 p-8">
+    <div className="min-h-screen bg-gray-100 p-4">
 
-      <div className="bg-white rounded-2xl shadow-lg p-6">
+      <div className="bg-white rounded-xl shadow-lg p-4">
 
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex justify-between items-center mb-4">
 
-          <h1 className="text-4xl font-bold">
-            Telecom Dashboard
+          <h1 className="text-2xl font-bold">
+            Datix Master
           </h1>
 
           <button
-            className="w-12 h-12 rounded-full bg-black text-white"
+            className="
+              bg-black
+              text-white
+              px-4
+              py-2
+              rounded-lg
+            "
           >
-            {loggedUser?.username
-              ?.charAt(0)
-              ?.toUpperCase() || 'U'}
+            Profile
           </button>
 
         </div>
 
-        <div className="mb-4 flex justify-start">
+        <div className="mb-4">
 
-          <div className="w-full max-w-xl">
+          <textarea
+            rows={4}
+            placeholder="Enter SIM numbers"
+            value={input}
+            onChange={(e) =>
+              setInput(
+                e.target.value
+              )
+            }
+            className="
+              w-full
+              max-w-lg
+              border
+              border-gray-300
+              rounded-lg
+              p-2
+              text-sm
+              resize-none
+            "
+          />
 
-            <textarea
-              rows={4}
-              placeholder="Enter SIM numbers"
-              value={input}
-              onChange={(e) =>
-                setInput(
-                  e.target.value
-                )
-              }
-              className="
-                w-full
-                border
-                border-gray-300
-                rounded-xl
-                p-3
-                text-sm
-                resize-none
-              "
-            />
-
-            <p className="text-xs text-gray-500 mt-2">
-              Maximum 1000 SIM numbers
-            </p>
-
-          </div>
+          <p className="text-xs text-gray-500 mt-1">
+            Maximum 1000 SIM numbers
+          </p>
 
         </div>
 
-        <div className="flex gap-4 flex-wrap mb-6 items-center">
+        <div className="flex flex-wrap gap-3 mb-4">
 
           <button
             onClick={searchBulk}
-            className="bg-black text-white px-6 py-3 rounded-lg"
+            className="
+              bg-black
+              text-white
+              px-4
+              py-2
+              rounded-lg
+              text-sm
+            "
           >
             Search
           </button>
 
           <button
             onClick={downloadCSV}
-            className="bg-green-600 text-white px-6 py-3 rounded-lg"
+            className="
+              bg-green-600
+              text-white
+              px-4
+              py-2
+              rounded-lg
+              text-sm
+            "
           >
             Download CSV
           </button>
 
           <button
             onClick={() =>
-              setData(originalData)
+              setData(
+                originalData
+              )
             }
-            className="bg-gray-500 text-white px-6 py-3 rounded-lg"
+            className="
+              bg-gray-500
+              text-white
+              px-4
+              py-2
+              rounded-lg
+              text-sm
+            "
           >
             Reset Filter
           </button>
@@ -782,8 +490,19 @@ export default function Home() {
                 e.target.value
               )
             }
-            className="border rounded-lg px-4 py-3"
+            className="
+              border
+              rounded-lg
+              px-3
+              py-2
+              text-sm
+            "
           >
+
+            <option value="all">
+              All Months
+            </option>
+
             <option value="6months">
               Last 6 Months
             </option>
@@ -793,37 +512,148 @@ export default function Home() {
             </option>
 
             <option value="custom">
-              Custom Range
+              Month Range
             </option>
+
           </select>
+
+          {filterType ===
+            'custom' && (
+            <>
+              <select
+                value={
+                  fromMonth
+                }
+                onChange={(
+                  e
+                ) =>
+                  setFromMonth(
+                    e.target
+                      .value
+                  )
+                }
+                className="
+                  border
+                  rounded-lg
+                  px-3
+                  py-2
+                  text-sm
+                "
+              >
+
+                <option value="">
+                  From Month
+                </option>
+
+                {allMonths.map(
+                  (
+                    month: any
+                  ) => (
+                    <option
+                      key={
+                        month
+                      }
+                      value={
+                        month
+                      }
+                    >
+                      {month}
+                    </option>
+                  )
+                )}
+
+              </select>
+
+              <select
+                value={
+                  toMonth
+                }
+                onChange={(
+                  e
+                ) =>
+                  setToMonth(
+                    e.target
+                      .value
+                  )
+                }
+                className="
+                  border
+                  rounded-lg
+                  px-3
+                  py-2
+                  text-sm
+                "
+              >
+
+                <option value="">
+                  To Month
+                </option>
+
+                {allMonths.map(
+                  (
+                    month: any
+                  ) => (
+                    <option
+                      key={
+                        month
+                      }
+                      value={
+                        month
+                      }
+                    >
+                      {month}
+                    </option>
+                  )
+                )}
+
+              </select>
+            </>
+          )}
 
         </div>
 
         {loading && (
-          <p className="mb-4">
+          <p className="mb-3 text-sm">
             Loading...
           </p>
         )}
 
-        <div className="overflow-auto rounded-xl border border-gray-300">
+        <div className="
+          overflow-auto
+          rounded-lg
+          border
+          border-gray-300
+          max-h-[650px]
+        ">
 
-          <table className="w-full border-collapse text-sm">
+          <table className="
+            w-full
+            border-collapse
+            text-xs
+          ">
 
-            <thead className="bg-gray-200 sticky top-0 z-10">
+            <thead className="
+              bg-gray-200
+              sticky
+              top-0
+              z-10
+            ">
 
               <tr>
 
                 {[
                   {
                     label:
-                      'SIM Number',
-                    key: 'sim_no',
+                      'SIM',
+                    key:
+                      'sim_no',
                   },
 
                   {
                     label:
-                      'Phone Number',
-                    key: 'msisdn',
+                      'MSISDN',
+                    key:
+                      'msisdn',
                   },
 
                   {
@@ -836,7 +666,8 @@ export default function Home() {
                   {
                     label:
                       'Plan',
-                    key: 'plan',
+                    key:
+                      'plan',
                   },
                 ].map(
                   (
@@ -847,12 +678,23 @@ export default function Home() {
                       key={
                         header.key
                       }
-                      className="border p-3 min-w-[200px]"
+                      className="
+                        border
+                        p-1
+                        min-w-[120px]
+                      "
                     >
 
-                      <div className="flex flex-col gap-2">
+                      <div className="
+                        flex
+                        flex-col
+                        gap-1
+                      ">
 
-                        <span className="font-semibold">
+                        <span className="
+                          font-semibold
+                          text-[11px]
+                        ">
                           {
                             header.label
                           }
@@ -862,9 +704,9 @@ export default function Home() {
                           className="
                             border
                             rounded
-                            px-2
+                            px-1
                             py-1
-                            text-xs
+                            text-[10px]
                           "
                           onChange={(
                             e
@@ -919,51 +761,66 @@ export default function Home() {
                   )
                 )}
 
-                <th className="border p-3">
-                  Min Data (MB)
+                <th className="border p-1">
+                  Min
                 </th>
 
-                <th className="border p-3">
-                  Max Data (MB)
+                <th className="border p-1">
+                  Max
                 </th>
 
-                <th className="border p-3">
-                  Total Data (MB)
+                <th className="border p-1">
+                  Total
                 </th>
 
-                <th className="border p-3">
-                  Avg Data (MB)
+                <th className="border p-1">
+                  Avg
                 </th>
 
-                <th className="border p-3">
-                  Data Consumed Months
+                <th className="border p-1">
+                  Used
                 </th>
 
-                <th className="border p-3">
-                  Zero Data conusmed Months
+                <th className="border p-1">
+                  Zero
                 </th>
 
                 {months.map(
-                  (month: any) => (
+                  (
+                    month: any
+                  ) => (
 
                     <th
-                      key={month}
-                      className="border p-3 min-w-[220px]"
+                      key={
+                        month
+                      }
+                      className="
+                        border
+                        p-1
+                        min-w-[140px]
+                      "
                     >
 
-                      <div className="flex flex-col gap-2">
+                      <div className="
+                        flex
+                        flex-col
+                        gap-1
+                      ">
 
-                        <span>
-                          {month} (MB)
+                        <span className="
+                          text-[11px]
+                          font-semibold
+                        ">
+                          {month}
                         </span>
 
                         <select
                           className="
                             border
                             rounded
-                            px-2
+                            px-1
                             py-1
-                            text-xs
+                            text-[10px]
                           "
                           onChange={(
                             e
@@ -1073,20 +930,20 @@ export default function Home() {
                           </option>
 
                           <option value="green">
-                            Highlighted
+                            Highlight
                           </option>
 
                         </select>
 
                         <input
                           type="number"
-                          placeholder="Filter value"
+                          placeholder="Value"
                           className="
                             border
                             rounded
-                            px-2
+                            px-1
                             py-1
-                            text-xs
+                            text-[10px]
                           "
                           onChange={(
                             e
@@ -1207,52 +1064,95 @@ export default function Home() {
 
                     <tr
                       key={index}
-                      className="hover:bg-gray-50"
+                      className="
+                        hover:bg-gray-50
+                      "
                     >
 
-                      <td className="border p-3">
+                      <td className="
+                        border
+                        p-1
+                        text-center
+                      ">
                         {row.sim_no}
                       </td>
 
-                      <td className="border p-3">
+                      <td className="
+                        border
+                        p-1
+                        text-center
+                      ">
                         {row.msisdn}
                       </td>
 
-                      <td className="border p-3">
+                      <td className="
+                        border
+                        p-1
+                        text-center
+                      ">
                         {
                           row.sim_status
                         }
                       </td>
 
-                      <td className="border p-3">
+                      <td className="
+                        border
+                        p-1
+                        text-center
+                      ">
                         {row.plan}
                       </td>
 
-                      <td className="border p-3 text-center">
+                      <td className="
+                        border
+                        p-1
+                        text-center
+                      ">
                         {minValue}
                       </td>
 
-                      <td className="border p-3 text-center">
+                      <td className="
+                        border
+                        p-1
+                        text-center
+                      ">
                         {maxValue}
                       </td>
 
-                      <td className="border p-3 text-center font-semibold">
+                      <td className="
+                        border
+                        p-1
+                        text-center
+                        font-semibold
+                      ">
                         {totalUsage}
                       </td>
 
-                      <td className="border p-3 text-center">
+                      <td className="
+                        border
+                        p-1
+                        text-center
+                      ">
                         {
                           averageValue
                         }
                       </td>
 
-                      <td className="border p-3 text-center">
+                      <td className="
+                        border
+                        p-1
+                        text-center
+                      ">
                         {
                           consumedMonths
                         }
                       </td>
 
-                      <td className="border p-3 text-center">
+                      <td className="
+                        border
+                        p-1
+                        text-center
+                      ">
                         {zeroMonths}
                       </td>
 
@@ -1276,8 +1176,9 @@ export default function Home() {
                               }
                               className={`
                                 border
-                                p-3
+                                p-1
                                 text-center
+                                text-[11px]
                                 ${
                                   value ===
                                   maxValue
