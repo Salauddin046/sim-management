@@ -26,19 +26,44 @@ export async function POST(req) {
       100000 + Math.random() * 900000
     ).toString()
 
+    const existing = await pool.query(
+      `
+      SELECT *
+      FROM users
+      WHERE email = $1
+      OR username = $2
+      `,
+      [email, username]
+    )
+
+    if (existing.rows.length > 0) {
+      return Response.json(
+        {
+          error:
+            'User already exists',
+        },
+        {
+          status: 400,
+        }
+      )
+    }
+
     await pool.query(
       `
-      UPDATE users
-      SET otp = $1
-      WHERE username = $2
+      INSERT INTO users (
+        email,
+        username,
+        otp
+      )
+      VALUES ($1, $2, $3)
       `,
-      [otp, username]
+      [email, username, otp]
     )
 
     await transporter.sendMail({
       from: process.env.EMAIL_USER,
       to: email,
-      subject: 'Email Verification OTP',
+      subject: 'OTP Verification',
       html: `
         <h2>Your OTP</h2>
 
@@ -48,7 +73,9 @@ export async function POST(req) {
 
     return Response.json({
       success: true,
+      message: 'OTP sent',
     })
+
   } catch (error) {
     console.error(error)
 
