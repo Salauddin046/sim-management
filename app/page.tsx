@@ -531,12 +531,12 @@ export default function Home() {
                   <SortableTh label="Phone Number" sortKey="msisdn" current={sort} onClick={toggleSort} indicator={sortIndicator('msisdn')} />
                   <SortableTh label="Status" sortKey="sim_status" current={sort} onClick={toggleSort} indicator={sortIndicator('sim_status')} />
                   <SortableTh label="Plan" sortKey="plan" current={sort} onClick={toggleSort} indicator={sortIndicator('plan')} />
-                  <th className="border p-1">Min (MB)</th>
-                  <th className="border p-1">Max (MB)</th>
-                  <th className="border p-1">Total (MB)</th>
-                  <th className="border p-1">Avg (MB)</th>
-                  <th className="border p-1">Used Months</th>
-                  <th className="border p-1">Zero Months</th>
+                  <th className="border p-1">Min Data (MB)</th>
+                  <th className="border p-1">Max Data (MB)</th>
+                  <th className="border p-1">Total Data (MB)</th>
+                  <th className="border p-1">Avg Data (MB)</th>
+                  <th className="border p-1">Data Used Months</th>
+                  <th className="border p-1">Zero Data Months</th>
                   <th className="border p-1">Missing</th>
                   {visibleMonths.map((m) => (
                     <th
