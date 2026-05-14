@@ -12,15 +12,12 @@ export default function Home() {
     useState('')
 
   const [data, setData] =
-    useState<any[]>([])
+    useState<any[]>(([]))
 
   const [originalData, setOriginalData] =
     useState<any[]>([])
 
   const [loading, setLoading] =
-    useState(false)
-
-  const [profileOpen, setProfileOpen] =
     useState(false)
 
   const [loggedUser, setLoggedUser] =
@@ -113,6 +110,15 @@ export default function Home() {
 
   }, [])
 
+  const logout = () => {
+
+    localStorage.clear()
+
+    sessionStorage.clear()
+
+    window.location.reload()
+  }
+
   const searchBulk = async () => {
 
     const numbers = input
@@ -155,38 +161,62 @@ export default function Home() {
 
       const grouped: any = {}
 
-      result.forEach(
-        (row: any) => {
+      for (const row of result) {
 
-          const key =
-            row.sim_no
+        const key =
+          row.sim_no
 
-          if (
-            !grouped[key]
-          ) {
+        if (
+          !grouped[key]
+        ) {
 
-            grouped[key] = {
-              sim_no:
-                row.sim_no,
+          grouped[key] = {
 
-              msisdn:
-                row.msisdn,
+            sim_no:
+              row.sim_no,
 
-              sim_status:
-                row.sim_status,
+            msisdn:
+              row.msisdn,
 
-              plan:
-                row.plan,
-            }
+            sim_status:
+              'Loading...',
+
+            plan:
+              'Loading...',
           }
 
-          grouped[key][
-            row.usage_month
-          ] = Number(
-            row.used_data_mb || 0
-          )
+          try {
+
+            const simResponse =
+              await fetch(
+                `/api/sim-details?sim=${row.sim_no}`
+              )
+
+            const simData =
+              await simResponse.json()
+
+            grouped[key].sim_status =
+              simData?.status || '-'
+
+            grouped[key].plan =
+              simData?.plan || '-'
+
+          } catch {
+
+            grouped[key].sim_status =
+              '-'
+
+            grouped[key].plan =
+              '-'
+          }
         }
-      )
+
+        grouped[key][
+          row.usage_month
+        ] = Number(
+          row.used_data_mb || 0
+        )
+      }
 
       const finalData =
         Object.values(grouped)
@@ -195,9 +225,9 @@ export default function Home() {
 
       setOriginalData(finalData)
 
-    } catch (err) {
+    } catch (error) {
 
-      console.error(err)
+      console.error(error)
 
       alert(
         'Search failed'
@@ -377,15 +407,6 @@ export default function Home() {
     setData(filtered)
   }
 
-  const logout = () => {
-
-    localStorage.clear()
-
-    sessionStorage.clear()
-
-    window.location.reload()
-  }
-
   const downloadCSV = () => {
 
     const headers = [
@@ -521,59 +542,60 @@ export default function Home() {
 
   return (
 
-    <div className="min-h-screen bg-gray-100 p-4">
+    <div className="
+      min-h-screen
+      bg-gray-100
+      p-4
+    ">
 
-      <div className="bg-white rounded-xl shadow-lg p-4">
+      <div className="
+        bg-white
+        rounded-xl
+        shadow-lg
+        p-4
+      ">
 
-        <div className="flex justify-between items-center mb-4">
+        <div className="
+          flex
+          justify-between
+          items-center
+          mb-4
+        ">
 
-          <h1 className="text-2xl font-bold">
-            Telecom Dashboard
+          <h1 className="
+            text-2xl
+            font-bold
+          ">
+            Datix Dashboard
           </h1>
 
-          <div className="relative">
+          <div className="
+            flex
+            items-center
+            gap-3
+          ">
+
+            <div className="
+              text-sm
+              font-medium
+            ">
+              {
+                loggedUser?.username ||
+                'User'
+              }
+            </div>
 
             <button
-              onClick={() =>
-                setProfileOpen(
-                  !profileOpen
-                )
-              }
+              onClick={logout}
               className="
-                bg-black
+                bg-red-600
                 text-white
-                px-3
+                px-4
                 py-2
                 rounded-lg
-                flex
-                items-center
-                gap-2
               "
             >
-
-              <div className="
-                w-7
-                h-7
-                rounded-full
-                bg-white
-                text-black
-                flex
-                items-center
-                justify-center
-                font-bold
-              ">
-                {loggedUser?.username
-                  ?.charAt(0)
-                  ?.toUpperCase() || 'U'}
-              </div>
-
-              <span>
-                {
-                  loggedUser?.username ||
-                  'User'
-                }
-              </span>
-
+              Logout
             </button>
 
           </div>
@@ -588,10 +610,12 @@ export default function Home() {
               e.target.value
             )
           }
-          placeholder="Enter SIM numbers"
+          placeholder="
+Enter SIM numbers
+One per line
+          "
           className="
             w-full
-            max-w-lg
             border
             rounded-lg
             p-2
@@ -708,10 +732,7 @@ export default function Home() {
                 </option>
 
                 {allMonths.map(
-                  (
-                    month
-                  ) => (
-
+                  (month) => (
                     <option
                       key={month}
                       value={month}
@@ -743,10 +764,7 @@ export default function Home() {
                 </option>
 
                 {allMonths.map(
-                  (
-                    month
-                  ) => (
-
+                  (month) => (
                     <option
                       key={month}
                       value={month}
@@ -766,7 +784,7 @@ export default function Home() {
           overflow-auto
           border
           rounded-lg
-          max-h-[650px]
+          max-h-[700px]
         ">
 
           <table className="
@@ -776,9 +794,9 @@ export default function Home() {
           ">
 
             <thead className="
-              bg-gray-200
               sticky
               top-0
+              bg-gray-200
               z-10
             ">
 
@@ -791,7 +809,7 @@ export default function Home() {
                   },
 
                   {
-                    label: 'MSISDN',
+                    label: 'Phone Number',
                     key: 'msisdn',
                   },
 
@@ -810,9 +828,7 @@ export default function Home() {
                   ) => (
 
                     <th
-                      key={
-                        header.key
-                      }
+                      key={header.key}
                       className="
                         border
                         p-1
@@ -827,9 +843,7 @@ export default function Home() {
                       ">
 
                         <span>
-                          {
-                            header.label
-                          }
+                          {header.label}
                         </span>
 
                         <select
@@ -905,27 +919,27 @@ export default function Home() {
                 )}
 
                 <th className="border p-1">
-                  Min
+                  Min Data (MB)
                 </th>
 
                 <th className="border p-1">
-                  Max
+                  Max Data (MB)
                 </th>
 
                 <th className="border p-1">
-                  Total
+                  Total Data (MB)
                 </th>
 
                 <th className="border p-1">
-                  Avg
+                  Avg Data (MB)
                 </th>
 
                 <th className="border p-1">
-                  Used
+                  Data USed Months
                 </th>
 
                 <th className="border p-1">
-                  Zero
+                  Zero Data used Months
                 </th>
 
                 {months.map(
@@ -936,7 +950,7 @@ export default function Home() {
                       className="
                         border
                         p-1
-                        min-w-[80px]
+                        min-w-[85px]
                         text-[10px]
                       "
                     >
@@ -1119,24 +1133,37 @@ export default function Home() {
                       </td>
 
                       {months.map(
-                        (month) => (
+                        (month) => {
 
-                          <td
-                            key={month}
-                            className="
-                              border
-                              p-1
-                              text-center
-                              text-[10px]
-                            "
-                          >
-                            {
+                          const value =
+                            Number(
                               row[
                                 month
                               ] || 0
-                            }
-                          </td>
-                        )
+                            )
+
+                          return (
+
+                            <td
+                              key={month}
+                              className={`
+                                border
+                                p-1
+                                text-center
+                                text-[10px]
+                                ${
+                                  value ===
+                                    max &&
+                                  value !== 0
+                                    ? 'bg-green-300 font-bold'
+                                    : ''
+                                }
+                              `}
+                            >
+                              {value}
+                            </td>
+                          )
+                        }
                       )}
 
                     </tr>
