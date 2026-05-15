@@ -34,6 +34,16 @@ export async function POST(req) {
     global.otpStore[email] =
       otp
 
+    console.log(
+      'EMAIL_USER:',
+      process.env.EMAIL_USER
+    )
+
+    console.log(
+      'EMAIL_PASS EXISTS:',
+      !!process.env.EMAIL_PASS
+    )
+
     const transporter =
       nodemailer.createTransport({
 
@@ -57,7 +67,7 @@ export async function POST(req) {
       to: email,
 
       subject:
-        'Your OTP Code',
+        'SIM Management OTP',
 
       html: `
 
@@ -67,15 +77,16 @@ export async function POST(req) {
         ">
 
           <h2>
-            SIM Management OTP
+            SIM Management System
           </h2>
 
           <p>
-            Your OTP is:
+            Your OTP Code:
           </p>
 
           <h1 style="
-            letter-spacing: 5px;
+            letter-spacing: 6px;
+            color: #7c3aed;
           ">
             ${otp}
           </h1>
@@ -88,6 +99,10 @@ export async function POST(req) {
       `,
     })
 
+    console.log(
+      'OTP MAIL SENT'
+    )
+
     return Response.json({
 
       success: true,
@@ -98,13 +113,17 @@ export async function POST(req) {
 
   } catch (error) {
 
-    console.log(error)
+    console.log(
+      'SEND OTP ERROR:',
+      error
+    )
 
     return Response.json({
 
       success: false,
 
       message:
+        error.message ||
         'Failed to send OTP',
     })
   }
