@@ -1,72 +1,60 @@
-export async function GET() {
+'use client'
 
-  return Response.json({
-    success: true,
-    message:
-      'Forgot Password API Working',
-  })
-}
+export default function ForgotPasswordPage() {
 
-export async function POST(
-  request
-) {
+  return (
 
-  try {
+    <div className="
+      min-h-screen
+      flex
+      items-center
+      justify-center
+      bg-gray-100
+    ">
 
-    const body =
-      await request.json()
+      <div className="
+        bg-white
+        p-8
+        rounded-xl
+        shadow-lg
+        w-full
+        max-w-md
+      ">
 
-    const {
-      email
-    } = body
+        <h1 className="
+          text-2xl
+          font-bold
+          mb-4
+        ">
+          Forgot Password
+        </h1>
 
-    if (!email) {
+        <input
+          type="email"
+          placeholder="Enter Email"
+          className="
+            w-full
+            border
+            rounded-lg
+            p-3
+            mb-4
+          "
+        />
 
-      return Response.json(
-        {
-          success: false,
-          message:
-            'Email required',
-        },
-        {
-          status: 400,
-        }
-      )
-    }
+        <button
+          className="
+            w-full
+            bg-black
+            text-white
+            p-3
+            rounded-lg
+          "
+        >
+          Reset Password
+        </button>
 
-    const otp =
-      Math.floor(
-        100000 +
-        Math.random() *
-          900000
-      ).toString()
+      </div>
 
-    console.log(
-      'Reset OTP:',
-      otp
-    )
-
-    return Response.json({
-
-      success: true,
-
-      message:
-        'Reset OTP sent successfully',
-
-      otp,
-    })
-
-  } catch (error) {
-
-    return Response.json(
-      {
-        success: false,
-        message:
-          'Server error',
-      },
-      {
-        status: 500,
-      }
-    )
-  }
+    </div>
+  )
 }
