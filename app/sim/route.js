@@ -1,47 +1,97 @@
-import { Pool } from 'pg'
+export async function GET() {
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  max: 20,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 5000,
-})
+  return Response.json({
 
-export async function POST(req) {
+    success: true,
+
+    message:
+      'SIM API Working',
+  })
+}
+
+export async function POST(
+  request
+) {
+
   try {
-    const body = await req.json()
 
-    const numbers = body.numbers || []
+    const body =
+      await request.json()
 
-    if (!numbers.length) {
-      return Response.json([])
+    const {
+      numbers
+    } = body
+
+    if (!numbers) {
+
+      return Response.json(
+        {
+          success: false,
+          message:
+            'Numbers required',
+        },
+        {
+          status: 400,
+        }
+      )
     }
 
-    const result = await pool.query(
-      `
-      SELECT
-        usage_month,
-        msisdn,
-        sim_no,
-        sim_status,
-        plan,
-        used_data_mb
-      FROM sim_data2
-      WHERE
-        msisdn = ANY($1)
-        OR sim_no = ANY($1)
-      ORDER BY usage_month DESC
-      `,
-      [numbers]
+    const sampleData = [
+
+      {
+        sim_no:
+          '89914509006120256846',
+
+        msisdn:
+          '9876543210',
+
+        usage_month:
+          '2026-01',
+
+        used_data_mb:
+          120.45,
+      },
+
+      {
+        sim_no:
+          '89914509006120256846',
+
+        msisdn:
+          '9876543210',
+
+        usage_month:
+          '2026-02',
+
+        used_data_mb:
+          98.22,
+      },
+
+      {
+        sim_no:
+          '89914509006120256846',
+
+        msisdn:
+          '9876543210',
+
+        usage_month:
+          '2026-03',
+
+        used_data_mb:
+          250.67,
+      },
+    ]
+
+    return Response.json(
+      sampleData
     )
 
-    return Response.json(result.rows)
   } catch (error) {
-    console.error(error)
 
     return Response.json(
       {
-        error: 'Database error',
+        success: false,
+        message:
+          'Server error',
       },
       {
         status: 500,
