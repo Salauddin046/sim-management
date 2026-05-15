@@ -1,79 +1,152 @@
-export async function GET() {
+import { Pool } from 'pg'
+import bcrypt from 'bcryptjs'
 
-  return Response.json({
+const pool =
+  new Pool({
 
-    success: true,
+    connectionString:
+      process.env.DATABASE_URL,
 
-    message:
-      'Signup API Working',
+    ssl: {
+      rejectUnauthorized: false,
+    },
   })
-}
 
-export async function POST(
-  request
-) {
+export async function POST(req) {
 
   try {
 
     const body =
-      await request.json()
+      await req.json()
 
     const {
       name,
       email,
       password,
+      otp,
     } = body
 
     if (
       !name ||
       !email ||
-      !password
+      !password ||
+      !otp
     ) {
 
-      return Response.json(
-        {
-          success: false,
-          message:
-            'All fields required',
-        },
-        {
-          status: 400,
-        }
+      return Response.json({
+
+        success: false,
+
+        message:
+          'All fields are required',
+      })
+    }
+
+    global.otpStore =
+      global.otpStore || {}
+
+    const savedOtp =
+      global.otpStore[email]
+
+    if (
+      !savedOtp
+    ) {
+
+      return Response.json({
+
+        success: false,
+
+        message:
+          'OTP expired',
+      })
+    }
+
+    if (
+      savedOtp !== otp
+    ) {
+
+      return Response.json({
+
+        success: false,
+
+        message:
+          'Invalid OTP',
+      })
+    }
+
+    const existingUser =
+      await pool.query(
+
+        `
+        SELECT * FROM users
+        WHERE email = $1
+        `,
+        [email]
       )
+
+    if (
+      existingUser.rows
+        .length > 0
+    ) {
+
+      return Response.json({
+
+        success: false,
+
+        message:
+          'User already exists',
+      })
     }
 
-    const user = {
+    const hashedPassword =
+      await bcrypt.hash(
+        password,
+        10
+      )
 
-      name,
+    await pool.query(
 
-      email,
-    }
+      `
+      INSERT INTO users
+      (
+        name,
+        email,
+        password
+      )
+      VALUES
+      (
+        $1,
+        $2,
+        $3
+      )
+      `,
+      [
+        name,
+        email,
+        hashedPassword,
+      ]
+    )
+
+    delete global.otpStore[email]
 
     return Response.json({
 
       success: true,
 
       message:
-        'Account created successfully',
-
-      user,
+        'Signup successful',
     })
 
   } catch (error) {
 
-    console.error(
-      error
-    )
+    console.log(error)
 
-    return Response.json(
-      {
-        success: false,
-        message:
-          'Server error',
-      },
-      {
-        status: 500,
-      }
-    )
+    return Response.json({
+
+      success: false,
+
+      message:
+        'Signup failed',
+    })
   }
 }

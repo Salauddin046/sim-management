@@ -1,40 +1,63 @@
-export async function GET() {
-
-  return Response.json({
-
-    success: true,
-
-    message:
-      'Verify OTP API Working',
-  })
-}
-
-export async function POST(
-  request
-) {
+export async function POST(req) {
 
   try {
 
     const body =
-      await request.json()
+      await req.json()
 
-    const {
-      otp
-    } = body
+    const email =
+      body.email
 
-    if (!otp) {
+    const otp =
+      body.otp
 
-      return Response.json(
-        {
-          success: false,
-          message:
-            'OTP required',
-        },
-        {
-          status: 400,
-        }
-      )
+    if (
+      !email ||
+      !otp
+    ) {
+
+      return Response.json({
+
+        success: false,
+
+        message:
+          'Email and OTP required',
+      })
     }
+
+    global.otpStore =
+      global.otpStore || {}
+
+    const savedOtp =
+      global.otpStore[email]
+
+    if (
+      !savedOtp
+    ) {
+
+      return Response.json({
+
+        success: false,
+
+        message:
+          'OTP expired or not found',
+      })
+    }
+
+    if (
+      savedOtp !== otp
+    ) {
+
+      return Response.json({
+
+        success: false,
+
+        message:
+          'Invalid OTP',
+      })
+    }
+
+    delete global.otpStore[email]
 
     return Response.json({
 
@@ -46,19 +69,14 @@ export async function POST(
 
   } catch (error) {
 
-    console.error(
-      error
-    )
+    console.log(error)
 
-    return Response.json(
-      {
-        success: false,
-        message:
-          'Server error',
-      },
-      {
-        status: 500,
-      }
-    )
+    return Response.json({
+
+      success: false,
+
+      message:
+        'OTP verification failed',
+    })
   }
 }
