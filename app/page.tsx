@@ -12,16 +12,16 @@ export default function Home() {
     useState('')
 
   const [data, setData] =
-    useState<any[]>(([]))
+    useState([])
 
   const [originalData, setOriginalData] =
-    useState<any[]>([])
+    useState([])
 
   const [loading, setLoading] =
     useState(false)
 
   const [loggedUser, setLoggedUser] =
-    useState<any>(null)
+    useState(null)
 
   const [filterType, setFilterType] =
     useState('all')
@@ -46,7 +46,7 @@ export default function Home() {
       )
     }
 
-    let timeout: any
+    let timeout
 
     const logoutUser = () => {
 
@@ -123,7 +123,9 @@ export default function Home() {
 
     const numbers = input
       .split('\n')
-      .map((v) => v.trim())
+      .map(
+        (v) => v.trim()
+      )
       .filter(Boolean)
 
     if (!numbers.length) {
@@ -159,9 +161,11 @@ export default function Home() {
       const result =
         await response.json()
 
-      const grouped: any = {}
+      const grouped = {}
 
-      for (const row of result) {
+      for (
+        const row of result
+      ) {
 
         const key =
           row.sim_no
@@ -179,36 +183,43 @@ export default function Home() {
               row.msisdn,
 
             sim_status:
-              'Loading...',
+              row.sim_status || '-',
 
             plan:
-              'Loading...',
+              row.plan || '-',
+
+            latestMonth:
+              row.usage_month,
           }
+        }
 
-          try {
+        const currentMonth =
+          new Date(
+            row.usage_month
+          )
 
-            const simResponse =
-              await fetch(
-                `/api/sim-details?sim=${row.sim_no}`
-              )
+        const savedMonth =
+          new Date(
+            grouped[key]
+              .latestMonth
+          )
 
-            const simData =
-              await simResponse.json()
+        if (
+          currentMonth >
+          savedMonth
+        ) {
 
-            grouped[key].sim_status =
-              simData?.status || '-'
+          grouped[key]
+            .sim_status =
+            row.sim_status || '-'
 
-            grouped[key].plan =
-              simData?.plan || '-'
+          grouped[key]
+            .plan =
+            row.plan || '-'
 
-          } catch {
-
-            grouped[key].sim_status =
-              '-'
-
-            grouped[key].plan =
-              '-'
-          }
+          grouped[key]
+            .latestMonth =
+            row.usage_month
         }
 
         grouped[key][
@@ -219,15 +230,21 @@ export default function Home() {
       }
 
       const finalData =
-        Object.values(grouped)
+        Object.values(
+          grouped
+        )
 
       setData(finalData)
 
-      setOriginalData(finalData)
+      setOriginalData(
+        finalData
+      )
 
     } catch (error) {
 
-      console.error(error)
+      console.error(
+        error
+      )
 
       alert(
         'Search failed'
@@ -245,7 +262,7 @@ export default function Home() {
       return Array.from(
         new Set(
           data.flatMap(
-            (row: any) =>
+            (row) =>
               Object.keys(
                 row
               ).filter(
@@ -255,14 +272,15 @@ export default function Home() {
                     'msisdn',
                     'sim_status',
                     'plan',
+                    'latestMonth',
                   ].includes(key)
               )
           )
         )
       ).sort(
         (
-          a: any,
-          b: any
+          a,
+          b
         ) =>
           new Date(a)
             .getTime() -
@@ -304,7 +322,7 @@ export default function Home() {
 
         return allMonths.filter(
           (
-            month: any
+            month
           ) =>
             month >=
               fromMonth &&
@@ -323,8 +341,8 @@ export default function Home() {
     ])
 
   const sortData = (
-    key: string,
-    direction: string,
+    key,
+    direction,
     isMonth = false
   ) => {
 
@@ -333,8 +351,8 @@ export default function Home() {
 
     sorted.sort(
       (
-        a: any,
-        b: any
+        a,
+        b
       ) => {
 
         const valueA =
@@ -380,20 +398,22 @@ export default function Home() {
   }
 
   const filterByValue = (
-    key: string,
-    value: string
+    key,
+    value
   ) => {
 
     if (!value) {
 
-      setData(originalData)
+      setData(
+        originalData
+      )
 
       return
     }
 
     const filtered =
       originalData.filter(
-        (row: any) =>
+        (row) =>
           (
             row[key] || ''
           )
@@ -410,16 +430,27 @@ export default function Home() {
   const downloadCSV = () => {
 
     const headers = [
+
       'SIM Number',
+
       'MSISDN',
+
       'Status',
+
       'Plan',
+
       'Min',
+
       'Max',
+
       'Total',
+
       'Avg',
+
       'Used',
+
       'Zero',
+
       ...months.map(
         (month) =>
           `${month} (MB)`
@@ -428,7 +459,7 @@ export default function Home() {
 
     const rows =
       data.map(
-        (row: any) => {
+        (row) => {
 
           const usageValues =
             months.map(
@@ -482,16 +513,27 @@ export default function Home() {
             ).length
 
           return [
+
             row.sim_no,
+
             row.msisdn,
+
             row.sim_status,
+
             row.plan,
+
             min,
+
             max,
+
             total.toFixed(2),
+
             avg,
+
             used,
+
             zero,
+
             ...months.map(
               (
                 month
@@ -507,6 +549,7 @@ export default function Home() {
     const csv =
       [
         headers.join(','),
+
         ...rows.map(
           (row) =>
             row.join(',')
@@ -566,7 +609,7 @@ export default function Home() {
             text-2xl
             font-bold
           ">
-            Datix Dashboard
+            Telecom Dashboard
           </h1>
 
           <div className="
@@ -580,13 +623,16 @@ export default function Home() {
               font-medium
             ">
               {
-                loggedUser?.username ||
+                loggedUser
+                  ?.username ||
                 'User'
               }
             </div>
 
             <button
-              onClick={logout}
+              onClick={
+                logout
+              }
               className="
                 bg-red-600
                 text-white
@@ -632,7 +678,9 @@ One per line
         ">
 
           <button
-            onClick={searchBulk}
+            onClick={
+              searchBulk
+            }
             className="
               bg-black
               text-white
@@ -641,13 +689,17 @@ One per line
               rounded-lg
             "
           >
-            {loading
-              ? 'Loading...'
-              : 'Search'}
+            {
+              loading
+                ? 'Loading...'
+                : 'Search'
+            }
           </button>
 
           <button
-            onClick={downloadCSV}
+            onClick={
+              downloadCSV
+            }
             className="
               bg-green-600
               text-white
@@ -677,7 +729,9 @@ One per line
           </button>
 
           <select
-            value={filterType}
+            value={
+              filterType
+            }
             onChange={(e) =>
               setFilterType(
                 e.target.value
@@ -709,74 +763,102 @@ One per line
 
           </select>
 
-          {filterType ===
-            'custom' && (
-            <>
-              <select
-                value={fromMonth}
-                onChange={(e) =>
-                  setFromMonth(
-                    e.target.value
-                  )
-                }
-                className="
-                  border
-                  rounded-lg
-                  px-3
-                  py-2
-                "
-              >
+          {
+            filterType ===
+              'custom' && (
+              <>
+                <select
+                  value={
+                    fromMonth
+                  }
+                  onChange={(e) =>
+                    setFromMonth(
+                      e.target
+                        .value
+                    )
+                  }
+                  className="
+                    border
+                    rounded-lg
+                    px-3
+                    py-2
+                  "
+                >
 
-                <option value="">
-                  From Month
-                </option>
+                  <option value="">
+                    From Month
+                  </option>
 
-                {allMonths.map(
-                  (month) => (
-                    <option
-                      key={month}
-                      value={month}
-                    >
-                      {month}
-                    </option>
-                  )
-                )}
+                  {
+                    allMonths.map(
+                      (
+                        month
+                      ) => (
+                        <option
+                          key={
+                            month
+                          }
+                          value={
+                            month
+                          }
+                        >
+                          {
+                            month
+                          }
+                        </option>
+                      )
+                    )
+                  }
 
-              </select>
+                </select>
 
-              <select
-                value={toMonth}
-                onChange={(e) =>
-                  setToMonth(
-                    e.target.value
-                  )
-                }
-                className="
-                  border
-                  rounded-lg
-                  px-3
-                  py-2
-                "
-              >
+                <select
+                  value={
+                    toMonth
+                  }
+                  onChange={(e) =>
+                    setToMonth(
+                      e.target
+                        .value
+                    )
+                  }
+                  className="
+                    border
+                    rounded-lg
+                    px-3
+                    py-2
+                  "
+                >
 
-                <option value="">
-                  To Month
-                </option>
+                  <option value="">
+                    To Month
+                  </option>
 
-                {allMonths.map(
-                  (month) => (
-                    <option
-                      key={month}
-                      value={month}
-                    >
-                      {month}
-                    </option>
-                  )
-                )}
+                  {
+                    allMonths.map(
+                      (
+                        month
+                      ) => (
+                        <option
+                          key={
+                            month
+                          }
+                          value={
+                            month
+                          }
+                        >
+                          {
+                            month
+                          }
+                        </option>
+                      )
+                    )
+                  }
 
-              </select>
-            </>
-          )}
+                </select>
+              </>
+            )
+          }
 
         </div>
 
@@ -802,223 +884,250 @@ One per line
 
               <tr>
 
-                {[
-                  {
-                    label: 'SIM',
-                    key: 'sim_no',
-                  },
+                {
+                  [
+                    {
+                      label:
+                        'SIM',
+                      key:
+                        'sim_no',
+                    },
 
-                  {
-                    label: 'Phone Number',
-                    key: 'msisdn',
-                  },
+                    {
+                      label:
+                        'MSISDN',
+                      key:
+                        'msisdn',
+                    },
 
-                  {
-                    label: 'Status',
-                    key: 'sim_status',
-                  },
+                    {
+                      label:
+                        'Status',
+                      key:
+                        'sim_status',
+                    },
 
-                  {
-                    label: 'Plan',
-                    key: 'plan',
-                  },
-                ].map(
-                  (
-                    header: any
-                  ) => (
+                    {
+                      label:
+                        'Plan',
+                      key:
+                        'plan',
+                    },
+                  ].map(
+                    (
+                      header
+                    ) => (
 
-                    <th
-                      key={header.key}
-                      className="
-                        border
-                        p-1
-                        min-w-[150px]
-                      "
-                    >
+                      <th
+                        key={
+                          header.key
+                        }
+                        className="
+                          border
+                          p-1
+                          min-w-[150px]
+                        "
+                      >
 
-                      <div className="
-                        flex
-                        flex-col
-                        gap-1
-                      ">
+                        <div className="
+                          flex
+                          flex-col
+                          gap-1
+                        ">
 
-                        <span>
-                          {header.label}
-                        </span>
-
-                        <select
-                          className="
-                            border
-                            rounded
-                            text-[10px]
-                          "
-                          onChange={(e) => {
-
-                            const value =
-                              e.target.value
-
-                            if (
-                              value ===
-                              'reset'
-                            ) {
-
-                              setData(
-                                originalData
-                              )
-
-                              return
+                          <span>
+                            {
+                              header.label
                             }
+                          </span>
 
-                            sortData(
-                              header.key,
-                              value
-                            )
-                          }}
-                        >
+                          <select
+                            className="
+                              border
+                              rounded
+                              text-[10px]
+                            "
+                            onChange={(e) => {
 
-                          <option value="">
-                            Sort
-                          </option>
+                              const value =
+                                e
+                                  .target
+                                  .value
 
-                          <option value="asc">
-                            A-Z
-                          </option>
+                              if (
+                                value ===
+                                'reset'
+                              ) {
 
-                          <option value="desc">
-                            Z-A
-                          </option>
+                                setData(
+                                  originalData
+                                )
 
-                          <option value="reset">
-                            Reset
-                          </option>
+                                return
+                              }
 
-                        </select>
-
-                        <input
-                          type="text"
-                          placeholder="Search"
-                          className="
-                            border
-                            rounded
-                            px-1
-                            py-1
-                            text-[10px]
-                          "
-                          onChange={(e) =>
-                            filterByValue(
-                              header.key,
-                              e.target.value
-                            )
-                          }
-                        />
-
-                      </div>
-
-                    </th>
-                  )
-                )}
-
-                <th className="border p-1">
-                  Min Data (MB)
-                </th>
-
-                <th className="border p-1">
-                  Max Data (MB)
-                </th>
-
-                <th className="border p-1">
-                  Total Data (MB)
-                </th>
-
-                <th className="border p-1">
-                  Avg Data (MB)
-                </th>
-
-                <th className="border p-1">
-                  Data USed Months
-                </th>
-
-                <th className="border p-1">
-                  Zero Data used Months
-                </th>
-
-                {months.map(
-                  (month) => (
-
-                    <th
-                      key={month}
-                      className="
-                        border
-                        p-1
-                        min-w-[85px]
-                        text-[10px]
-                      "
-                    >
-
-                      <div className="
-                        flex
-                        flex-col
-                        gap-1
-                      ">
-
-                        <span>
-                          {month} (MB)
-                        </span>
-
-                        <select
-                          className="
-                            border
-                            rounded
-                            text-[10px]
-                          "
-                          onChange={(e) => {
-
-                            const value =
-                              e.target.value
-
-                            if (
-                              value ===
-                              'reset'
-                            ) {
-
-                              setData(
-                                originalData
+                              sortData(
+                                header.key,
+                                value
                               )
+                            }}
+                          >
 
-                              return
+                            <option value="">
+                              Sort
+                            </option>
+
+                            <option value="asc">
+                              A-Z
+                            </option>
+
+                            <option value="desc">
+                              Z-A
+                            </option>
+
+                            <option value="reset">
+                              Reset
+                            </option>
+
+                          </select>
+
+                          <input
+                            type="text"
+                            placeholder="Search"
+                            className="
+                              border
+                              rounded
+                              px-1
+                              py-1
+                              text-[10px]
+                            "
+                            onChange={(e) =>
+                              filterByValue(
+                                header.key,
+                                e.target
+                                  .value
+                              )
                             }
+                          />
 
-                            sortData(
-                              month,
-                              value,
-                              true
-                            )
-                          }}
-                        >
+                        </div>
 
-                          <option value="">
-                            Sort
-                          </option>
-
-                          <option value="asc">
-                            Low-High
-                          </option>
-
-                          <option value="desc">
-                            High-Low
-                          </option>
-
-                          <option value="reset">
-                            Reset
-                          </option>
-
-                        </select>
-
-                      </div>
-
-                    </th>
+                      </th>
+                    )
                   )
-                )}
+                }
+
+                <th className="border p-1">
+                  Min
+                </th>
+
+                <th className="border p-1">
+                  Max
+                </th>
+
+                <th className="border p-1">
+                  Total
+                </th>
+
+                <th className="border p-1">
+                  Avg
+                </th>
+
+                <th className="border p-1">
+                  Used
+                </th>
+
+                <th className="border p-1">
+                  Zero
+                </th>
+
+                {
+                  months.map(
+                    (
+                      month
+                    ) => (
+
+                      <th
+                        key={
+                          month
+                        }
+                        className="
+                          border
+                          p-1
+                          min-w-[85px]
+                          text-[10px]
+                        "
+                      >
+
+                        <div className="
+                          flex
+                          flex-col
+                          gap-1
+                        ">
+
+                          <span>
+                            {
+                              month
+                            } (MB)
+                          </span>
+
+                          <select
+                            className="
+                              border
+                              rounded
+                              text-[10px]
+                            "
+                            onChange={(e) => {
+
+                              const value =
+                                e
+                                  .target
+                                  .value
+
+                              if (
+                                value ===
+                                'reset'
+                              ) {
+
+                                setData(
+                                  originalData
+                                )
+
+                                return
+                              }
+
+                              sortData(
+                                month,
+                                value,
+                                true
+                              )
+                            }}
+                          >
+
+                            <option value="">
+                              Sort
+                            </option>
+
+                            <option value="asc">
+                              Low-High
+                            </option>
+
+                            <option value="desc">
+                              High-Low
+                            </option>
+
+                            <option value="reset">
+                              Reset
+                            </option>
+
+                          </select>
+
+                        </div>
+
+                      </th>
+                    )
+                  )
+                }
 
               </tr>
 
@@ -1026,150 +1135,177 @@ One per line
 
             <tbody>
 
-              {data.map(
-                (
-                  row: any,
-                  index: number
-                ) => {
+              {
+                data.map(
+                  (
+                    row,
+                    index
+                  ) => {
 
-                  const usageValues =
-                    months.map(
-                      (month) =>
-                        Number(
-                          row[
-                            month
-                          ] || 0
-                        )
-                    )
+                    const usageValues =
+                      months.map(
+                        (
+                          month
+                        ) =>
+                          Number(
+                            row[
+                              month
+                            ] || 0
+                          )
+                      )
 
-                  const min =
-                    Math.min(
-                      ...usageValues
-                    )
+                    const min =
+                      Math.min(
+                        ...usageValues
+                      )
 
-                  const max =
-                    Math.max(
-                      ...usageValues
-                    )
+                    const max =
+                      Math.max(
+                        ...usageValues
+                      )
 
-                  const total =
-                    usageValues.reduce(
+                    const total =
+                      usageValues.reduce(
+                        (
+                          a,
+                          b
+                        ) =>
+                          a + b,
+                        0
+                      )
+
+                    const avg =
                       (
-                        a,
-                        b
-                      ) => a + b,
-                      0
-                    )
+                        total /
+                        usageValues.length
+                      ).toFixed(2)
 
-                  const avg =
-                    (
-                      total /
-                      usageValues.length
-                    ).toFixed(2)
+                    const used =
+                      usageValues.filter(
+                        (
+                          value
+                        ) =>
+                          value > 0
+                      ).length
 
-                  const used =
-                    usageValues.filter(
-                      (
-                        value
-                      ) =>
-                        value > 0
-                    ).length
+                    const zero =
+                      usageValues.filter(
+                        (
+                          value
+                        ) =>
+                          value === 0
+                      ).length
 
-                  const zero =
-                    usageValues.filter(
-                      (
-                        value
-                      ) =>
-                        value === 0
-                    ).length
+                    return (
 
-                  return (
+                      <tr
+                        key={
+                          index
+                        }
+                        className="
+                          hover:bg-gray-50
+                        "
+                      >
 
-                    <tr
-                      key={index}
-                      className="
-                        hover:bg-gray-50
-                      "
-                    >
+                        <td className="border p-1 text-center">
+                          {
+                            row.sim_no
+                          }
+                        </td>
 
-                      <td className="border p-1 text-center">
-                        {row.sim_no}
-                      </td>
+                        <td className="border p-1 text-center">
+                          {
+                            row.msisdn
+                          }
+                        </td>
 
-                      <td className="border p-1 text-center">
-                        {row.msisdn}
-                      </td>
+                        <td className="border p-1 text-center">
+                          {
+                            row.sim_status
+                          }
+                        </td>
 
-                      <td className="border p-1 text-center">
-                        {row.sim_status}
-                      </td>
+                        <td className="border p-1 text-center">
+                          {
+                            row.plan
+                          }
+                        </td>
 
-                      <td className="border p-1 text-center">
-                        {row.plan}
-                      </td>
+                        <td className="border p-1 text-center">
+                          {min}
+                        </td>
 
-                      <td className="border p-1 text-center">
-                        {min}
-                      </td>
+                        <td className="border p-1 text-center">
+                          {max}
+                        </td>
 
-                      <td className="border p-1 text-center">
-                        {max}
-                      </td>
-
-                      <td className="border p-1 text-center">
-                        {total.toFixed(2)}
-                      </td>
-
-                      <td className="border p-1 text-center">
-                        {avg}
-                      </td>
-
-                      <td className="border p-1 text-center">
-                        {used}
-                      </td>
-
-                      <td className="border p-1 text-center">
-                        {zero}
-                      </td>
-
-                      {months.map(
-                        (month) => {
-
-                          const value =
-                            Number(
-                              row[
-                                month
-                              ] || 0
+                        <td className="border p-1 text-center">
+                          {
+                            total.toFixed(
+                              2
                             )
+                          }
+                        </td>
 
-                          return (
+                        <td className="border p-1 text-center">
+                          {avg}
+                        </td>
 
-                            <td
-                              key={month}
-                              className={`
-                                border
-                                p-1
-                                text-center
-                                text-[10px]
-                                ${
-                                  value ===
-                                    max &&
-                                  value !== 0
-                                    ? 'bg-green-300 font-bold'
-                                    : ''
-                                }
-                              `}
-                            >
-                              {value}
-                            </td>
+                        <td className="border p-1 text-center">
+                          {used}
+                        </td>
+
+                        <td className="border p-1 text-center">
+                          {zero}
+                        </td>
+
+                        {
+                          months.map(
+                            (
+                              month
+                            ) => {
+
+                              const value =
+                                Number(
+                                  row[
+                                    month
+                                  ] || 0
+                                )
+
+                              return (
+
+                                <td
+                                  key={
+                                    month
+                                  }
+                                  className={`
+                                    border
+                                    p-1
+                                    text-center
+                                    text-[10px]
+                                    ${
+                                      value ===
+                                        max &&
+                                      value !== 0
+                                        ? 'bg-green-300 font-bold'
+                                        : ''
+                                    }
+                                  `}
+                                >
+                                  {
+                                    value
+                                  }
+                                </td>
+                              )
+                            }
                           )
                         }
-                      )}
 
-                    </tr>
-                  )
-                }
-              )}
+                      </tr>
+                    )
+                  }
+                )
+              }
 
             </tbody>
 
