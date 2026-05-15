@@ -80,16 +80,16 @@ export default function SignupPage() {
         }
 
         localStorage.setItem(
+
           'signupData',
+
           JSON.stringify({
             ...formData,
-            otp:
-              otpData.otp,
           })
         )
 
         alert(
-          `OTP Sent Successfully\n\nTest OTP: ${otpData.otp}`
+          'OTP Sent Successfully'
         )
 
         router.push(
@@ -116,7 +116,9 @@ export default function SignupPage() {
 
     <div className="
       min-h-screen
-      bg-gray-100
+      bg-gradient-to-r
+      from-violet-700
+      to-fuchsia-500
       flex
       items-center
       justify-center
@@ -124,12 +126,16 @@ export default function SignupPage() {
     ">
 
       <div className="
-        bg-white
+        bg-white/10
+        backdrop-blur-xl
+        border
+        border-white/20
         w-full
         max-w-md
         rounded-3xl
-        shadow-xl
+        shadow-2xl
         p-8
+        text-white
       ">
 
         <div className="
@@ -138,9 +144,8 @@ export default function SignupPage() {
         ">
 
           <h1 className="
-            text-3xl
+            text-4xl
             font-bold
-            text-gray-800
             mb-2
           ">
             Signup
@@ -148,9 +153,9 @@ export default function SignupPage() {
 
           <p className="
             text-sm
-            text-gray-500
+            text-white/80
           ">
-            Create your account
+            Create your SIM Management account
           </p>
 
         </div>
@@ -177,10 +182,13 @@ export default function SignupPage() {
             }
             className="
               w-full
+              bg-white/10
               border
-              rounded-xl
+              border-white/20
+              rounded-2xl
               p-4
               outline-none
+              placeholder:text-white/60
             "
           />
 
@@ -202,10 +210,13 @@ export default function SignupPage() {
             }
             className="
               w-full
+              bg-white/10
               border
-              rounded-xl
+              border-white/20
+              rounded-2xl
               p-4
               outline-none
+              placeholder:text-white/60
             "
           />
 
@@ -227,10 +238,13 @@ export default function SignupPage() {
             }
             className="
               w-full
+              bg-white/10
               border
-              rounded-xl
+              border-white/20
+              rounded-2xl
               p-4
               outline-none
+              placeholder:text-white/60
             "
           />
 
@@ -243,11 +257,14 @@ export default function SignupPage() {
             }
             className="
               w-full
-              bg-black
-              text-white
+              bg-white
+              text-violet-700
               py-4
-              rounded-xl
-              font-semibold
+              rounded-2xl
+              font-bold
+              text-lg
+              hover:scale-[1.02]
+              transition-all
             "
           >
 
@@ -265,6 +282,7 @@ export default function SignupPage() {
           mt-6
           text-center
           text-sm
+          text-white/80
         ">
 
           Already have account?
@@ -278,7 +296,7 @@ export default function SignupPage() {
             className="
               ml-2
               font-semibold
-              text-blue-600
+              text-white
             "
           >
             Login
