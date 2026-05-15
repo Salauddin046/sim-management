@@ -14,43 +14,54 @@ export default function HomePage() {
   const router =
     useRouter()
 
-  const [showLogin, setShowLogin] =
-    useState(false)
+  const [loading, setLoading] =
+    useState(true)
 
-  const [showSignup, setShowSignup] =
-    useState(false)
-
-  const [loggedUser, setLoggedUser] =
+  const [user, setUser] =
     useState(null)
-
-  const [loginData, setLoginData] =
-    useState({
-      email: '',
-      password: '',
-    })
-
-  const [signupData, setSignupData] =
-    useState({
-      name: '',
-      email: '',
-      password: '',
-    })
 
   useEffect(() => {
 
-    const user =
+    const loggedIn =
       localStorage.getItem(
-        'user'
+        'loggedIn'
       )
 
-    if (user) {
-
-      setLoggedUser(
-        JSON.parse(user)
+    const savedUser =
+      JSON.parse(
+        localStorage.getItem(
+          'user'
+        )
       )
+
+    if (
+      !loggedIn ||
+      !savedUser
+    ) {
+
+      router.push(
+        '/login'
+      )
+
+      return
     }
 
+    setUser(savedUser)
+
+    setLoading(false)
+
   }, [])
+
+  const logout = () => {
+
+    localStorage.removeItem(
+      'loggedIn'
+    )
+
+    router.push(
+      '/login'
+    )
+  }
 
   const dashboards = [
 
@@ -88,89 +99,22 @@ export default function HomePage() {
     },
   ]
 
-  const signup = () => {
+  if (loading) {
 
-    if (
-      !signupData.name ||
-      !signupData.email ||
-      !signupData.password
-    ) {
+    return (
 
-      alert(
-        'Fill all fields'
-      )
+      <div className="
+        min-h-screen
+        flex
+        items-center
+        justify-center
+        text-2xl
+        font-bold
+      ">
 
-      return
-    }
+        Loading...
 
-    localStorage.setItem(
-      'user',
-      JSON.stringify(
-        signupData
-      )
-    )
-
-    setLoggedUser(
-      signupData
-    )
-
-    setShowSignup(
-      false
-    )
-
-    alert(
-      'Signup successful'
-    )
-  }
-
-  const login = () => {
-
-    const savedUser =
-      JSON.parse(
-        localStorage.getItem(
-          'user'
-        )
-      )
-
-    if (
-      savedUser?.email ===
-        loginData.email &&
-      savedUser?.password ===
-        loginData.password
-    ) {
-
-      setLoggedUser(
-        savedUser
-      )
-
-      setShowLogin(
-        false
-      )
-
-      alert(
-        'Login successful'
-      )
-
-    } else {
-
-      alert(
-        'Invalid credentials'
-      )
-    }
-  }
-
-  const logout = () => {
-
-    localStorage.removeItem(
-      'user'
-    )
-
-    setLoggedUser(
-      null
-    )
-
-    alert(
-      'Logged out'
+      </div>
     )
   }
 
@@ -202,13 +146,14 @@ export default function HomePage() {
               text-4xl
               font-bold
               text-gray-800
-              mb-2
+              mb-3
             ">
               Dashboard Home
             </h1>
 
             <p className="
               text-gray-600
+              text-base
             ">
               Select a dashboard to continue
             </p>
@@ -221,82 +166,35 @@ export default function HomePage() {
             gap-3
           ">
 
-            {loggedUser ? (
+            <div className="
+              bg-white
+              px-4
+              py-2
+              rounded-xl
+              shadow
+              text-sm
+              font-semibold
+            ">
 
-              <>
+              {user?.name}
 
-                <div className="
-                  bg-white
-                  px-4
-                  py-2
-                  rounded-xl
-                  shadow
-                  text-sm
-                  font-medium
-                ">
+            </div>
 
-                  {loggedUser.name}
-
-                </div>
-
-                <button
-                  onClick={
-                    logout
-                  }
-                  className="
-                    bg-red-600
-                    text-white
-                    px-4
-                    py-2
-                    rounded-xl
-                  "
-                >
-                  Logout
-                </button>
-
-              </>
-
-            ) : (
-
-              <>
-
-                <button
-                  onClick={() =>
-                    setShowLogin(
-                      true
-                    )
-                  }
-                  className="
-                    bg-black
-                    text-white
-                    px-4
-                    py-2
-                    rounded-xl
-                  "
-                >
-                  Login
-                </button>
-
-                <button
-                  onClick={() =>
-                    setShowSignup(
-                      true
-                    )
-                  }
-                  className="
-                    bg-green-600
-                    text-white
-                    px-4
-                    py-2
-                    rounded-xl
-                  "
-                >
-                  Signup
-                </button>
-
-              </>
-
-            )}
+            <button
+              onClick={
+                logout
+              }
+              className="
+                bg-red-600
+                text-white
+                px-4
+                py-2
+                rounded-xl
+                font-semibold
+              "
+            >
+              Logout
+            </button>
 
           </div>
 
@@ -325,7 +223,9 @@ export default function HomePage() {
                   border-gray-200
                   p-7
                   hover:shadow-2xl
+                  hover:-translate-y-1
                   transition-all
+                  duration-300
                 "
               >
 
@@ -397,6 +297,8 @@ export default function HomePage() {
                       rounded-2xl
                       text-sm
                       font-semibold
+                      hover:bg-gray-800
+                      transition-all
                     "
                   >
                     Open Dashboard
@@ -409,248 +311,6 @@ export default function HomePage() {
           )}
 
         </div>
-
-        {showLogin && (
-
-          <div className="
-            fixed
-            inset-0
-            bg-black/40
-            flex
-            items-center
-            justify-center
-            z-50
-          ">
-
-            <div className="
-              bg-white
-              p-6
-              rounded-2xl
-              w-full
-              max-w-md
-            ">
-
-              <h2 className="
-                text-2xl
-                font-bold
-                mb-4
-              ">
-                Login
-              </h2>
-
-              <input
-                type="email"
-                placeholder="Email"
-                className="
-                  w-full
-                  border
-                  p-3
-                  rounded-lg
-                  mb-3
-                "
-                onChange={(e) =>
-                  setLoginData({
-                    ...loginData,
-                    email:
-                      e.target
-                        .value,
-                  })
-                }
-              />
-
-              <input
-                type="password"
-                placeholder="Password"
-                className="
-                  w-full
-                  border
-                  p-3
-                  rounded-lg
-                  mb-4
-                "
-                onChange={(e) =>
-                  setLoginData({
-                    ...loginData,
-                    password:
-                      e.target
-                        .value,
-                  })
-                }
-              />
-
-              <div className="
-                flex
-                gap-3
-              ">
-
-                <button
-                  onClick={
-                    login
-                  }
-                  className="
-                    flex-1
-                    bg-black
-                    text-white
-                    py-3
-                    rounded-lg
-                  "
-                >
-                  Login
-                </button>
-
-                <button
-                  onClick={() =>
-                    setShowLogin(
-                      false
-                    )
-                  }
-                  className="
-                    flex-1
-                    bg-gray-300
-                    py-3
-                    rounded-lg
-                  "
-                >
-                  Cancel
-                </button>
-
-              </div>
-
-            </div>
-
-          </div>
-        )}
-
-        {showSignup && (
-
-          <div className="
-            fixed
-            inset-0
-            bg-black/40
-            flex
-            items-center
-            justify-center
-            z-50
-          ">
-
-            <div className="
-              bg-white
-              p-6
-              rounded-2xl
-              w-full
-              max-w-md
-            ">
-
-              <h2 className="
-                text-2xl
-                font-bold
-                mb-4
-              ">
-                Signup
-              </h2>
-
-              <input
-                type="text"
-                placeholder="Name"
-                className="
-                  w-full
-                  border
-                  p-3
-                  rounded-lg
-                  mb-3
-                "
-                onChange={(e) =>
-                  setSignupData({
-                    ...signupData,
-                    name:
-                      e.target
-                        .value,
-                  })
-                }
-              />
-
-              <input
-                type="email"
-                placeholder="Email"
-                className="
-                  w-full
-                  border
-                  p-3
-                  rounded-lg
-                  mb-3
-                "
-                onChange={(e) =>
-                  setSignupData({
-                    ...signupData,
-                    email:
-                      e.target
-                        .value,
-                  })
-                }
-              />
-
-              <input
-                type="password"
-                placeholder="Password"
-                className="
-                  w-full
-                  border
-                  p-3
-                  rounded-lg
-                  mb-4
-                "
-                onChange={(e) =>
-                  setSignupData({
-                    ...signupData,
-                    password:
-                      e.target
-                        .value,
-                  })
-                }
-              />
-
-              <div className="
-                flex
-                gap-3
-              ">
-
-                <button
-                  onClick={
-                    signup
-                  }
-                  className="
-                    flex-1
-                    bg-green-600
-                    text-white
-                    py-3
-                    rounded-lg
-                  "
-                >
-                  Signup
-                </button>
-
-                <button
-                  onClick={() =>
-                    setShowSignup(
-                      false
-                    )
-                  }
-                  className="
-                    flex-1
-                    bg-gray-300
-                    py-3
-                    rounded-lg
-                  "
-                >
-                  Cancel
-                </button>
-
-              </div>
-
-            </div>
-
-          </div>
-        )}
 
       </div>
 
