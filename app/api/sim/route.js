@@ -22,20 +22,6 @@ export async function POST(
       numbers
     } = body
 
-    if (!numbers) {
-
-      return Response.json(
-        {
-          success: false,
-          message:
-            'Numbers required',
-        },
-        {
-          status: 400,
-        }
-      )
-    }
-
     const sampleData = [
 
       {
@@ -65,20 +51,6 @@ export async function POST(
         used_data_mb:
           98.22,
       },
-
-      {
-        sim_no:
-          '89914509006120256846',
-
-        msisdn:
-          '9876543210',
-
-        usage_month:
-          '2026-03',
-
-        used_data_mb:
-          250.67,
-      },
     ]
 
     return Response.json(
@@ -90,8 +62,6 @@ export async function POST(
     return Response.json(
       {
         success: false,
-        message:
-          'Server error',
       },
       {
         status: 500,
