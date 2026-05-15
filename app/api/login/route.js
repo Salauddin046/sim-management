@@ -1,3 +1,12 @@
+export async function GET() {
+
+  return Response.json({
+    success: true,
+    message:
+      'Login API Working',
+  })
+}
+
 export async function POST(
   request
 ) {
@@ -10,7 +19,7 @@ export async function POST(
     return Response.json({
       success: true,
       message:
-        'Login API Working',
+        'Login Success',
       data: body,
     })
 
