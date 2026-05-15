@@ -564,7 +564,7 @@ export default function Home() {
             text-2xl
             font-bold
           ">
-            Datix Dashboard
+            Usage Intelligence
           </h1>
 
           <div className="
