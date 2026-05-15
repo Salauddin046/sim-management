@@ -13,8 +13,11 @@ export async function POST(req) {
     if (!email) {
 
       return Response.json({
+
         success: false,
-        message: 'Email required',
+
+        message:
+          'Email is required',
       })
     }
 

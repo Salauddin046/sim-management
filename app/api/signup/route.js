@@ -19,6 +19,11 @@ export async function POST(req) {
     const body =
       await req.json()
 
+    console.log(
+      'BODY:',
+      body
+    )
+
     const {
       name,
       email,
@@ -26,43 +31,16 @@ export async function POST(req) {
       otp,
     } = body
 
-    if (
-      !name ||
-      !email ||
-      !password ||
-      !otp
-    ) {
-
-      return Response.json({
-
-        success: false,
-
-        message:
-          'All fields are required',
-      })
-    }
-
     global.otpStore =
       global.otpStore || {}
 
-    const savedOtp =
+    console.log(
+      'Saved OTP:',
       global.otpStore[email]
+    )
 
     if (
-      !savedOtp
-    ) {
-
-      return Response.json({
-
-        success: false,
-
-        message:
-          'OTP expired',
-      })
-    }
-
-    if (
-      savedOtp !== otp
+      global.otpStore[email] !== otp
     ) {
 
       return Response.json({
@@ -74,35 +52,15 @@ export async function POST(req) {
       })
     }
 
-    const existingUser =
-      await pool.query(
-
-        `
-        SELECT * FROM users
-        WHERE email = $1
-        `,
-        [email]
-      )
-
-    if (
-      existingUser.rows
-        .length > 0
-    ) {
-
-      return Response.json({
-
-        success: false,
-
-        message:
-          'User already exists',
-      })
-    }
-
     const hashedPassword =
       await bcrypt.hash(
         password,
         10
       )
+
+    console.log(
+      'Connecting DB...'
+    )
 
     await pool.query(
 
@@ -127,6 +85,10 @@ export async function POST(req) {
       ]
     )
 
+    console.log(
+      'User inserted'
+    )
+
     delete global.otpStore[email]
 
     return Response.json({
@@ -139,14 +101,17 @@ export async function POST(req) {
 
   } catch (error) {
 
-    console.log(error)
+    console.log(
+      'SIGNUP ERROR:',
+      error
+    )
 
     return Response.json({
 
       success: false,
 
       message:
-        'Signup failed',
+        error.message,
     })
   }
 }
