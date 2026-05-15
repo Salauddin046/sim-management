@@ -9,34 +9,16 @@ import {
   useRouter,
 } from 'next/navigation'
 
-type DashboardType = {
-
-  title: string
-
-  description: string
-
-  route: string
-}
-
-type UserType = {
-
-  name: string
-
-  email: string
-}
-
 export default function HomePage() {
 
   const router =
     useRouter()
 
   const [loading, setLoading] =
-    useState<boolean>(true)
+    useState(true)
 
   const [user, setUser] =
-    useState<UserType | null>(
-      null
-    )
+    useState(null)
 
   useEffect(() => {
 
@@ -83,8 +65,7 @@ export default function HomePage() {
     )
   }
 
-  const dashboards:
-    DashboardType[] = [
+  const dashboards = [
 
     {
       title:
