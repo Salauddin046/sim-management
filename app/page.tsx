@@ -613,7 +613,7 @@ export default function Home() {
             font-semibold
             mb-2
           ">
-            Bulk SIM Search
+            
           </label>
 
           <textarea
@@ -627,10 +627,6 @@ export default function Home() {
             placeholder="
 Enter SIM or Phone numbers
 
-
-Example:
-89914509006120256846
-89914509006120256847
             "
             className="
               w-full
@@ -647,7 +643,7 @@ Example:
             text-gray-500
             mt-1
           ">
-            Supports bulk search
+            
           </div>
 
         </div>
