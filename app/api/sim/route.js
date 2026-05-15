@@ -22,36 +22,122 @@ export async function POST(
       numbers
     } = body
 
-    const sampleData = [
+    if (
+      !numbers ||
+      !Array.isArray(
+        numbers
+      )
+    ) {
 
-      {
-        sim_no:
-          '89914509006120256846',
+      return Response.json(
+        {
+          success: false,
+          message:
+            'Numbers array required',
+        },
+        {
+          status: 400,
+        }
+      )
+    }
 
-        msisdn:
-          '9876543210',
+    const sampleData = []
 
-        usage_month:
-          '2026-01',
+    numbers.forEach(
+      (
+        sim,
+        index
+      ) => {
 
-        used_data_mb:
-          120.45,
-      },
+        sampleData.push(
 
-      {
-        sim_no:
-          '89914509006120256846',
+          {
+            sim_no:
+              sim,
 
-        msisdn:
-          '9876543210',
+            msisdn:
+              `98765432${index}`,
 
-        usage_month:
-          '2026-02',
+            usage_month:
+              '2026-01',
 
-        used_data_mb:
-          98.22,
-      },
-    ]
+            used_data_mb:
+              (
+                Math.random() *
+                500
+              ).toFixed(2),
+          },
+
+          {
+            sim_no:
+              sim,
+
+            msisdn:
+              `98765432${index}`,
+
+            usage_month:
+              '2026-02',
+
+            used_data_mb:
+              (
+                Math.random() *
+                500
+              ).toFixed(2),
+          },
+
+          {
+            sim_no:
+              sim,
+
+            msisdn:
+              `98765432${index}`,
+
+            usage_month:
+              '2026-03',
+
+            used_data_mb:
+              (
+                Math.random() *
+                500
+              ).toFixed(2),
+          },
+
+          {
+            sim_no:
+              sim,
+
+            msisdn:
+              `98765432${index}`,
+
+            usage_month:
+              '2026-04',
+
+            used_data_mb:
+              (
+                Math.random() *
+                500
+              ).toFixed(2),
+          },
+
+          {
+            sim_no:
+              sim,
+
+            msisdn:
+              `98765432${index}`,
+
+            usage_month:
+              '2026-05',
+
+            used_data_mb:
+              (
+                Math.random() *
+                500
+              ).toFixed(2),
+          }
+        )
+      }
+    )
 
     return Response.json(
       sampleData
@@ -59,9 +145,15 @@ export async function POST(
 
   } catch (error) {
 
+    console.error(
+      error
+    )
+
     return Response.json(
       {
         success: false,
+        message:
+          'Server Error',
       },
       {
         status: 500,
