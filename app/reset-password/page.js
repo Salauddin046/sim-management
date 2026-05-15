@@ -1,80 +1,72 @@
-export async function GET() {
+'use client'
 
-  return Response.json({
-    success: true,
-    message:
-      'Reset Password API Working',
-  })
-}
+export default function ResetPasswordPage() {
 
-export async function POST(
-  request
-) {
+  return (
 
-  try {
+    <div className="
+      min-h-screen
+      flex
+      items-center
+      justify-center
+      bg-gray-100
+    ">
 
-    const body =
-      await request.json()
+      <div className="
+        bg-white
+        p-8
+        rounded-xl
+        shadow-lg
+        w-full
+        max-w-md
+      ">
 
-    const {
-      email,
-      password,
-      otp,
-    } = body
+        <h1 className="
+          text-2xl
+          font-bold
+          mb-4
+        ">
+          Reset Password
+        </h1>
 
-    if (
-      !email ||
-      !password ||
-      !otp
-    ) {
+        <input
+          type="password"
+          placeholder="New Password"
+          className="
+            w-full
+            border
+            rounded-lg
+            p-3
+            mb-4
+          "
+        />
 
-      return Response.json(
-        {
-          success: false,
-          message:
-            'All fields required',
-        },
-        {
-          status: 400,
-        }
-      )
-    }
+        <input
+          type="password"
+          placeholder="Confirm Password"
+          className="
+            w-full
+            border
+            rounded-lg
+            p-3
+            mb-4
+          "
+        />
 
-    if (
-      otp !== '123456'
-    ) {
+        <button
+          className="
+            w-full
+            bg-black
+            text-white
+            p-3
+            rounded-lg
+          "
+        >
+          Update Password
+        </button>
 
-      return Response.json(
-        {
-          success: false,
-          message:
-            'Invalid OTP',
-        },
-        {
-          status: 401,
-        }
-      )
-    }
+      </div>
 
-    return Response.json({
-
-      success: true,
-
-      message:
-        'Password reset successful',
-    })
-
-  } catch (error) {
-
-    return Response.json(
-      {
-        success: false,
-        message:
-          'Server error',
-      },
-      {
-        status: 500,
-      }
-    )
-  }
+    </div>
+  )
 }
