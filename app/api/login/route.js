@@ -1,287 +1,123 @@
-'use client'
+import { Pool } from 'pg'
 
-import {
-  useState
-} from 'react'
+import bcrypt from 'bcryptjs'
 
-import {
-  useRouter
-} from 'next/navigation'
+const pool =
+  new Pool({
 
-export default function LoginPage() {
+    connectionString:
+      process.env.DATABASE_URL,
 
-  const router =
-    useRouter()
+    ssl: {
+      rejectUnauthorized: false,
+    },
+  })
 
-  const [email, setEmail] =
-    useState('')
+export async function POST(req) {
 
-  const [password, setPassword] =
-    useState('')
+  try {
 
-  const [loading, setLoading] =
-    useState(false)
+    const body =
+      await req.json()
 
-  const loginUser =
-    async () => {
+    const {
+      email,
+      password,
+    } = body
 
-      if (
-        !email ||
-        !password
-      ) {
+    if (
+      !email ||
+      !password
+    ) {
 
-        alert(
-          'Enter email and password'
-        )
+      return Response.json({
 
-        return
-      }
+        success: false,
 
-      try {
-
-        setLoading(true)
-
-        const savedUser =
-          JSON.parse(
-            localStorage.getItem(
-              'user'
-            )
-          )
-
-        if (
-          !savedUser
-        ) {
-
-          alert(
-            'No account found'
-          )
-
-          return
-        }
-
-        if (
-          savedUser.email !==
-            email
-        ) {
-
-          alert(
-            'Invalid email'
-          )
-
-          return
-        }
-
-        const response =
-          await fetch(
-            '/api/login',
-            {
-
-              method: 'POST',
-
-              headers: {
-                'Content-Type':
-                  'application/json',
-              },
-
-              body: JSON.stringify({
-                email,
-                password,
-              }),
-            }
-          )
-
-        const data =
-          await response.json()
-
-        if (
-          !data.success
-        ) {
-
-          alert(
-            data.message
-          )
-
-          return
-        }
-
-        localStorage.setItem(
-          'loggedIn',
-          'true'
-        )
-
-        alert(
-          'Login successful'
-        )
-
-        router.push(
-          '/'
-        )
-
-      } catch (error) {
-
-        console.error(
-          error
-        )
-
-        alert(
-          'Login failed'
-        )
-
-      } finally {
-
-        setLoading(false)
-      }
+        message:
+          'Email and password required',
+      })
     }
 
-  return (
+    const user =
+      await pool.query(
 
-    <div className="
-      min-h-screen
-      bg-gray-100
-      flex
-      items-center
-      justify-center
-      p-4
-    ">
+        `
+        SELECT *
+        FROM users
+        WHERE email = $1
+        `,
+        [email]
+      )
 
-      <div className="
-        bg-white
-        w-full
-        max-w-md
-        rounded-3xl
-        shadow-xl
-        p-8
-      ">
+    if (
+      user.rows.length === 0
+    ) {
 
-        <div className="
-          mb-8
-          text-center
-        ">
+      return Response.json({
 
-          <h1 className="
-            text-3xl
-            font-bold
-            text-gray-800
-            mb-2
-          ">
-            Login
-          </h1>
+        success: false,
 
-          <p className="
-            text-sm
-            text-gray-500
-          ">
-            Login to continue
-          </p>
+        message:
+          'User not found',
+      })
+    }
 
-        </div>
+    const dbUser =
+      user.rows[0]
 
-        <div className="
-          space-y-4
-        ">
+    const validPassword =
+      await bcrypt.compare(
+        password,
+        dbUser.password
+      )
 
-          <input
-            type="email"
-            placeholder="Email Address"
-            value={email}
-            onChange={(e) =>
-              setEmail(
-                e.target.value
-              )
-            }
-            className="
-              w-full
-              border
-              rounded-xl
-              p-4
-              outline-none
-            "
-          />
+    if (
+      !validPassword
+    ) {
 
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) =>
-              setPassword(
-                e.target.value
-              )
-            }
-            className="
-              w-full
-              border
-              rounded-xl
-              p-4
-              outline-none
-            "
-          />
+      return Response.json({
 
-          <button
-            onClick={
-              loginUser
-            }
-            disabled={
-              loading
-            }
-            className="
-              w-full
-              bg-black
-              text-white
-              py-4
-              rounded-xl
-              font-semibold
-            "
-          >
+        success: false,
 
-            {
-              loading
-                ? 'Logging in...'
-                : 'Login'
-            }
+        message:
+          'Invalid password',
+      })
+    }
 
-          </button>
+    return Response.json({
 
-        </div>
+      success: true,
 
-        <div className="
-          mt-6
-          flex
-          justify-between
-          text-sm
-        ">
+      message:
+        'Login successful',
 
-          <button
-            onClick={() =>
-              router.push(
-                '/signup'
-              )
-            }
-            className="
-              text-blue-600
-              font-semibold
-            "
-          >
-            Signup
-          </button>
+      user: {
 
-          <button
-            onClick={() =>
-              router.push(
-                '/forgot-password'
-              )
-            }
-            className="
-              text-red-600
-              font-semibold
-            "
-          >
-            Forgot Password
-          </button>
+        id:
+          dbUser.id,
 
-        </div>
+        name:
+          dbUser.name,
 
-      </div>
+        email:
+          dbUser.email,
+      },
+    })
 
-    </div>
-  )
+  } catch (error) {
+
+    console.log(
+      'LOGIN ERROR:',
+      error
+    )
+
+    return Response.json({
+
+      success: false,
+
+      message:
+        'Login failed',
+    })
+  }
 }

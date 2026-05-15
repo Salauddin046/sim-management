@@ -1,12 +1,15 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState }
+from 'react'
 
-import { useRouter } from 'next/navigation'
+import { useRouter }
+from 'next/navigation'
 
 export default function LoginPage() {
 
-  const router = useRouter()
+  const router =
+    useRouter()
 
   const [email, setEmail] =
     useState('')
@@ -110,84 +113,120 @@ export default function LoginPage() {
     setCaptcha(value)
   }
 
-  const loginUser = () => {
+  const loginUser =
+    async () => {
 
-    if (
-      !email ||
-      !password ||
-      !userCaptcha
-    ) {
+      if (
+        !email ||
+        !password ||
+        !userCaptcha
+      ) {
 
-      alert(
-        'Please fill all fields'
-      )
-
-      return
-    }
-
-    if (
-      userCaptcha !==
-      captcha
-    ) {
-
-      alert(
-        'Invalid captcha'
-      )
-
-      generateCaptcha()
-
-      setUserCaptcha('')
-
-      return
-    }
-
-    const savedUser =
-      JSON.parse(
-        localStorage.getItem(
-          'user'
+        alert(
+          'Please fill all fields'
         )
-      )
 
-    if (!savedUser) {
+        return
+      }
 
-      alert(
-        'No account found'
-      )
+      if (
+        userCaptcha !==
+        captcha
+      ) {
 
-      return
+        alert(
+          'Invalid captcha'
+        )
+
+        generateCaptcha()
+
+        setUserCaptcha('')
+
+        return
+      }
+
+      try {
+
+        setLoading(true)
+
+        const response =
+          await fetch(
+            '/api/login',
+            {
+
+              method: 'POST',
+
+              headers: {
+                'Content-Type':
+                  'application/json',
+              },
+
+              body: JSON.stringify({
+
+                email,
+
+                password,
+              }),
+            }
+          )
+
+        const result =
+          await response.json()
+
+        if (
+          !result.success
+        ) {
+
+          alert(
+            result.message
+          )
+
+          return
+        }
+
+        localStorage.setItem(
+
+          'user',
+
+          JSON.stringify(
+            result.user
+          )
+        )
+
+        localStorage.setItem(
+          'loggedIn',
+          'true'
+        )
+
+        alert(
+          'Login successful'
+        )
+
+        router.push('/')
+
+      } catch (error) {
+
+        console.log(
+          error
+        )
+
+        alert(
+          'Login failed'
+        )
+
+      } finally {
+
+        setLoading(false)
+      }
     }
-
-    if (
-      savedUser.email !==
-      email
-    ) {
-
-      alert(
-        'Invalid email'
-      )
-
-      return
-    }
-
-    setLoading(true)
-
-    localStorage.setItem(
-      'loggedIn',
-      'true'
-    )
-
-    alert(
-      'Login successful'
-    )
-
-    router.push('/')
-  }
 
   return (
 
     <div className="
       min-h-screen
-      bg-gray-100
+      bg-gradient-to-r
+      from-violet-700
+      to-fuchsia-500
       flex
       items-center
       justify-center
@@ -195,12 +234,16 @@ export default function LoginPage() {
     ">
 
       <div className="
-        bg-white
+        bg-white/10
+        backdrop-blur-xl
+        border
+        border-white/20
         w-full
         max-w-md
         rounded-3xl
-        shadow-xl
+        shadow-2xl
         p-8
+        text-white
       ">
 
         <div className="
@@ -217,7 +260,7 @@ export default function LoginPage() {
           </h1>
 
           <p className="
-            text-gray-500
+            text-white/70
           ">
             Login to continue
           </p>
@@ -239,9 +282,13 @@ export default function LoginPage() {
             }
             className="
               w-full
+              bg-white/10
               border
-              rounded-xl
+              border-white/20
+              rounded-2xl
               p-4
+              outline-none
+              placeholder:text-white/60
             "
           />
 
@@ -256,9 +303,13 @@ export default function LoginPage() {
             }
             className="
               w-full
+              bg-white/10
               border
-              rounded-xl
+              border-white/20
+              rounded-2xl
               p-4
+              outline-none
+              placeholder:text-white/60
             "
           />
 
@@ -273,9 +324,9 @@ export default function LoginPage() {
               text-white
               px-4
               py-3
-              rounded-xl
+              rounded-2xl
               font-bold
-              tracking-[3px]
+              tracking-[5px]
               flex-1
               text-center
             ">
@@ -289,10 +340,11 @@ export default function LoginPage() {
                 generateCaptcha
               }
               className="
-                bg-gray-200
+                bg-white
+                text-black
                 px-4
                 py-3
-                rounded-xl
+                rounded-2xl
                 font-semibold
               "
             >
@@ -312,9 +364,13 @@ export default function LoginPage() {
             }
             className="
               w-full
+              bg-white/10
               border
-              rounded-xl
+              border-white/20
+              rounded-2xl
               p-4
+              outline-none
+              placeholder:text-white/60
             "
           />
 
@@ -322,14 +378,17 @@ export default function LoginPage() {
             onClick={
               loginUser
             }
-            disabled={loading}
+            disabled={
+              loading
+            }
             className="
               w-full
-              bg-black
-              text-white
+              bg-white
+              text-violet-700
               py-4
-              rounded-xl
-              font-semibold
+              rounded-2xl
+              font-bold
+              text-lg
             "
           >
 
@@ -350,12 +409,28 @@ export default function LoginPage() {
             className="
               w-full
               border
+              border-white/20
               py-4
-              rounded-xl
+              rounded-2xl
               font-semibold
             "
           >
             Signup
+          </button>
+
+          <button
+            onClick={() =>
+              router.push(
+                '/forgot-password'
+              )
+            }
+            className="
+              w-full
+              text-sm
+              text-white/80
+            "
+          >
+            Forgot Password?
           </button>
 
         </div>

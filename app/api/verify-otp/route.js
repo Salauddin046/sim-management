@@ -57,8 +57,6 @@ export async function POST(req) {
       })
     }
 
-    delete global.otpStore[email]
-
     return Response.json({
 
       success: true,
@@ -69,7 +67,10 @@ export async function POST(req) {
 
   } catch (error) {
 
-    console.log(error)
+    console.log(
+      'VERIFY OTP ERROR:',
+      error
+    )
 
     return Response.json({
 
