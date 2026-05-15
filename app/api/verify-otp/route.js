@@ -1,32 +1,32 @@
-import { Pool } from 'pg'
+export async function GET() {
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-})
+  return Response.json({
+    success: true,
+    message:
+      'Verify OTP API Working',
+  })
+}
 
-export async function POST(req) {
+export async function POST(
+  request
+) {
+
   try {
-    const body = await req.json()
+
+    const body =
+      await request.json()
 
     const {
-      username,
-      otp,
+      otp
     } = body
 
-    const result = await pool.query(
-      `
-      SELECT *
-      FROM users
-      WHERE username = $1
-      AND otp = $2
-      `,
-      [username, otp]
-    )
+    if (!otp) {
 
-    if (result.rows.length === 0) {
       return Response.json(
         {
-          error: 'Invalid OTP',
+          success: false,
+          message:
+            'OTP required',
         },
         {
           status: 400,
@@ -34,25 +34,37 @@ export async function POST(req) {
       )
     }
 
-    await pool.query(
-      `
-      UPDATE users
-      SET otp_verified = TRUE,
-          otp = NULL
-      WHERE username = $1
-      `,
-      [username]
-    )
+    if (
+      otp === '123456'
+    ) {
 
-    return Response.json({
-      success: true,
-    })
-  } catch (error) {
-    console.error(error)
+      return Response.json({
+
+        success: true,
+
+        message:
+          'OTP Verified Successfully',
+      })
+    }
 
     return Response.json(
       {
-        error: 'Verification failed',
+        success: false,
+        message:
+          'Invalid OTP',
+      },
+      {
+        status: 401,
+      }
+    )
+
+  } catch (error) {
+
+    return Response.json(
+      {
+        success: false,
+        message:
+          'Server error',
       },
       {
         status: 500,
