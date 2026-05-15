@@ -1,3 +1,12 @@
+export async function GET() {
+
+  return Response.json({
+    success: true,
+    message:
+      'Send OTP API Working',
+  })
+}
+
 export async function POST(
   request
 ) {
