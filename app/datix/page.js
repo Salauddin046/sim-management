@@ -6,7 +6,20 @@ import {
   useState,
 } from 'react'
 
-export default function Home() {
+import {
+  useRouter,
+} from 'next/navigation'
+
+export default function DatixPage() {
+
+  const router =
+    useRouter()
+
+  const [loading, setLoading] =
+    useState(false)
+
+  const [pageLoading, setPageLoading] =
+    useState(true)
 
   const [input, setInput] =
     useState('')
@@ -17,9 +30,6 @@ export default function Home() {
   const [originalData, setOriginalData] =
     useState([])
 
-  const [loading, setLoading] =
-    useState(false)
-
   const [filterType, setFilterType] =
     useState('all')
 
@@ -29,141 +39,165 @@ export default function Home() {
   const [toMonth, setToMonth] =
     useState('')
 
-  const searchBulk = async () => {
+  useEffect(() => {
 
-    const numbers = input
-      .split('\n')
-      .map(
-        (v) => v.trim()
+    const loggedIn =
+      localStorage.getItem(
+        'loggedIn'
       )
-      .filter(Boolean)
 
-    if (!numbers.length) {
+    if (!loggedIn) {
 
-      alert(
-        'Enter SIM or Phone numbers'
+      router.push(
+        '/login'
       )
 
       return
     }
 
-    setLoading(true)
+    setPageLoading(false)
 
-    try {
+  }, [router])
 
-      const response =
-        await fetch(
-          '/api/sim',
-          {
-            method: 'POST',
+  const searchBulk =
+    async () => {
 
-            headers: {
-              'Content-Type':
-                'application/json',
-            },
+      const numbers =
+        input
+          .split('\n')
+          .map(
+            (v) =>
+              v.trim()
+          )
+          .filter(Boolean)
 
-            body: JSON.stringify({
-              numbers,
-            }),
-          }
-        )
-
-      const result =
-        await response.json()
-
-      const grouped = {}
-
-      for (
-        const row of result
+      if (
+        !numbers.length
       ) {
 
-        const key =
-          row.sim_no
-
-        if (
-          !grouped[key]
-        ) {
-
-          grouped[key] = {
-
-            sim_no:
-              row.sim_no,
-
-            msisdn:
-              row.msisdn,
-
-            latestMonth:
-              row.usage_month,
-          }
-        }
-
-        grouped[key][
-          row.usage_month
-        ] = Number(
-          row.used_data_mb || 0
+        alert(
+          'Enter SIM numbers'
         )
+
+        return
       }
 
-      const finalData =
-        Object.values(
-          grouped
+      try {
+
+        setLoading(true)
+
+        const response =
+          await fetch(
+            '/api/sim',
+            {
+
+              method:
+                'POST',
+
+              headers: {
+                'Content-Type':
+                  'application/json',
+              },
+
+              body:
+                JSON.stringify({
+                  numbers,
+                }),
+            }
+          )
+
+        const result =
+          await response.json()
+
+        const grouped = {}
+
+        for (
+          const row of result
+        ) {
+
+          const key =
+            row.sim_no
+
+          if (
+            !grouped[key]
+          ) {
+
+            grouped[key] = {
+
+              sim_no:
+                row.sim_no,
+
+              msisdn:
+                row.msisdn,
+            }
+          }
+
+          grouped[key][
+            row.usage_month
+          ] = Number(
+            row.used_data_mb ||
+              0
+          )
+        }
+
+        const finalData =
+          Object.values(
+            grouped
+          )
+
+        setData(
+          finalData
         )
 
-      setData(finalData)
+        setOriginalData(
+          finalData
+        )
 
-      setOriginalData(
-        finalData
-      )
+      } catch (error) {
 
-    } catch (error) {
+        console.error(
+          error
+        )
 
-      console.error(
-        error
-      )
+        alert(
+          'Failed to fetch data'
+        )
 
-      alert(
-        'Search failed'
-      )
+      } finally {
 
-    } finally {
-
-      setLoading(false)
+        setLoading(false)
+      }
     }
-  }
 
   const allMonths =
     useMemo(() => {
 
       return Array.from(
+
         new Set(
+
           data.flatMap(
             (row) =>
+
               Object.keys(
                 row
               ).filter(
                 (key) =>
+
                   ![
                     'sim_no',
                     'msisdn',
-                    'latestMonth',
-                  ].includes(key)
+                  ].includes(
+                    key
+                  )
               )
           )
         )
-      ).sort(
-        (
-          a,
-          b
-        ) =>
-          new Date(a)
-            .getTime() -
-          new Date(b)
-            .getTime()
-      )
+      ).sort()
 
     }, [data])
 
-  const months =
+  const visibleMonths =
     useMemo(() => {
 
       if (
@@ -216,7 +250,7 @@ export default function Home() {
   const sortData = (
     key,
     direction,
-    isMonth = false
+    numeric = false
   ) => {
 
     const sorted =
@@ -229,7 +263,7 @@ export default function Home() {
       ) => {
 
         const valueA =
-          isMonth
+          numeric
             ? Number(
                 a[key] || 0
               )
@@ -239,7 +273,7 @@ export default function Home() {
                 .toString()
 
         const valueB =
-          isMonth
+          numeric
             ? Number(
                 b[key] || 0
               )
@@ -248,12 +282,16 @@ export default function Home() {
               )
                 .toString()
 
-        if (isMonth) {
+        if (
+          numeric
+        ) {
 
           return direction ===
             'asc'
-            ? valueA - valueB
-            : valueB - valueA
+            ? valueA -
+                valueB
+            : valueB -
+                valueA
         }
 
         return direction ===
@@ -270,7 +308,7 @@ export default function Home() {
     setData(sorted)
   }
 
-  const filterByValue = (
+  const filterData = (
     key,
     value
   ) => {
@@ -287,6 +325,7 @@ export default function Home() {
     const filtered =
       originalData.filter(
         (row) =>
+
           (
             row[key] || ''
           )
@@ -300,152 +339,177 @@ export default function Home() {
     setData(filtered)
   }
 
-  const downloadCSV = () => {
+  const downloadCSV =
+    () => {
 
-    const headers = [
+      const headers = [
 
-      'SIM Number',
+        'SIM',
 
-      'Phone Number',
+        'MSISDN',
 
-      'Min Data',
+        'Min Data',
 
-      'Max Data',
+        'Max Data',
 
-      'Total Data',
+        'Total Data',
 
-      'Avg Data',
+        'Average Data',
 
-      'Used Months',
+        'Used Months',
 
-      'Zero Months',
+        'Zero Usage Months',
 
-      ...months.map(
-        (month) =>
-          `${month} (MB)`
-      ),
-    ]
+        ...visibleMonths.map(
+          (month) =>
+            `${month} (MB)`
+        ),
+      ]
 
-    const rows =
-      data.map(
-        (row) => {
+      const rows =
+        data.map(
+          (row) => {
 
-          const usageValues =
-            months.map(
-              (month) =>
-                Number(
+            const values =
+              visibleMonths.map(
+                (
+                  month
+                ) =>
+                  Number(
+                    row[
+                      month
+                    ] || 0
+                  )
+              )
+
+            const min =
+              Math.min(
+                ...values
+              )
+
+            const max =
+              Math.max(
+                ...values
+              )
+
+            const total =
+              values.reduce(
+                (
+                  a,
+                  b
+                ) =>
+                  a + b,
+                0
+              )
+
+            const avg =
+              (
+                total /
+                values.length
+              ).toFixed(2)
+
+            const used =
+              values.filter(
+                (
+                  value
+                ) =>
+                  value > 0
+              ).length
+
+            const zero =
+              values.filter(
+                (
+                  value
+                ) =>
+                  value === 0
+              ).length
+
+            return [
+
+              row.sim_no,
+
+              row.msisdn,
+
+              min,
+
+              max,
+
+              total.toFixed(
+                2
+              ),
+
+              avg,
+
+              used,
+
+              zero,
+
+              ...visibleMonths.map(
+                (
+                  month
+                ) =>
                   row[
                     month
                   ] || 0
-                )
-            )
+              ),
+            ]
+          }
+        )
 
-          const min =
-            Math.min(
-              ...usageValues
-            )
+      const csv =
+        [
+          headers.join(','),
 
-          const max =
-            Math.max(
-              ...usageValues
-            )
+          ...rows.map(
+            (row) =>
+              row.join(',')
+          ),
+        ].join('\n')
 
-          const total =
-            usageValues.reduce(
-              (
-                a,
-                b
-              ) => a + b,
-              0
-            )
+      const blob =
+        new Blob(
+          [csv],
+          {
+            type:
+              'text/csv',
+          }
+        )
 
-          const avg =
-            (
-              total /
-              usageValues.length
-            ).toFixed(2)
+      const url =
+        URL.createObjectURL(
+          blob
+        )
 
-          const used =
-            usageValues.filter(
-              (
-                value
-              ) =>
-                value > 0
-            ).length
+      const link =
+        document.createElement(
+          'a'
+        )
 
-          const zero =
-            usageValues.filter(
-              (
-                value
-              ) =>
-                value === 0
-            ).length
+      link.href = url
 
-          return [
+      link.download =
+        'usage-report.csv'
 
-            row.sim_no,
+      link.click()
+    }
 
-            row.msisdn,
+  if (pageLoading) {
 
-            min,
+    return (
 
-            max,
+      <div className="
+        min-h-screen
+        flex
+        items-center
+        justify-center
+        text-2xl
+        font-bold
+      ">
 
-            total.toFixed(2),
+        Loading...
 
-            avg,
-
-            used,
-
-            zero,
-
-            ...months.map(
-              (
-                month
-              ) =>
-                row[
-                  month
-                ] || 0
-            ),
-          ]
-        }
-      )
-
-    const csv =
-      [
-        headers.join(','),
-
-        ...rows.map(
-          (row) =>
-            row.join(',')
-        ),
-      ].join('\n')
-
-    const blob =
-      new Blob(
-        [csv],
-        {
-          type:
-            'text/csv',
-        }
-      )
-
-    const url =
-      URL.createObjectURL(
-        blob
-      )
-
-    const link =
-      document.createElement(
-        'a'
-      )
-
-    link.href = url
-
-    link.download =
-      `usage_intelligence_${Date.now()}.csv`
-
-    link.click()
+      </div>
+    )
   }
 
   return (
@@ -458,51 +522,65 @@ export default function Home() {
 
       <div className="
         bg-white
-        rounded-xl
+        rounded-2xl
         shadow-lg
         p-4
       ">
 
         <div className="
+          flex
+          justify-between
+          items-center
           mb-4
         ">
 
           <h1 className="
-            text-2xl
+            text-3xl
             font-bold
           ">
             Usage Intelligence
           </h1>
 
-        </div>
-
-        <div className="
-          mb-4
-        ">
-
-          <textarea
-            rows={5}
-            value={input}
-            onChange={(e) =>
-              setInput(
-                e.target.value
+          <button
+            onClick={() =>
+              router.push(
+                '/'
               )
             }
-            placeholder="
-Enter SIM or Phone numbers
-One per line
-            "
             className="
-              w-full
-              border
-              rounded-lg
-              p-3
-              text-sm
-              resize-none
+              bg-black
+              text-white
+              px-4
+              py-2
+              rounded-xl
             "
-          />
+          >
+            Back
+          </button>
 
         </div>
+
+        <textarea
+          rows={5}
+          value={input}
+          onChange={(e) =>
+            setInput(
+              e.target.value
+            )
+          }
+          placeholder="
+Enter SIM numbers
+One per line
+          "
+          className="
+            w-full
+            border
+            rounded-xl
+            p-4
+            mb-4
+            resize-none
+          "
+        />
 
         <div className="
           flex
@@ -520,14 +598,16 @@ One per line
               text-white
               px-4
               py-2
-              rounded-lg
+              rounded-xl
             "
           >
+
             {
               loading
                 ? 'Loading...'
                 : 'Search'
             }
+
           </button>
 
           <button
@@ -539,7 +619,7 @@ One per line
               text-white
               px-4
               py-2
-              rounded-lg
+              rounded-xl
             "
           >
             Download CSV
@@ -556,10 +636,10 @@ One per line
               text-white
               px-4
               py-2
-              rounded-lg
+              rounded-xl
             "
           >
-            Reset Filter
+            Reset
           </button>
 
           <select
@@ -573,8 +653,8 @@ One per line
             }
             className="
               border
-              rounded-lg
-              px-3
+              rounded-xl
+              px-4
               py-2
             "
           >
@@ -592,7 +672,7 @@ One per line
             </option>
 
             <option value="custom">
-              Month Range
+              Custom Range
             </option>
 
           </select>
@@ -600,7 +680,9 @@ One per line
           {
             filterType ===
               'custom' && (
+
               <>
+
                 <select
                   value={
                     fromMonth
@@ -613,8 +695,8 @@ One per line
                   }
                   className="
                     border
-                    rounded-lg
-                    px-3
+                    rounded-xl
+                    px-4
                     py-2
                   "
                 >
@@ -628,6 +710,7 @@ One per line
                       (
                         month
                       ) => (
+
                         <option
                           key={
                             month
@@ -658,8 +741,8 @@ One per line
                   }
                   className="
                     border
-                    rounded-lg
-                    px-3
+                    rounded-xl
+                    px-4
                     py-2
                   "
                 >
@@ -673,6 +756,7 @@ One per line
                       (
                         month
                       ) => (
+
                         <option
                           key={
                             month
@@ -690,6 +774,7 @@ One per line
                   }
 
                 </select>
+
               </>
             )
           }
@@ -698,9 +783,9 @@ One per line
 
         <div className="
           overflow-auto
-          border
-          rounded-lg
           max-h-[700px]
+          border
+          rounded-xl
         ">
 
           <table className="
@@ -723,28 +808,30 @@ One per line
                     {
                       label:
                         'SIM',
+
                       key:
                         'sim_no',
                     },
 
                     {
                       label:
-                        'Phone Number',
+                        'MSISDN',
+
                       key:
                         'msisdn',
                     },
                   ].map(
                     (
-                      header
+                      item
                     ) => (
 
                       <th
                         key={
-                          header.key
+                          item.key
                         }
                         className="
                           border
-                          p-1
+                          p-2
                           min-w-[150px]
                         "
                       >
@@ -752,26 +839,20 @@ One per line
                         <div className="
                           flex
                           flex-col
-                          gap-1
+                          gap-2
                         ">
 
                           <span>
                             {
-                              header.label
+                              item.label
                             }
                           </span>
 
                           <select
-                            className="
-                              border
-                              rounded
-                              text-[10px]
-                            "
                             onChange={(e) => {
 
                               const value =
-                                e
-                                  .target
+                                e.target
                                   .value
 
                               if (
@@ -787,10 +868,15 @@ One per line
                               }
 
                               sortData(
-                                header.key,
+                                item.key,
                                 value
                               )
                             }}
+                            className="
+                              border
+                              rounded
+                              text-[10px]
+                            "
                           >
 
                             <option value="">
@@ -814,6 +900,13 @@ One per line
                           <input
                             type="text"
                             placeholder="Search"
+                            onChange={(e) =>
+                              filterData(
+                                item.key,
+                                e.target
+                                  .value
+                              )
+                            }
                             className="
                               border
                               rounded
@@ -821,13 +914,6 @@ One per line
                               py-1
                               text-[10px]
                             "
-                            onChange={(e) =>
-                              filterByValue(
-                                header.key,
-                                e.target
-                                  .value
-                              )
-                            }
                           />
 
                         </div>
@@ -837,32 +923,8 @@ One per line
                   )
                 }
 
-                <th className="border p-1">
-                  Min Data (MB)
-                </th>
-
-                <th className="border p-1">
-                  Max Data (MB)
-                </th>
-
-                <th className="border p-1">
-                  Total Data (MB)
-                </th>
-
-                <th className="border p-1">
-                  Avg Data (MB)
-                </th>
-
-                <th className="border p-1">
-                  Data Used Months
-                </th>
-
-                <th className="border p-1">
-                  Zero Data Usage Months
-                </th>
-
                 {
-                  months.map(
+                  visibleMonths.map(
                     (
                       month
                     ) => (
@@ -873,16 +935,15 @@ One per line
                         }
                         className="
                           border
-                          p-1
+                          p-2
                           min-w-[85px]
-                          text-[10px]
                         "
                       >
 
                         <div className="
                           flex
                           flex-col
-                          gap-1
+                          gap-2
                         ">
 
                           <span>
@@ -892,16 +953,10 @@ One per line
                           </span>
 
                           <select
-                            className="
-                              border
-                              rounded
-                              text-[10px]
-                            "
                             onChange={(e) => {
 
                               const value =
-                                e
-                                  .target
+                                e.target
                                   .value
 
                               if (
@@ -922,6 +977,11 @@ One per line
                                 true
                               )
                             }}
+                            className="
+                              border
+                              rounded
+                              text-[10px]
+                            "
                           >
 
                             <option value="">
@@ -962,8 +1022,8 @@ One per line
                     index
                   ) => {
 
-                    const usageValues =
-                      months.map(
+                    const values =
+                      visibleMonths.map(
                         (
                           month
                         ) =>
@@ -974,47 +1034,10 @@ One per line
                           )
                       )
 
-                    const min =
-                      Math.min(
-                        ...usageValues
-                      )
-
                     const max =
                       Math.max(
-                        ...usageValues
+                        ...values
                       )
-
-                    const total =
-                      usageValues.reduce(
-                        (
-                          a,
-                          b
-                        ) =>
-                          a + b,
-                        0
-                      )
-
-                    const avg =
-                      (
-                        total /
-                        usageValues.length
-                      ).toFixed(2)
-
-                    const used =
-                      usageValues.filter(
-                        (
-                          value
-                        ) =>
-                          value > 0
-                      ).length
-
-                    const zero =
-                      usageValues.filter(
-                        (
-                          value
-                        ) =>
-                          value === 0
-                      ).length
 
                     return (
 
@@ -1027,48 +1050,28 @@ One per line
                         "
                       >
 
-                        <td className="border p-1 text-center">
+                        <td className="
+                          border
+                          p-2
+                          text-center
+                        ">
                           {
                             row.sim_no
                           }
                         </td>
 
-                        <td className="border p-1 text-center">
+                        <td className="
+                          border
+                          p-2
+                          text-center
+                        ">
                           {
                             row.msisdn
                           }
                         </td>
 
-                        <td className="border p-1 text-center">
-                          {min}
-                        </td>
-
-                        <td className="border p-1 text-center">
-                          {max}
-                        </td>
-
-                        <td className="border p-1 text-center">
-                          {
-                            total.toFixed(
-                              2
-                            )
-                          }
-                        </td>
-
-                        <td className="border p-1 text-center">
-                          {avg}
-                        </td>
-
-                        <td className="border p-1 text-center">
-                          {used}
-                        </td>
-
-                        <td className="border p-1 text-center">
-                          {zero}
-                        </td>
-
                         {
-                          months.map(
+                          visibleMonths.map(
                             (
                               month
                             ) => {
@@ -1088,9 +1091,8 @@ One per line
                                   }
                                   className={`
                                     border
-                                    p-1
+                                    p-2
                                     text-center
-                                    text-[10px]
                                     ${
                                       value ===
                                         max &&
@@ -1100,9 +1102,13 @@ One per line
                                     }
                                   `}
                                 >
+
                                   {
-                                    value
+                                    value.toFixed(
+                                      2
+                                    )
                                   }
+
                                 </td>
                               )
                             }
