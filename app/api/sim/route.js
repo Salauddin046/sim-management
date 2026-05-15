@@ -1,3 +1,15 @@
+import { Pool } from 'pg'
+
+const pool = new Pool({
+
+  connectionString:
+    process.env.DATABASE_URL,
+
+  ssl: {
+    rejectUnauthorized: false,
+  },
+})
+
 export async function GET() {
 
   return Response.json({
@@ -24,16 +36,14 @@ export async function POST(
 
     if (
       !numbers ||
-      !Array.isArray(
-        numbers
-      )
+      !numbers.length
     ) {
 
       return Response.json(
         {
           success: false,
           message:
-            'Numbers array required',
+            'SIM numbers required',
         },
         {
           status: 400,
@@ -41,111 +51,46 @@ export async function POST(
       )
     }
 
-    const sampleData = []
+    const client =
+      await pool.connect()
 
-    numbers.forEach(
-      (
-        sim,
-        index
-      ) => {
+    const query = `
 
-        sampleData.push(
+      SELECT
+        usage_month,
+        msisdn,
+        sim_no,
+        sim_status,
+        plan,
+        used_data_mb
 
-          {
-            sim_no:
-              sim,
+      FROM sim_data2
 
-            msisdn:
-              `98765432${index}`,
+      WHERE
+        sim_no = ANY($1)
+        OR msisdn = ANY($1)
 
-            usage_month:
-              '2026-01',
+      ORDER BY
+        usage_month ASC
 
-            used_data_mb:
-              (
-                Math.random() *
-                500
-              ).toFixed(2),
-          },
+    `
 
-          {
-            sim_no:
-              sim,
+    const result =
+      await client.query(
+        query,
+        [numbers]
+      )
 
-            msisdn:
-              `98765432${index}`,
-
-            usage_month:
-              '2026-02',
-
-            used_data_mb:
-              (
-                Math.random() *
-                500
-              ).toFixed(2),
-          },
-
-          {
-            sim_no:
-              sim,
-
-            msisdn:
-              `98765432${index}`,
-
-            usage_month:
-              '2026-03',
-
-            used_data_mb:
-              (
-                Math.random() *
-                500
-              ).toFixed(2),
-          },
-
-          {
-            sim_no:
-              sim,
-
-            msisdn:
-              `98765432${index}`,
-
-            usage_month:
-              '2026-04',
-
-            used_data_mb:
-              (
-                Math.random() *
-                500
-              ).toFixed(2),
-          },
-
-          {
-            sim_no:
-              sim,
-
-            msisdn:
-              `98765432${index}`,
-
-            usage_month:
-              '2026-05',
-
-            used_data_mb:
-              (
-                Math.random() *
-                500
-              ).toFixed(2),
-          }
-        )
-      }
-    )
+    client.release()
 
     return Response.json(
-      sampleData
+      result.rows
     )
 
   } catch (error) {
 
     console.error(
+      'Database Error:',
       error
     )
 
@@ -153,7 +98,9 @@ export async function POST(
       {
         success: false,
         message:
-          'Server Error',
+          'Database Error',
+        error:
+          error.message,
       },
       {
         status: 500,

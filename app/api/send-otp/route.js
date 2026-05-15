@@ -1,7 +1,9 @@
 export async function GET() {
 
   return Response.json({
+
     success: true,
+
     message:
       'Send OTP API Working',
   })
@@ -51,12 +53,16 @@ export async function POST(
       success: true,
 
       message:
-        'OTP generated successfully',
+        'OTP sent successfully',
 
       otp,
     })
 
   } catch (error) {
+
+    console.error(
+      error
+    )
 
     return Response.json(
       {

@@ -1,17 +1,12 @@
 'use client'
 
-import {
-  useState,
-} from 'react'
+import { useEffect, useState } from 'react'
 
-import {
-  useRouter,
-} from 'next/navigation'
+import { useRouter } from 'next/navigation'
 
 export default function LoginPage() {
 
-  const router =
-    useRouter()
+  const router = useRouter()
 
   const [email, setEmail] =
     useState('')
@@ -19,52 +14,174 @@ export default function LoginPage() {
   const [password, setPassword] =
     useState('')
 
-  const loginUser =
-    async () => {
+  const [captcha, setCaptcha] =
+    useState('')
 
-      const savedUser =
-        JSON.parse(
-          localStorage.getItem(
-            'user'
+  const [userCaptcha, setUserCaptcha] =
+    useState('')
+
+  const [loading, setLoading] =
+    useState(false)
+
+  useEffect(() => {
+
+    generateCaptcha()
+
+  }, [])
+
+  const generateCaptcha = () => {
+
+    const upper =
+      'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+
+    const lower =
+      'abcdefghijklmnopqrstuvwxyz'
+
+    const numbers =
+      '0123456789'
+
+    const symbols =
+      '!@#$%^&*'
+
+    const all =
+      upper +
+      lower +
+      numbers +
+      symbols
+
+    let value = ''
+
+    value +=
+      upper[
+        Math.floor(
+          Math.random() *
+            upper.length
+        )
+      ]
+
+    value +=
+      lower[
+        Math.floor(
+          Math.random() *
+            lower.length
+        )
+      ]
+
+    value +=
+      numbers[
+        Math.floor(
+          Math.random() *
+            numbers.length
+        )
+      ]
+
+    value +=
+      symbols[
+        Math.floor(
+          Math.random() *
+            symbols.length
+        )
+      ]
+
+    for (
+      let i = 0;
+      i < 2;
+      i++
+    ) {
+
+      value +=
+        all[
+          Math.floor(
+            Math.random() *
+              all.length
           )
-        )
+        ]
+    }
 
-      if (
-        !savedUser
-      ) {
-
-        alert(
-          'No account found'
-        )
-
-        return
-      }
-
-      if (
-        savedUser.email !==
-          email
-      ) {
-
-        alert(
-          'Invalid email'
-        )
-
-        return
-      }
-
-      localStorage.setItem(
-        'loggedIn',
-        'true'
+    value = value
+      .split('')
+      .sort(
+        () =>
+          Math.random() -
+          0.5
       )
+      .join('')
+
+    setCaptcha(value)
+  }
+
+  const loginUser = () => {
+
+    if (
+      !email ||
+      !password ||
+      !userCaptcha
+    ) {
 
       alert(
-        'Login successful'
+        'Please fill all fields'
       )
 
-      router.push(
-        '/'
-      )
+      return
     }
+
+    if (
+      userCaptcha !==
+      captcha
+    ) {
+
+      alert(
+        'Invalid captcha'
+      )
+
+      generateCaptcha()
+
+      setUserCaptcha('')
+
+      return
+    }
+
+    const savedUser =
+      JSON.parse(
+        localStorage.getItem(
+          'user'
+        )
+      )
+
+    if (!savedUser) {
+
+      alert(
+        'No account found'
+      )
+
+      return
+    }
+
+    if (
+      savedUser.email !==
+      email
+    ) {
+
+      alert(
+        'Invalid email'
+      )
+
+      return
+    }
+
+    setLoading(true)
+
+    localStorage.setItem(
+      'loggedIn',
+      'true'
+    )
+
+    alert(
+      'Login successful'
+    )
+
+    router.push('/')
+  }
 
   return (
 
@@ -86,14 +203,26 @@ export default function LoginPage() {
         p-8
       ">
 
-        <h1 className="
-          text-3xl
-          font-bold
+        <div className="
           text-center
           mb-8
         ">
-          Login
-        </h1>
+
+          <h1 className="
+            text-4xl
+            font-bold
+            mb-2
+          ">
+            Login
+          </h1>
+
+          <p className="
+            text-gray-500
+          ">
+            Login to continue
+          </p>
+
+        </div>
 
         <div className="
           space-y-4
@@ -101,7 +230,7 @@ export default function LoginPage() {
 
           <input
             type="email"
-            placeholder="Email"
+            placeholder="Email Address"
             value={email}
             onChange={(e) =>
               setEmail(
@@ -133,10 +262,67 @@ export default function LoginPage() {
             "
           />
 
+          <div className="
+            flex
+            gap-3
+            items-center
+          ">
+
+            <div className="
+              bg-black
+              text-white
+              px-4
+              py-3
+              rounded-xl
+              font-bold
+              tracking-[3px]
+              flex-1
+              text-center
+            ">
+
+              {captcha}
+
+            </div>
+
+            <button
+              onClick={
+                generateCaptcha
+              }
+              className="
+                bg-gray-200
+                px-4
+                py-3
+                rounded-xl
+                font-semibold
+              "
+            >
+              Refresh
+            </button>
+
+          </div>
+
+          <input
+            type="text"
+            placeholder="Enter Captcha"
+            value={userCaptcha}
+            onChange={(e) =>
+              setUserCaptcha(
+                e.target.value
+              )
+            }
+            className="
+              w-full
+              border
+              rounded-xl
+              p-4
+            "
+          />
+
           <button
             onClick={
               loginUser
             }
+            disabled={loading}
             className="
               w-full
               bg-black
@@ -146,7 +332,13 @@ export default function LoginPage() {
               font-semibold
             "
           >
-            Login
+
+            {
+              loading
+                ? 'Logging in...'
+                : 'Login'
+            }
+
           </button>
 
           <button
@@ -160,6 +352,7 @@ export default function LoginPage() {
               border
               py-4
               rounded-xl
+              font-semibold
             "
           >
             Signup

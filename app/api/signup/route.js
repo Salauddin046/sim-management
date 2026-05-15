@@ -1,293 +1,79 @@
-'use client'
+export async function GET() {
 
-import {
-  useState
-} from 'react'
+  return Response.json({
 
-import {
-  useRouter
-} from 'next/navigation'
+    success: true,
 
-export default function SignupPage() {
+    message:
+      'Signup API Working',
+  })
+}
 
-  const router =
-    useRouter()
+export async function POST(
+  request
+) {
 
-  const [loading, setLoading] =
-    useState(false)
+  try {
 
-  const [formData, setFormData] =
-    useState({
+    const body =
+      await request.json()
 
-      name: '',
+    const {
+      name,
+      email,
+      password,
+    } = body
 
-      email: '',
+    if (
+      !name ||
+      !email ||
+      !password
+    ) {
 
-      password: '',
-    })
-
-  const signupUser =
-    async () => {
-
-      if (
-        !formData.name ||
-        !formData.email ||
-        !formData.password
-      ) {
-
-        alert(
-          'Please fill all fields'
-        )
-
-        return
-      }
-
-      try {
-
-        setLoading(true)
-
-        const otpResponse =
-          await fetch(
-            '/api/send-otp',
-            {
-
-              method: 'POST',
-
-              headers: {
-                'Content-Type':
-                  'application/json',
-              },
-
-              body: JSON.stringify({
-                email:
-                  formData.email,
-              }),
-            }
-          )
-
-        const otpData =
-          await otpResponse.json()
-
-        if (
-          !otpData.success
-        ) {
-
-          alert(
-            otpData.message
-          )
-
-          return
+      return Response.json(
+        {
+          success: false,
+          message:
+            'All fields required',
+        },
+        {
+          status: 400,
         }
-
-        localStorage.setItem(
-          'signupData',
-          JSON.stringify({
-            ...formData,
-            otp:
-              otpData.otp,
-          })
-        )
-
-        alert(
-          `OTP Sent Successfully\n\nTest OTP: ${otpData.otp}`
-        )
-
-        router.push(
-          '/verify-otp'
-        )
-
-      } catch (error) {
-
-        console.error(
-          error
-        )
-
-        alert(
-          'Signup failed'
-        )
-
-      } finally {
-
-        setLoading(false)
-      }
+      )
     }
 
-  return (
+    const user = {
 
-    <div className="
-      min-h-screen
-      bg-gray-100
-      flex
-      items-center
-      justify-center
-      p-4
-    ">
+      name,
 
-      <div className="
-        bg-white
-        w-full
-        max-w-md
-        rounded-3xl
-        shadow-xl
-        p-8
-      ">
+      email,
+    }
 
-        <div className="
-          mb-8
-          text-center
-        ">
+    return Response.json({
 
-          <h1 className="
-            text-3xl
-            font-bold
-            text-gray-800
-            mb-2
-          ">
-            Signup
-          </h1>
+      success: true,
 
-          <p className="
-            text-sm
-            text-gray-500
-          ">
-            Create your account
-          </p>
+      message:
+        'Account created successfully',
 
-        </div>
+      user,
+    })
 
-        <div className="
-          space-y-4
-        ">
+  } catch (error) {
 
-          <input
-            type="text"
-            placeholder="Full Name"
-            value={
-              formData.name
-            }
-            onChange={(e) =>
-              setFormData({
+    console.error(
+      error
+    )
 
-                ...formData,
-
-                name:
-                  e.target
-                    .value,
-              })
-            }
-            className="
-              w-full
-              border
-              rounded-xl
-              p-4
-              outline-none
-            "
-          />
-
-          <input
-            type="email"
-            placeholder="Email Address"
-            value={
-              formData.email
-            }
-            onChange={(e) =>
-              setFormData({
-
-                ...formData,
-
-                email:
-                  e.target
-                    .value,
-              })
-            }
-            className="
-              w-full
-              border
-              rounded-xl
-              p-4
-              outline-none
-            "
-          />
-
-          <input
-            type="password"
-            placeholder="Password"
-            value={
-              formData.password
-            }
-            onChange={(e) =>
-              setFormData({
-
-                ...formData,
-
-                password:
-                  e.target
-                    .value,
-              })
-            }
-            className="
-              w-full
-              border
-              rounded-xl
-              p-4
-              outline-none
-            "
-          />
-
-          <button
-            onClick={
-              signupUser
-            }
-            disabled={
-              loading
-            }
-            className="
-              w-full
-              bg-black
-              text-white
-              py-4
-              rounded-xl
-              font-semibold
-            "
-          >
-
-            {
-              loading
-                ? 'Sending OTP...'
-                : 'Send OTP'
-            }
-
-          </button>
-
-        </div>
-
-        <div className="
-          mt-6
-          text-center
-          text-sm
-        ">
-
-          Already have account?
-
-          <button
-            onClick={() =>
-              router.push(
-                '/login'
-              )
-            }
-            className="
-              ml-2
-              font-semibold
-              text-blue-600
-            "
-          >
-            Login
-          </button>
-
-        </div>
-
-      </div>
-
-    </div>
-  )
+    return Response.json(
+      {
+        success: false,
+        message:
+          'Server error',
+      },
+      {
+        status: 500,
+      }
+    )
+  }
 }
