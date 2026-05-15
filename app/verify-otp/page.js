@@ -1,12 +1,9 @@
 'use client'
 
-import {
-  useState
-} from 'react'
+import { useState } from 'react'
 
-import {
-  useRouter
-} from 'next/navigation'
+import { useRouter }
+from 'next/navigation'
 
 export default function VerifyOtpPage() {
 
@@ -61,6 +58,10 @@ export default function VerifyOtpPage() {
               },
 
               body: JSON.stringify({
+
+                email:
+                  signupData.email,
+
                 otp,
               }),
             }
@@ -93,6 +94,7 @@ export default function VerifyOtpPage() {
               },
 
               body: JSON.stringify({
+
                 name:
                   signupData.name,
 
@@ -101,6 +103,8 @@ export default function VerifyOtpPage() {
 
                 password:
                   signupData.password,
+
+                otp,
               }),
             }
           )
@@ -121,13 +125,6 @@ export default function VerifyOtpPage() {
 
         localStorage.removeItem(
           'signupData'
-        )
-
-        localStorage.setItem(
-          'user',
-          JSON.stringify(
-            signupResult.user
-          )
         )
 
         alert(
@@ -158,7 +155,9 @@ export default function VerifyOtpPage() {
 
     <div className="
       min-h-screen
-      bg-gray-100
+      bg-gradient-to-r
+      from-violet-700
+      to-fuchsia-500
       flex
       items-center
       justify-center
@@ -166,12 +165,16 @@ export default function VerifyOtpPage() {
     ">
 
       <div className="
-        bg-white
+        bg-white/10
+        backdrop-blur-xl
+        border
+        border-white/20
         w-full
         max-w-md
         rounded-3xl
-        shadow-xl
+        shadow-2xl
         p-8
+        text-white
       ">
 
         <div className="
@@ -180,17 +183,15 @@ export default function VerifyOtpPage() {
         ">
 
           <h1 className="
-            text-3xl
+            text-4xl
             font-bold
-            text-gray-800
             mb-2
           ">
             Verify OTP
           </h1>
 
           <p className="
-            text-sm
-            text-gray-500
+            text-white/70
           ">
             Enter OTP sent to email
           </p>
@@ -212,13 +213,16 @@ export default function VerifyOtpPage() {
             }
             className="
               w-full
+              bg-white/10
               border
-              rounded-xl
+              border-white/20
+              rounded-2xl
               p-4
               outline-none
               text-center
-              text-xl
+              text-2xl
               tracking-[10px]
+              placeholder:text-white/60
             "
           />
 
@@ -231,11 +235,11 @@ export default function VerifyOtpPage() {
             }
             className="
               w-full
-              bg-black
-              text-white
+              bg-white
+              text-violet-700
               py-4
-              rounded-xl
-              font-semibold
+              rounded-2xl
+              font-bold
             "
           >
 
