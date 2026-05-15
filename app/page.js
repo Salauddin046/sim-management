@@ -9,16 +9,34 @@ import {
   useRouter,
 } from 'next/navigation'
 
+type DashboardType = {
+
+  title: string
+
+  description: string
+
+  route: string
+}
+
+type UserType = {
+
+  name: string
+
+  email: string
+}
+
 export default function HomePage() {
 
   const router =
     useRouter()
 
   const [loading, setLoading] =
-    useState(true)
+    useState<boolean>(true)
 
   const [user, setUser] =
-    useState(null)
+    useState<UserType | null>(
+      null
+    )
 
   useEffect(() => {
 
@@ -28,10 +46,8 @@ export default function HomePage() {
       )
 
     const savedUser =
-      JSON.parse(
-        localStorage.getItem(
-          'user'
-        )
+      localStorage.getItem(
+        'user'
       )
 
     if (
@@ -46,11 +62,15 @@ export default function HomePage() {
       return
     }
 
-    setUser(savedUser)
+    setUser(
+      JSON.parse(
+        savedUser
+      )
+    )
 
     setLoading(false)
 
-  }, [])
+  }, [router])
 
   const logout = () => {
 
@@ -63,7 +83,8 @@ export default function HomePage() {
     )
   }
 
-  const dashboards = [
+  const dashboards:
+    DashboardType[] = [
 
     {
       title:
@@ -209,7 +230,9 @@ export default function HomePage() {
         ">
 
           {dashboards.map(
-            (dashboard) => (
+            (
+              dashboard
+            ) => (
 
               <div
                 key={
