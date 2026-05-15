@@ -1,10 +1,56 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
+import {
+  useEffect,
+  useState,
+} from 'react'
+
+import {
+  useRouter,
+} from 'next/navigation'
 
 export default function HomePage() {
 
-  const router = useRouter()
+  const router =
+    useRouter()
+
+  const [showLogin, setShowLogin] =
+    useState(false)
+
+  const [showSignup, setShowSignup] =
+    useState(false)
+
+  const [loggedUser, setLoggedUser] =
+    useState(null)
+
+  const [loginData, setLoginData] =
+    useState({
+      email: '',
+      password: '',
+    })
+
+  const [signupData, setSignupData] =
+    useState({
+      name: '',
+      email: '',
+      password: '',
+    })
+
+  useEffect(() => {
+
+    const user =
+      localStorage.getItem(
+        'user'
+      )
+
+    if (user) {
+
+      setLoggedUser(
+        JSON.parse(user)
+      )
+    }
+
+  }, [])
 
   const dashboards = [
 
@@ -13,7 +59,7 @@ export default function HomePage() {
         'Usage Intelligence',
 
       description:
-        'SIM usage analytics, monthly data usage, filters, CSV export and telecom insights.',
+        'SIM usage analytics, monthly data usage, filters and telecom insights.',
 
       route:
         '/datix',
@@ -24,7 +70,7 @@ export default function HomePage() {
         'Command Center',
 
       description:
-        'Operations monitoring, alerts, live tracking and operational management dashboard.',
+        'Operations monitoring, alerts and operational management dashboard.',
 
       route:
         '/command-center',
@@ -35,18 +81,106 @@ export default function HomePage() {
         'Control Tower',
 
       description:
-        'Centralized monitoring, KPI visibility and enterprise level control dashboard.',
+        'Centralized monitoring and enterprise level control dashboard.',
 
       route:
         '/control-tower',
     },
   ]
 
+  const signup = () => {
+
+    if (
+      !signupData.name ||
+      !signupData.email ||
+      !signupData.password
+    ) {
+
+      alert(
+        'Fill all fields'
+      )
+
+      return
+    }
+
+    localStorage.setItem(
+      'user',
+      JSON.stringify(
+        signupData
+      )
+    )
+
+    setLoggedUser(
+      signupData
+    )
+
+    setShowSignup(
+      false
+    )
+
+    alert(
+      'Signup successful'
+    )
+  }
+
+  const login = () => {
+
+    const savedUser =
+      JSON.parse(
+        localStorage.getItem(
+          'user'
+        )
+      )
+
+    if (
+      savedUser?.email ===
+        loginData.email &&
+      savedUser?.password ===
+        loginData.password
+    ) {
+
+      setLoggedUser(
+        savedUser
+      )
+
+      setShowLogin(
+        false
+      )
+
+      alert(
+        'Login successful'
+      )
+
+    } else {
+
+      alert(
+        'Invalid credentials'
+      )
+    }
+  }
+
+  const logout = () => {
+
+    localStorage.removeItem(
+      'user'
+    )
+
+    setLoggedUser(
+      null
+    )
+
+    alert(
+      'Logged out'
+    )
+  }
+
   return (
 
     <div className="
       min-h-screen
-      bg-gray-100
+      bg-gradient-to-br
+      from-gray-100
+      to-gray-200
       p-6
     ">
 
@@ -56,24 +190,115 @@ export default function HomePage() {
       ">
 
         <div className="
+          flex
+          justify-between
+          items-center
           mb-10
         ">
 
-          <h1 className="
-            text-4xl
-            font-bold
-            text-gray-800
-            mb-2
-          ">
-            Dashboard Home
-          </h1>
+          <div>
 
-          <p className="
-            text-gray-600
-            text-sm
+            <h1 className="
+              text-4xl
+              font-bold
+              text-gray-800
+              mb-2
+            ">
+              Dashboard Home
+            </h1>
+
+            <p className="
+              text-gray-600
+            ">
+              Select a dashboard to continue
+            </p>
+
+          </div>
+
+          <div className="
+            flex
+            items-center
+            gap-3
           ">
-            Select a dashboard to continue
-          </p>
+
+            {loggedUser ? (
+
+              <>
+
+                <div className="
+                  bg-white
+                  px-4
+                  py-2
+                  rounded-xl
+                  shadow
+                  text-sm
+                  font-medium
+                ">
+
+                  {loggedUser.name}
+
+                </div>
+
+                <button
+                  onClick={
+                    logout
+                  }
+                  className="
+                    bg-red-600
+                    text-white
+                    px-4
+                    py-2
+                    rounded-xl
+                  "
+                >
+                  Logout
+                </button>
+
+              </>
+
+            ) : (
+
+              <>
+
+                <button
+                  onClick={() =>
+                    setShowLogin(
+                      true
+                    )
+                  }
+                  className="
+                    bg-black
+                    text-white
+                    px-4
+                    py-2
+                    rounded-xl
+                  "
+                >
+                  Login
+                </button>
+
+                <button
+                  onClick={() =>
+                    setShowSignup(
+                      true
+                    )
+                  }
+                  className="
+                    bg-green-600
+                    text-white
+                    px-4
+                    py-2
+                    rounded-xl
+                  "
+                >
+                  Signup
+                </button>
+
+              </>
+
+            )}
+
+          </div>
 
         </div>
 
@@ -94,14 +319,13 @@ export default function HomePage() {
                 }
                 className="
                   bg-white
-                  rounded-2xl
+                  rounded-3xl
                   shadow-lg
                   border
                   border-gray-200
-                  p-6
+                  p-7
                   hover:shadow-2xl
                   transition-all
-                  duration-300
                 "
               >
 
@@ -113,6 +337,27 @@ export default function HomePage() {
                 ">
 
                   <div>
+
+                    <div className="
+                      w-14
+                      h-14
+                      rounded-2xl
+                      bg-black
+                      text-white
+                      flex
+                      items-center
+                      justify-center
+                      text-2xl
+                      font-bold
+                      mb-5
+                    ">
+
+                      {
+                        dashboard
+                          .title[0]
+                      }
+
+                    </div>
 
                     <h2 className="
                       text-2xl
@@ -144,16 +389,14 @@ export default function HomePage() {
                       )
                     }
                     className="
-                      mt-6
+                      mt-8
                       w-full
                       bg-black
                       text-white
                       py-3
-                      rounded-xl
+                      rounded-2xl
                       text-sm
                       font-semibold
-                      hover:bg-gray-800
-                      transition-all
                     "
                   >
                     Open Dashboard
@@ -166,6 +409,248 @@ export default function HomePage() {
           )}
 
         </div>
+
+        {showLogin && (
+
+          <div className="
+            fixed
+            inset-0
+            bg-black/40
+            flex
+            items-center
+            justify-center
+            z-50
+          ">
+
+            <div className="
+              bg-white
+              p-6
+              rounded-2xl
+              w-full
+              max-w-md
+            ">
+
+              <h2 className="
+                text-2xl
+                font-bold
+                mb-4
+              ">
+                Login
+              </h2>
+
+              <input
+                type="email"
+                placeholder="Email"
+                className="
+                  w-full
+                  border
+                  p-3
+                  rounded-lg
+                  mb-3
+                "
+                onChange={(e) =>
+                  setLoginData({
+                    ...loginData,
+                    email:
+                      e.target
+                        .value,
+                  })
+                }
+              />
+
+              <input
+                type="password"
+                placeholder="Password"
+                className="
+                  w-full
+                  border
+                  p-3
+                  rounded-lg
+                  mb-4
+                "
+                onChange={(e) =>
+                  setLoginData({
+                    ...loginData,
+                    password:
+                      e.target
+                        .value,
+                  })
+                }
+              />
+
+              <div className="
+                flex
+                gap-3
+              ">
+
+                <button
+                  onClick={
+                    login
+                  }
+                  className="
+                    flex-1
+                    bg-black
+                    text-white
+                    py-3
+                    rounded-lg
+                  "
+                >
+                  Login
+                </button>
+
+                <button
+                  onClick={() =>
+                    setShowLogin(
+                      false
+                    )
+                  }
+                  className="
+                    flex-1
+                    bg-gray-300
+                    py-3
+                    rounded-lg
+                  "
+                >
+                  Cancel
+                </button>
+
+              </div>
+
+            </div>
+
+          </div>
+        )}
+
+        {showSignup && (
+
+          <div className="
+            fixed
+            inset-0
+            bg-black/40
+            flex
+            items-center
+            justify-center
+            z-50
+          ">
+
+            <div className="
+              bg-white
+              p-6
+              rounded-2xl
+              w-full
+              max-w-md
+            ">
+
+              <h2 className="
+                text-2xl
+                font-bold
+                mb-4
+              ">
+                Signup
+              </h2>
+
+              <input
+                type="text"
+                placeholder="Name"
+                className="
+                  w-full
+                  border
+                  p-3
+                  rounded-lg
+                  mb-3
+                "
+                onChange={(e) =>
+                  setSignupData({
+                    ...signupData,
+                    name:
+                      e.target
+                        .value,
+                  })
+                }
+              />
+
+              <input
+                type="email"
+                placeholder="Email"
+                className="
+                  w-full
+                  border
+                  p-3
+                  rounded-lg
+                  mb-3
+                "
+                onChange={(e) =>
+                  setSignupData({
+                    ...signupData,
+                    email:
+                      e.target
+                        .value,
+                  })
+                }
+              />
+
+              <input
+                type="password"
+                placeholder="Password"
+                className="
+                  w-full
+                  border
+                  p-3
+                  rounded-lg
+                  mb-4
+                "
+                onChange={(e) =>
+                  setSignupData({
+                    ...signupData,
+                    password:
+                      e.target
+                        .value,
+                  })
+                }
+              />
+
+              <div className="
+                flex
+                gap-3
+              ">
+
+                <button
+                  onClick={
+                    signup
+                  }
+                  className="
+                    flex-1
+                    bg-green-600
+                    text-white
+                    py-3
+                    rounded-lg
+                  "
+                >
+                  Signup
+                </button>
+
+                <button
+                  onClick={() =>
+                    setShowSignup(
+                      false
+                    )
+                  }
+                  className="
+                    flex-1
+                    bg-gray-300
+                    py-3
+                    rounded-lg
+                  "
+                >
+                  Cancel
+                </button>
+
+              </div>
+
+            </div>
+
+          </div>
+        )}
 
       </div>
 

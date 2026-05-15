@@ -20,9 +20,6 @@ export default function Home() {
   const [loading, setLoading] =
     useState(false)
 
-  const [loggedUser, setLoggedUser] =
-    useState(null)
-
   const [filterType, setFilterType] =
     useState('all')
 
@@ -31,93 +28,6 @@ export default function Home() {
 
   const [toMonth, setToMonth] =
     useState('')
-
-  useEffect(() => {
-
-    const user =
-      localStorage.getItem(
-        'user'
-      )
-
-    if (user) {
-
-      setLoggedUser(
-        JSON.parse(user)
-      )
-    }
-
-    let timeout
-
-    const logoutUser = () => {
-
-      localStorage.clear()
-
-      sessionStorage.clear()
-
-      alert(
-        'Session expired'
-      )
-
-      window.location.reload()
-    }
-
-    const resetTimer = () => {
-
-      clearTimeout(timeout)
-
-      timeout = setTimeout(
-        logoutUser,
-        10 * 60 * 1000
-      )
-    }
-
-    resetTimer()
-
-    window.addEventListener(
-      'mousemove',
-      resetTimer
-    )
-
-    window.addEventListener(
-      'keydown',
-      resetTimer
-    )
-
-    window.addEventListener(
-      'click',
-      resetTimer
-    )
-
-    return () => {
-
-      clearTimeout(timeout)
-
-      window.removeEventListener(
-        'mousemove',
-        resetTimer
-      )
-
-      window.removeEventListener(
-        'keydown',
-        resetTimer
-      )
-
-      window.removeEventListener(
-        'click',
-        resetTimer
-      )
-    }
-
-  }, [])
-
-  const logout = () => {
-
-    localStorage.clear()
-
-    sessionStorage.clear()
-
-    window.location.reload()
-  }
 
   const searchBulk = async () => {
 
@@ -396,19 +306,19 @@ export default function Home() {
 
       'SIM Number',
 
-      'MSISDN',
+      'Phone Number',
 
-      'Min',
+      'Min Data',
 
-      'Max',
+      'Max Data',
 
-      'Total',
+      'Total Data',
 
-      'Avg',
+      'Avg Data',
 
-      'Used',
+      'Used Months',
 
-      'Zero',
+      'Zero Months',
 
       ...months.map(
         (month) =>
@@ -533,7 +443,7 @@ export default function Home() {
     link.href = url
 
     link.download =
-      `sim_usage_report_${Date.now()}.csv`
+      `usage_intelligence_${Date.now()}.csv`
 
     link.click()
   }
@@ -554,9 +464,6 @@ export default function Home() {
       ">
 
         <div className="
-          flex
-          justify-between
-          items-center
           mb-4
         ">
 
@@ -567,54 +474,11 @@ export default function Home() {
             Usage Intelligence
           </h1>
 
-          <div className="
-            flex
-            items-center
-            gap-3
-          ">
-
-            <div className="
-              text-sm
-              font-medium
-            ">
-              {
-                loggedUser
-                  ?.username ||
-                'User'
-              }
-            </div>
-
-            <button
-              onClick={
-                logout
-              }
-              className="
-                bg-red-600
-                text-white
-                px-4
-                py-2
-                rounded-lg
-              "
-            >
-              Logout
-            </button>
-
-          </div>
-
         </div>
 
         <div className="
           mb-4
         ">
-
-          <label className="
-            block
-            text-sm
-            font-semibold
-            mb-2
-          ">
-            
-          </label>
 
           <textarea
             rows={5}
@@ -626,7 +490,7 @@ export default function Home() {
             }
             placeholder="
 Enter SIM or Phone numbers
-
+One per line
             "
             className="
               w-full
@@ -637,14 +501,6 @@ Enter SIM or Phone numbers
               resize-none
             "
           />
-
-          <div className="
-            text-[11px]
-            text-gray-500
-            mt-1
-          ">
-            
-          </div>
 
         </div>
 
