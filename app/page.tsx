@@ -609,7 +609,7 @@ export default function Home() {
             text-2xl
             font-bold
           ">
-            Telecom Dashboard
+            Datix Dashboard
           </h1>
 
           <div className="
@@ -895,7 +895,7 @@ One per line
 
                     {
                       label:
-                        'MSISDN',
+                        'Phone Number',
                       key:
                         'msisdn',
                     },
@@ -1018,27 +1018,27 @@ One per line
                 }
 
                 <th className="border p-1">
-                  Min
+                  Min Data (MB)
                 </th>
 
                 <th className="border p-1">
-                  Max
+                  Max Data (MB)
                 </th>
 
                 <th className="border p-1">
-                  Total
+                  Total Data (MB)
                 </th>
 
                 <th className="border p-1">
-                  Avg
+                  Avg Data (MB)
                 </th>
 
                 <th className="border p-1">
-                  Used
+                  Data Used Months
                 </th>
 
                 <th className="border p-1">
-                  Zero
+                  Zero Data Used Months
                 </th>
 
                 {
