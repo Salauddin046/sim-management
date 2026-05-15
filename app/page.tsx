@@ -131,7 +131,7 @@ export default function Home() {
     if (!numbers.length) {
 
       alert(
-        'Enter SIM numbers'
+        'Enter SIM or Phone numbers'
       )
 
       return
@@ -182,44 +182,9 @@ export default function Home() {
             msisdn:
               row.msisdn,
 
-            sim_status:
-              row.sim_status || '-',
-
-            plan:
-              row.plan || '-',
-
             latestMonth:
               row.usage_month,
           }
-        }
-
-        const currentMonth =
-          new Date(
-            row.usage_month
-          )
-
-        const savedMonth =
-          new Date(
-            grouped[key]
-              .latestMonth
-          )
-
-        if (
-          currentMonth >
-          savedMonth
-        ) {
-
-          grouped[key]
-            .sim_status =
-            row.sim_status || '-'
-
-          grouped[key]
-            .plan =
-            row.plan || '-'
-
-          grouped[key]
-            .latestMonth =
-            row.usage_month
         }
 
         grouped[key][
@@ -270,8 +235,6 @@ export default function Home() {
                   ![
                     'sim_no',
                     'msisdn',
-                    'sim_status',
-                    'plan',
                     'latestMonth',
                   ].includes(key)
               )
@@ -435,10 +398,6 @@ export default function Home() {
 
       'MSISDN',
 
-      'Status',
-
-      'Plan',
-
       'Min',
 
       'Max',
@@ -517,10 +476,6 @@ export default function Home() {
             row.sim_no,
 
             row.msisdn,
-
-            row.sim_status,
-
-            row.plan,
 
             min,
 
@@ -648,27 +603,54 @@ export default function Home() {
 
         </div>
 
-        <textarea
-          rows={4}
-          value={input}
-          onChange={(e) =>
-            setInput(
-              e.target.value
-            )
-          }
-          placeholder="
-Enter SIM numbers
-One per line
-          "
-          className="
-            w-full
-            border
-            rounded-lg
-            p-2
+        <div className="
+          mb-4
+        ">
+
+          <label className="
+            block
             text-sm
-            mb-4
-          "
-        />
+            font-semibold
+            mb-2
+          ">
+            Bulk SIM Search
+          </label>
+
+          <textarea
+            rows={5}
+            value={input}
+            onChange={(e) =>
+              setInput(
+                e.target.value
+              )
+            }
+            placeholder="
+Enter SIM or Phone numbers
+
+
+Example:
+89914509006120256846
+89914509006120256847
+            "
+            className="
+              w-full
+              border
+              rounded-lg
+              p-3
+              text-sm
+              resize-none
+            "
+          />
+
+          <div className="
+            text-[11px]
+            text-gray-500
+            mt-1
+          ">
+            Supports bulk search
+          </div>
+
+        </div>
 
         <div className="
           flex
@@ -899,20 +881,6 @@ One per line
                       key:
                         'msisdn',
                     },
-
-                    {
-                      label:
-                        'Status',
-                      key:
-                        'sim_status',
-                    },
-
-                    {
-                      label:
-                        'Plan',
-                      key:
-                        'plan',
-                    },
                   ].map(
                     (
                       header
@@ -1038,7 +1006,7 @@ One per line
                 </th>
 
                 <th className="border p-1">
-                  Zero Data Used Months
+                  Zero Data Usage Months
                 </th>
 
                 {
@@ -1216,18 +1184,6 @@ One per line
                         <td className="border p-1 text-center">
                           {
                             row.msisdn
-                          }
-                        </td>
-
-                        <td className="border p-1 text-center">
-                          {
-                            row.sim_status
-                          }
-                        </td>
-
-                        <td className="border p-1 text-center">
-                          {
-                            row.plan
                           }
                         </td>
 
