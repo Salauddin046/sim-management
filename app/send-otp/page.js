@@ -1,72 +1,185 @@
-export async function GET() {
+'use client'
 
-  return Response.json({
-    success: true,
-    message:
-      'Send OTP API Working',
-  })
-}
+import { useState } from 'react'
 
-export async function POST(
-  request
-) {
+export default function SendOtpPage() {
 
-  try {
+  const [email, setEmail] =
+    useState('')
 
-    const body =
-      await request.json()
+  const [loading, setLoading] =
+    useState(false)
 
-    const {
-      email
-    } = body
+  const sendOtp = async () => {
 
     if (!email) {
 
-      return Response.json(
-        {
-          success: false,
-          message:
-            'Email required',
-        },
-        {
-          status: 400,
-        }
+      alert(
+        'Enter Email ID'
       )
+
+      return
     }
 
-    const otp =
-      Math.floor(
-        100000 +
-        Math.random() *
-          900000
-      ).toString()
+    setLoading(true)
 
-    console.log(
-      'Generated OTP:',
-      otp
-    )
+    try {
 
-    return Response.json({
+      const response =
+        await fetch(
+          '/api/send-otp',
+          {
+            method: 'POST',
 
-      success: true,
+            headers: {
+              'Content-Type':
+                'application/json',
+            },
 
-      message:
-        'OTP generated successfully',
+            body: JSON.stringify({
+              email,
+            }),
+          }
+        )
 
-      otp,
-    })
+      const result =
+        await response.json()
 
-  } catch (error) {
+      if (
+        result.success
+      ) {
 
-    return Response.json(
-      {
-        success: false,
-        message:
-          'Server error',
-      },
-      {
-        status: 500,
+        alert(
+          'OTP Sent Successfully'
+        )
+
+        window.location.href =
+          '/verify-otp'
+
+      } else {
+
+        alert(
+          result.message ||
+          'Failed to Send OTP'
+        )
       }
-    )
+
+    } catch (error) {
+
+      console.error(
+        error
+      )
+
+      alert(
+        'Something went wrong'
+      )
+
+    } finally {
+
+      setLoading(false)
+    }
   }
+
+  return (
+
+    <div className="
+      min-h-screen
+      flex
+      items-center
+      justify-center
+      bg-gray-100
+      p-4
+    ">
+
+      <div className="
+        bg-white
+        w-full
+        max-w-md
+        rounded-2xl
+        shadow-lg
+        p-8
+      ">
+
+        <h1 className="
+          text-3xl
+          font-bold
+          mb-2
+          text-center
+        ">
+          Send OTP
+        </h1>
+
+        <p className="
+          text-gray-500
+          text-sm
+          mb-6
+          text-center
+        ">
+          Enter your registered email ID
+        </p>
+
+        <input
+          type="email"
+          value={email}
+          onChange={(e) =>
+            setEmail(
+              e.target.value
+            )
+          }
+          placeholder="Enter Email ID"
+          className="
+            w-full
+            border
+            rounded-xl
+            p-3
+            mb-5
+            outline-none
+            focus:ring-2
+            focus:ring-black
+          "
+        />
+
+        <button
+          onClick={sendOtp}
+          disabled={loading}
+          className="
+            w-full
+            bg-black
+            text-white
+            p-3
+            rounded-xl
+            font-semibold
+            hover:bg-gray-800
+            transition-all
+          "
+        >
+
+          {
+            loading
+              ? 'Sending OTP...'
+              : 'Send OTP'
+          }
+
+        </button>
+
+        <button
+          onClick={() =>
+            window.location.href = '/'
+          }
+          className="
+            w-full
+            mt-3
+            border
+            p-3
+            rounded-xl
+            text-sm
+          "
+        >
+          Back To Home
+        </button>
+
+      </div>
+
+    </div>
+  )
 }
