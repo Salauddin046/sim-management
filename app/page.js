@@ -72,7 +72,7 @@ export default function HomePage() {
         'Usage Intelligence',
 
       description:
-        'SIM usage analytics, monthly data usage, filters and telecom insights.',
+        '',
 
       route:
         '/datix',
@@ -83,7 +83,7 @@ export default function HomePage() {
         'Command Center',
 
       description:
-        'Operations monitoring, alerts and operational management dashboard.',
+        '',
 
       route:
         '/command-center',
@@ -94,7 +94,7 @@ export default function HomePage() {
         'Control Tower',
 
       description:
-        'Centralized monitoring and enterprise level control dashboard.',
+        '',
 
       route:
         '/control-tower',
