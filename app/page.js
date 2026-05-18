@@ -257,25 +257,18 @@ export default function HomePage() {
               text-2xl
               font-bold
             ">
-              U
+              I
             </div>
 
             <div>
 
-              <h1 className="
-                text-xl
-                font-bold
-                leading-tight
-              ">
-                IntelliSIM
-                </h1>
-               <h3 className="
-                text-xl
-                font-bold
-                leading-tight
-              ">
-                SIM Intelligence & Control Platform
-              </h3>
+             <h1 className="text-3xl font-bold tracking-tight text-gray-900">
+               IntelliSIM
+            </h1>
+
+             <h3 className="text-sm font-medium text-gray-500 mt-1 tracking-wide">
+             SIM Intelligence & Control Platform
+               </h3>
 
             </div>
 
