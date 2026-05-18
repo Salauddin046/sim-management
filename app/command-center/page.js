@@ -380,6 +380,22 @@ Maximum 500
               Clear
             </button>
 
+            <button
+              onClick={() =>
+                window.history.back()
+              }
+              className="
+                bg-gray-700
+                text-white
+                px-8
+                py-4
+                rounded-2xl
+                font-semibold
+              "
+            >
+              Back
+            </button>
+
           </div>
 
           {
