@@ -94,11 +94,14 @@ export default function CommandCenterPage() {
               result
             )
 
-            const apiData =
-              result
-                ?.data
-                ?.data
-                ?.data
+           const apiData = {
+
+  sims:
+    result.sims || [],
+
+  deviceInfo:
+    result.deviceInfo || [],
+}
 
             console.log(
               'API DATA:',

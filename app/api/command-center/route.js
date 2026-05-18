@@ -63,20 +63,27 @@ export async function POST(req) {
         }
       )
 
-    const data =
+    const apiResponse =
       await response.json()
 
     console.log(
-      'API DATA:',
-      data
+      'API RESPONSE:',
+      apiResponse
     )
 
     return Response.json({
 
       success: true,
 
-      data:
-        data,
+      sims:
+        apiResponse
+          ?.data
+          ?.sims || [],
+
+      deviceInfo:
+        apiResponse
+          ?.data
+          ?.deviceInfo || [],
     })
 
   } catch (error) {
