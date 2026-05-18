@@ -267,9 +267,9 @@ export default function HomePage() {
                 font-bold
                 leading-tight
               ">
-                Universal
+                IntelliSIM
                 <br />
-                Teleservices
+                SIM Intelligence & Control Platform
               </h1>
 
             </div>
