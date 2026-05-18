@@ -179,7 +179,7 @@ export default function HomePage() {
         'SIM Explorer',
 
       route:
-        '/sim-search',
+        '/sim-explorer',
     },
   ]
 
