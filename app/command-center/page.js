@@ -53,9 +53,9 @@ export default function CommandCenterPage() {
 
         setLoading(true)
 
-        setError('')
-
         setRows([])
+
+        setError('')
 
         const allRows = []
 
@@ -90,20 +90,31 @@ export default function CommandCenterPage() {
               await response.json()
 
             console.log(
+              'RESULT:',
               result
             )
 
+            const apiData =
+              result
+                ?.data
+                ?.data
+                ?.data
+
+            console.log(
+              'API DATA:',
+              apiData
+            )
+
             if (
-              result.success &&
-              result.data &&
-              result.data.sims
+              apiData &&
+              apiData.sims
             ) {
 
-              result.data.sims
+              apiData.sims
                 .forEach((sim) => {
 
                   const device =
-                    result.data
+                    apiData
                       .deviceInfo
                       ?.find(
 
@@ -116,31 +127,27 @@ export default function CommandCenterPage() {
 
                     simNumber:
                       sim.simNo ||
-
-                    '-',
+                      '-',
 
                     mobileNumber:
                       sim.mobileNo ||
-
-                    '-',
+                      '-',
 
                     simStatus:
                       sim.status ||
-
-                    '-',
+                      '-',
 
                     plan:
                       sim.planName ||
-
-                    '-',
+                      '-',
 
                     imei:
                       device
                         ?.deviceImei ||
-
                       '-',
 
                     activationDate:
+
                       sim.activationDate
 
                         ? sim
@@ -164,15 +171,26 @@ export default function CommandCenterPage() {
 
           } catch (err) {
 
-            console.log(err)
+            console.log(
+              'ROW ERROR:',
+              err
+            )
           }
         }
+
+        console.log(
+          'FINAL ROWS:',
+          allRows
+        )
 
         setRows(allRows)
 
       } catch (error) {
 
-        console.log(error)
+        console.log(
+          'SEARCH ERROR:',
+          error
+        )
 
         setError(
           'Search failed'
