@@ -1,3 +1,16 @@
+import { Pool } from 'pg'
+
+const pool =
+  new Pool({
+
+    connectionString:
+      process.env.DATABASE_URL,
+
+    ssl: {
+      rejectUnauthorized: false,
+    },
+  })
+
 export async function POST(req) {
 
   try {
@@ -5,47 +18,28 @@ export async function POST(req) {
     const body =
       await req.json()
 
-    const email =
-      body.email
+    const {
+      email,
+      otp,
+    } = body
 
-    const otp =
-      body.otp
+    const result =
+      await pool.query(
 
-    if (
-      !email ||
-      !otp
-    ) {
-
-      return Response.json({
-
-        success: false,
-
-        message:
-          'Email and OTP required',
-      })
-    }
-
-    global.otpStore =
-      global.otpStore || {}
-
-    const savedOtp =
-      global.otpStore[email]
+        `
+        SELECT *
+        FROM otp_store
+        WHERE email = $1
+        AND otp = $2
+        `,
+        [
+          email,
+          otp,
+        ]
+      )
 
     if (
-      !savedOtp
-    ) {
-
-      return Response.json({
-
-        success: false,
-
-        message:
-          'OTP expired or not found',
-      })
-    }
-
-    if (
-      savedOtp !== otp
+      result.rows.length === 0
     ) {
 
       return Response.json({
@@ -67,10 +61,7 @@ export async function POST(req) {
 
   } catch (error) {
 
-    console.log(
-      'VERIFY OTP ERROR:',
-      error
-    )
+    console.log(error)
 
     return Response.json({
 
