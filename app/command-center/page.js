@@ -1,7 +1,6 @@
 'use client'
 
-import { useState }
-from 'react'
+import { useState } from 'react'
 
 export default function CommandCenterPage() {
 
@@ -11,8 +10,8 @@ export default function CommandCenterPage() {
   const [loading, setLoading] =
     useState(false)
 
-  const [data, setData] =
-    useState(null)
+  const [rows, setRows] =
+    useState([])
 
   const [error, setError] =
     useState('')
@@ -23,7 +22,27 @@ export default function CommandCenterPage() {
       if (!search.trim()) {
 
         alert(
-          'Enter SIM Number'
+          'Enter SIM Numbers'
+        )
+
+        return
+      }
+
+      const simNumbers =
+        search
+          .split('\n')
+          .map(
+            (item) =>
+              item.trim()
+          )
+          .filter(Boolean)
+
+      if (
+        simNumbers.length > 500
+      ) {
+
+        alert(
+          'Maximum 500 searches allowed'
         )
 
         return
@@ -35,44 +54,99 @@ export default function CommandCenterPage() {
 
         setError('')
 
-        setData(null)
+        setRows([])
 
-        const response =
-          await fetch(
-            '/api/command-center',
-            {
+        const allRows = []
 
-              method: 'POST',
-
-              headers: {
-                'Content-Type':
-                  'application/json',
-              },
-
-              body: JSON.stringify({
-
-                search,
-              }),
-            }
-          )
-
-        const result =
-          await response.json()
-
-        if (
-          !result.success
+        for (
+          const simNo
+          of simNumbers
         ) {
 
-          setError(
-            result.message
-          )
+          try {
 
-          return
+            const response =
+              await fetch(
+                '/api/command-center',
+                {
+
+                  method: 'POST',
+
+                  headers: {
+                    'Content-Type':
+                      'application/json',
+                  },
+
+                  body: JSON.stringify({
+
+                    search:
+                      simNo,
+                  }),
+                }
+              )
+
+            const result =
+              await response.json()
+
+            if (
+              result.success &&
+              result.data?.data?.sims
+            ) {
+
+              result.data.data.sims
+                .forEach((sim) => {
+
+                  const device =
+                    result.data
+                      .data
+                      .deviceInfo
+                      ?.find(
+
+                        (d) =>
+                          d.simNo ===
+                          sim.simNo
+                      )
+
+                  allRows.push({
+
+                    simNumber:
+                      sim.simNo,
+
+                    mobileNumber:
+                      sim.mobileNo,
+
+                    simStatus:
+                      sim.status,
+
+                    plan:
+                      sim.planName,
+
+                    imei:
+                      device
+                        ?.deviceImei ||
+                      '-',
+
+                    activationDate:
+                      sim.activationDate
+                        ?.split('T')[0] ||
+                      '-',
+
+                    safeCustodyDate:
+                      sim.safeCustodyDate
+                        ? sim.safeCustodyDate
+                            .split('T')[0]
+                        : '-',
+                  })
+                })
+            }
+
+          } catch (err) {
+
+            console.log(err)
+          }
         }
 
-        setData(
-          result.data.data
-        )
+        setRows(allRows)
 
       } catch (error) {
 
@@ -86,6 +160,94 @@ export default function CommandCenterPage() {
 
         setLoading(false)
       }
+    }
+
+  const downloadCSV =
+    () => {
+
+      if (
+        rows.length === 0
+      ) {
+
+        alert(
+          'No data available'
+        )
+
+        return
+      }
+
+      const headers = [
+
+        'SIM Number',
+
+        'Mobile Number',
+
+        'SIM Status',
+
+        'Plan',
+
+        'IMEI No',
+
+        'Activation Date',
+
+        'Safe Custody Date',
+      ]
+
+      const csvRows = [
+
+        headers.join(','),
+      ]
+
+      rows.forEach((row) => {
+
+        csvRows.push(
+
+          [
+
+            row.simNumber,
+
+            row.mobileNumber,
+
+            row.simStatus,
+
+            `"${row.plan}"`,
+
+            row.imei,
+
+            row.activationDate,
+
+            row.safeCustodyDate,
+          ].join(',')
+        )
+      })
+
+      const blob =
+        new Blob(
+
+          [csvRows.join('\n')],
+
+          {
+            type:
+              'text/csv',
+          }
+        )
+
+      const url =
+        window.URL
+          .createObjectURL(
+            blob
+          )
+
+      const a =
+        document
+          .createElement('a')
+
+      a.href = url
+
+      a.download =
+        `command_center_${Date.now()}.csv`
+
+      a.click()
     }
 
   return (
@@ -123,36 +285,39 @@ export default function CommandCenterPage() {
             <p className="
               text-gray-500
             ">
-              Search Airtel SIM Details
+              Bulk SIM Search
             </p>
 
           </div>
 
+          <textarea
+            placeholder="
+Enter SIM Numbers
+One per line
+Maximum 500
+            "
+            value={search}
+            onChange={(e) =>
+              setSearch(
+                e.target.value
+              )
+            }
+            rows={10}
+            className="
+              w-full
+              border
+              rounded-2xl
+              p-4
+              outline-none
+              mb-4
+            "
+          />
+
           <div className="
             flex
-            flex-col
-            md:flex-row
             gap-4
             mb-6
           ">
-
-            <input
-              type="text"
-              placeholder="Enter SIM Number"
-              value={search}
-              onChange={(e) =>
-                setSearch(
-                  e.target.value
-                )
-              }
-              className="
-                flex-1
-                border
-                rounded-2xl
-                p-4
-                outline-none
-              "
-            />
 
             <button
               onClick={
@@ -165,6 +330,7 @@ export default function CommandCenterPage() {
                 bg-black
                 text-white
                 px-8
+                py-4
                 rounded-2xl
                 font-semibold
               "
@@ -176,6 +342,22 @@ export default function CommandCenterPage() {
                   : 'Search'
               }
 
+            </button>
+
+            <button
+              onClick={
+                downloadCSV
+              }
+              className="
+                bg-green-600
+                text-white
+                px-8
+                py-4
+                rounded-2xl
+                font-semibold
+              "
+            >
+              Download CSV
             </button>
 
           </div>
@@ -197,79 +379,130 @@ export default function CommandCenterPage() {
             )
           }
 
-          {
-            data && (
+          <div className="
+            overflow-auto
+          ">
 
-              <div className="
-                overflow-auto
-              ">
+            <table className="
+              w-full
+              border-collapse
+              text-sm
+            ">
 
-                <table className="
-                  w-full
-                  border-collapse
+              <thead>
+
+                <tr className="
+                  bg-black
+                  text-white
                 ">
 
-                  <tbody>
+                  <th className="border p-3">
+                    SIM Number
+                  </th>
 
-                    {
-                      Object.entries(
-                        data
-                      ).map(
-                        (
-                          [key, value]
-                        ) => (
+                  <th className="border p-3">
+                    Mobile Number
+                  </th>
 
-                          <tr
-                            key={key}
-                            className="
-                              hover:bg-gray-50
-                            "
-                          >
+                  <th className="border p-3">
+                    SIM Status
+                  </th>
 
-                            <td className="
-                              border
-                              p-4
-                              font-semibold
-                              bg-gray-100
-                              w-[300px]
-                            ">
+                  <th className="border p-3">
+                    Plan
+                  </th>
 
-                              {key}
+                  <th className="border p-3">
+                    IMEI No
+                  </th>
 
-                            </td>
+                  <th className="border p-3">
+                    Activation Date
+                  </th>
 
-                            <td className="
-                              border
-                              p-4
-                            ">
+                  <th className="border p-3">
+                    Safe Custody Date
+                  </th>
 
-                              {
-                                typeof value ===
-                                'object'
+                </tr>
 
-                                ? JSON.stringify(
-                                    value
-                                  )
+              </thead>
 
-                                : String(
-                                    value
-                                  )
-                              }
+              <tbody>
 
-                            </td>
+                {
+                  rows.length === 0
+                  ? (
 
-                          </tr>
-                        )
+                    <tr>
+
+                      <td
+                        colSpan="7"
+                        className="
+                          border
+                          p-8
+                          text-center
+                        "
+                      >
+                        No data found
+                      </td>
+
+                    </tr>
+                  )
+                  : (
+
+                    rows.map(
+                      (
+                        row,
+                        index
+                      ) => (
+
+                        <tr
+                          key={index}
+                          className="
+                            hover:bg-gray-100
+                          "
+                        >
+
+                          <td className="border p-3">
+                            {row.simNumber}
+                          </td>
+
+                          <td className="border p-3">
+                            {row.mobileNumber}
+                          </td>
+
+                          <td className="border p-3">
+                            {row.simStatus}
+                          </td>
+
+                          <td className="border p-3">
+                            {row.plan}
+                          </td>
+
+                          <td className="border p-3">
+                            {row.imei}
+                          </td>
+
+                          <td className="border p-3">
+                            {row.activationDate}
+                          </td>
+
+                          <td className="border p-3">
+                            {row.safeCustodyDate}
+                          </td>
+
+                        </tr>
                       )
-                    }
+                    )
+                  )
+                }
 
-                  </tbody>
+              </tbody>
 
-                </table>
+            </table>
 
-              </div>
-            )
-          }
+          </div>
 
         </div>
 
