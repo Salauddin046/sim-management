@@ -268,9 +268,14 @@ export default function HomePage() {
                 leading-tight
               ">
                 IntelliSIM
-                <br />
+                </h1>
+               <h3 className="
+                text-xl
+                font-bold
+                leading-tight
+              ">
                 SIM Intelligence & Control Platform
-              </h1>
+              </h3>
 
             </div>
 
