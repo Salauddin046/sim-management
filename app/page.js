@@ -14,9 +14,6 @@ export default function HomePage() {
   const router =
     useRouter()
 
-  const [loading, setLoading] =
-    useState(true)
-
   const [user, setUser] =
     useState(null)
 
@@ -50,8 +47,6 @@ export default function HomePage() {
       )
     )
 
-    setLoading(false)
-
   }, [router])
 
   useEffect(() => {
@@ -77,7 +72,7 @@ export default function HomePage() {
             )
 
             alert(
-              'Session expired due to inactivity'
+              'Session expired'
             )
 
             router.push(
@@ -129,22 +124,66 @@ export default function HomePage() {
 
   }, [router])
 
-  const logout = () => {
+  const logout =
+    () => {
 
-    localStorage.removeItem(
-      'loggedIn'
-    )
+      localStorage.removeItem(
+        'loggedIn'
+      )
 
-    localStorage.removeItem(
-      'user'
-    )
+      localStorage.removeItem(
+        'user'
+      )
 
-    router.push(
-      '/login'
-    )
-  }
+      router.push(
+        '/login'
+      )
+    }
 
-  const dashboards = [
+  const menus = [
+
+    {
+      title:
+        'Home',
+
+      route:
+        '/',
+    },
+
+    {
+      title:
+        'Usage Intelligence',
+
+      route:
+        '/datix',
+    },
+
+    {
+      title:
+        'Command Center',
+
+      route:
+        '/command-center',
+    },
+
+    {
+      title:
+        'Control Tower',
+
+      route:
+        '/control-tower',
+    },
+
+    {
+      title:
+        'SIM Explorer',
+
+      route:
+        '/sim-search',
+    },
+  ]
+
+  const cards = [
 
     {
       title:
@@ -171,258 +210,371 @@ export default function HomePage() {
     },
   ]
 
-  if (loading) {
-
-    return (
-
-      <div className="
-        min-h-screen
-        flex
-        items-center
-        justify-center
-        text-2xl
-        font-bold
-      ">
-
-        Loading...
-
-      </div>
-    )
-  }
-
   return (
 
     <div className="
+      flex
       min-h-screen
-      bg-gradient-to-br
-      from-gray-100
-      to-gray-200
-      p-6
+      bg-[#f5f5f7]
     ">
 
       <div className="
-        max-w-7xl
-        mx-auto
+        w-[280px]
+        bg-white
+        border-r
+        flex
+        flex-col
+        justify-between
       ">
 
-        <div className="
-          flex
-          justify-between
-          items-center
-          mb-10
-          flex-wrap
-          gap-4
-        ">
+        <div>
 
-          <div>
+          <div className="
+            p-8
+            border-b
+            flex
+            items-center
+            gap-4
+          ">
 
-            <h1 className="
-              text-4xl
+            <div className="
+              w-14
+              h-14
+              rounded-2xl
+              bg-black
+              text-white
+              flex
+              items-center
+              justify-center
+              text-3xl
               font-bold
-              text-gray-800
-              mb-3
             ">
-              Dashboard Home
-            </h1>
+              U
+            </div>
 
-            <p className="
-              text-gray-600
-              text-base
-            ">
-              Select a dashboard to continue
-            </p>
+            <div>
+
+              <h1 className="
+                text-2xl
+                font-bold
+                leading-tight
+              ">
+                Universal
+                <br />
+                Teleservices
+              </h1>
+
+            </div>
 
           </div>
+
+          <div className="
+            p-5
+            space-y-3
+          ">
+
+            {
+              menus.map(
+                (menu) => (
+
+                  <button
+                    key={
+                      menu.title
+                    }
+                    onClick={() =>
+                      router.push(
+                        menu.route
+                      )
+                    }
+                    className={`
+                      w-full
+                      flex
+                      items-center
+                      gap-4
+                      px-5
+                      py-4
+                      rounded-2xl
+                      font-semibold
+                      transition-all
+
+                      ${
+                        menu.title ===
+                        'Home'
+
+                          ? 'bg-black text-white'
+
+                          : 'hover:bg-gray-100'
+                      }
+                    `}
+                  >
+
+                    <div className="
+                      w-9
+                      h-9
+                      rounded-xl
+                      bg-black
+                      text-white
+                      flex
+                      items-center
+                      justify-center
+                      text-sm
+                      font-bold
+                    ">
+
+                      {
+                        menu.title[0]
+                      }
+
+                    </div>
+
+                    {menu.title}
+
+                  </button>
+                )
+              )
+            }
+
+          </div>
+
+        </div>
+
+        <div className="
+          p-5
+        ">
 
           <button
             onClick={
               logout
             }
             className="
-              bg-red-600
-              text-white
+              w-full
+              flex
+              items-center
+              gap-4
               px-5
-              py-3
+              py-4
               rounded-2xl
+              hover:bg-red-100
+              text-red-600
               font-semibold
             "
           >
+
             Logout
+
           </button>
 
         </div>
 
+      </div>
+
+      <div className="
+        flex-1
+      ">
+
         <div className="
           bg-white
-          rounded-3xl
-          shadow-lg
-          p-6
-          mb-8
+          h-[100px]
+          border-b
           flex
           items-center
-          gap-5
+          justify-between
+          px-10
         ">
 
           <div className="
-            w-20
-            h-20
-            rounded-full
-            bg-black
-            text-white
             flex
             items-center
-            justify-center
-            text-3xl
-            font-bold
+            gap-6
           ">
 
-            {
-              user?.name
-                ?.charAt(0)
-                ?.toUpperCase()
-            }
+            <div className="
+              text-4xl
+              font-bold
+            ">
+              ☰
+            </div>
+
+            <h1 className="
+              text-4xl
+              font-bold
+            ">
+              Home
+            </h1>
 
           </div>
 
-          <div>
+          <div className="
+            flex
+            items-center
+            gap-4
+          ">
 
-            <h2 className="
-              text-2xl
+            <div className="
+              w-12
+              h-12
+              rounded-full
+              bg-black
+              text-white
+              flex
+              items-center
+              justify-center
+              text-lg
               font-bold
-              text-gray-800
             ">
 
               {
                 user?.name
+                  ?.charAt(0)
+                  ?.toUpperCase()
               }
 
-            </h2>
+            </div>
 
-            <p className="
-              text-gray-500
-              mt-1
-            ">
+            <div>
 
-              {
-                user?.email
-              }
+              <h2 className="
+                text-lg
+                font-bold
+              ">
 
-            </p>
+                {
+                  user?.name ||
+                  'User'
+                }
 
-            <p className="
-              text-sm
-              text-green-600
-              font-semibold
-              mt-2
-            ">
-              Active Session
-            </p>
+              </h2>
+
+              <p className="
+                text-sm
+                text-gray-500
+              ">
+
+                {
+                  user?.email
+                }
+
+              </p>
+
+            </div>
 
           </div>
 
         </div>
 
         <div className="
-          grid
-          grid-cols-1
-          md:grid-cols-2
-          lg:grid-cols-3
-          gap-6
+          p-10
         ">
 
-          {dashboards.map(
-            (
-              dashboard
-            ) => (
+          <h1 className="
+            text-5xl
+            font-bold
+            mb-4
+          ">
 
-              <div
-                key={
-                  dashboard.title
-                }
-                className="
-                  bg-white
-                  rounded-3xl
-                  shadow-lg
-                  border
-                  border-gray-200
-                  p-7
-                  hover:shadow-2xl
-                  hover:-translate-y-1
-                  transition-all
-                  duration-300
-                "
-              >
+            Welcome back,
+            {' '}
+            {
+              user?.name ||
+              'User'
+            }!
 
-                <div className="
-                  flex
-                  flex-col
-                  h-full
-                  justify-between
-                ">
+          </h1>
 
-                  <div>
+          <p className="
+            text-gray-600
+            text-xl
+            mb-12
+          ">
+
+            Here's what's happening with your system today.
+
+          </p>
+
+          <div className="
+            grid
+            grid-cols-1
+            md:grid-cols-2
+            xl:grid-cols-3
+            gap-8
+          ">
+
+            {
+              cards.map(
+                (card) => (
+
+                  <div
+                    key={
+                      card.title
+                    }
+                    className="
+                      bg-white
+                      rounded-3xl
+                      shadow-sm
+                      border
+                      p-8
+                      hover:shadow-xl
+                      transition-all
+                    "
+                  >
 
                     <div className="
-                      w-14
-                      h-14
+                      w-16
+                      h-16
                       rounded-2xl
                       bg-black
                       text-white
                       flex
                       items-center
                       justify-center
-                      text-2xl
+                      text-3xl
                       font-bold
-                      mb-5
+                      mb-8
                     ">
 
                       {
-                        dashboard
-                          .title[0]
+                        card.title[0]
                       }
 
                     </div>
 
                     <h2 className="
-                      text-2xl
+                      text-3xl
                       font-bold
-                      text-gray-800
-                      mb-3
+                      mb-16
                     ">
+
                       {
-                        dashboard.title
+                        card.title
                       }
+
                     </h2>
 
+                    <button
+                      onClick={() =>
+                        router.push(
+                          card.route
+                        )
+                      }
+                      className="
+                        w-full
+                        bg-black
+                        text-white
+                        py-4
+                        rounded-2xl
+                        font-semibold
+                        text-lg
+                      "
+                    >
+                      Open Dashboard
+                    </button>
+
                   </div>
+                )
+              )
+            }
 
-                  <button
-                    onClick={() =>
-                      router.push(
-                        dashboard.route
-                      )
-                    }
-                    className="
-                      mt-8
-                      w-full
-                      bg-black
-                      text-white
-                      py-3
-                      rounded-2xl
-                      text-sm
-                      font-semibold
-                      hover:bg-gray-800
-                      transition-all
-                    "
-                  >
-                    Open Dashboard
-                  </button>
-
-                </div>
-
-              </div>
-            )
-          )}
+          </div>
 
         </div>
 

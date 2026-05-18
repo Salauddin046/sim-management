@@ -110,7 +110,7 @@ export async function POST(req) {
   } catch (error) {
 
     console.log(
-      'COMMAND CENTER ERROR:',
+      'SIM Explorer ERROR:',
       error
     )
 
