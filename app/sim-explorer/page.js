@@ -1,7 +1,6 @@
 'use client'
 
-import { useState }
-from 'react'
+import { useState } from 'react'
 
 export default function SimExplorerPage() {
 
@@ -274,22 +273,45 @@ export default function SimExplorerPage() {
         ">
 
           <div className="
+            flex
+            items-center
+            justify-between
             mb-6
           ">
 
-            <h1 className="
-              text-4xl
-              font-bold
-              mb-2
-            ">
-              SIM Explorer
-            </h1>
+            <div>
 
-            <p className="
-              text-gray-500
-            ">
-              Bulk SIM Search
-            </p>
+              <h1 className="
+                text-4xl
+                font-bold
+                mb-2
+              ">
+                SIM Explorer
+              </h1>
+
+              <p className="
+                text-gray-500
+              ">
+                Bulk SIM Search
+              </p>
+
+            </div>
+
+            <button
+              onClick={() =>
+                window.history.back()
+              }
+              className="
+                bg-black
+                text-white
+                px-6
+                py-3
+                rounded-2xl
+                font-semibold
+              "
+            >
+              Back
+            </button>
 
           </div>
 
@@ -376,22 +398,6 @@ Enter SIM Numbers upto 500 nos
               "
             >
               Clear
-            </button>
-
-            <button
-              onClick={() =>
-                window.history.back()
-              }
-              className="
-                bg-gray-700
-                text-white
-                px-8
-                py-4
-                rounded-2xl
-                font-semibold
-              "
-            >
-              Back
             </button>
 
           </div>

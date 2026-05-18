@@ -21,12 +21,37 @@ export async function POST(req) {
       })
     }
 
+    if (
+      searches.length > 500
+    ) {
+
+      return Response.json({
+
+        success: false,
+
+        message:
+          'Maximum 500 searches allowed',
+      })
+    }
+
     const requests =
       searches.map(
 
         async (search) => {
 
           try {
+
+            const controller =
+              new AbortController()
+
+            const timeout =
+              setTimeout(
+
+                () =>
+                  controller.abort(),
+
+                15000
+              )
 
             const response =
               await fetch(
@@ -36,6 +61,9 @@ export async function POST(req) {
                 {
 
                   method: 'POST',
+
+                  signal:
+                    controller.signal,
 
                   headers: {
 
@@ -72,6 +100,22 @@ export async function POST(req) {
                 }
               )
 
+            clearTimeout(
+              timeout
+            )
+
+            if (
+              !response.ok
+            ) {
+
+              return {
+
+                sims: [],
+
+                deviceInfo: [],
+              }
+            }
+
             const apiResponse =
               await response.json()
 
@@ -88,9 +132,19 @@ export async function POST(req) {
                   ?.deviceInfo || [],
             }
 
-          } catch {
+          } catch (error) {
 
-            return null
+            console.log(
+              'SIM SEARCH ERROR:',
+              error
+            )
+
+            return {
+
+              sims: [],
+
+              deviceInfo: [],
+            }
           }
         }
       )
