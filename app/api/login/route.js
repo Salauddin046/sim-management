@@ -15,14 +15,6 @@ const pool =
     ssl: {
       rejectUnauthorized: false,
     },
-
-    max: 20,
-
-    idleTimeoutMillis:
-      30000,
-
-    connectionTimeoutMillis:
-      2000,
   })
 
 if (
@@ -44,6 +36,11 @@ export async function POST(req) {
       email,
       password,
     } = body
+
+    console.log(
+      'LOGIN BODY:',
+      body
+    )
 
     if (
       !email ||
@@ -72,6 +69,11 @@ export async function POST(req) {
         [email]
       )
 
+    console.log(
+      'DB RESULT:',
+      result.rows
+    )
+
     if (
       result.rows.length === 0
     ) {
@@ -85,7 +87,7 @@ export async function POST(req) {
       })
     }
 
-    const dbUser =
+    const user =
       result.rows[0]
 
     const validPassword =
@@ -93,8 +95,13 @@ export async function POST(req) {
 
         password,
 
-        dbUser.password
+        user.password
       )
+
+    console.log(
+      'PASSWORD MATCH:',
+      validPassword
+    )
 
     if (
       !validPassword
@@ -116,13 +123,13 @@ export async function POST(req) {
       user: {
 
         id:
-          dbUser.id,
+          user.id,
 
         name:
-          dbUser.name,
+          user.name,
 
         email:
-          dbUser.email,
+          user.email,
       },
     })
 
@@ -138,7 +145,7 @@ export async function POST(req) {
       success: false,
 
       message:
-        'Login failed',
+        error.message,
     })
   }
 }
