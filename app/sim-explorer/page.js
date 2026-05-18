@@ -295,9 +295,7 @@ export default function SimExplorerPage() {
 
           <textarea
             placeholder="
-Enter SIM Numbers
-One per line
-Maximum 500
+Enter SIM Numbers upto 500 nos
             "
             value={search}
             onChange={(e) =>

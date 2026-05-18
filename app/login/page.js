@@ -198,10 +198,6 @@ export default function LoginPage() {
           'true'
         )
 
-        alert(
-          'Login successful'
-        )
-
         router.push('/')
 
       } catch (error) {
