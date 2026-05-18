@@ -54,10 +54,89 @@ export default function HomePage() {
 
   }, [router])
 
+  useEffect(() => {
+
+    let logoutTimer
+
+    const resetTimer =
+      () => {
+
+        clearTimeout(
+          logoutTimer
+        )
+
+        logoutTimer =
+          setTimeout(() => {
+
+            localStorage.removeItem(
+              'loggedIn'
+            )
+
+            localStorage.removeItem(
+              'user'
+            )
+
+            alert(
+              'Session expired due to inactivity'
+            )
+
+            router.push(
+              '/login'
+            )
+
+          }, 10 * 60 * 1000)
+      }
+
+    const events = [
+
+      'mousemove',
+
+      'keydown',
+
+      'click',
+
+      'scroll',
+    ]
+
+    events.forEach(
+      (event) => {
+
+        window.addEventListener(
+          event,
+          resetTimer
+        )
+      }
+    )
+
+    resetTimer()
+
+    return () => {
+
+      clearTimeout(
+        logoutTimer
+      )
+
+      events.forEach(
+        (event) => {
+
+          window.removeEventListener(
+            event,
+            resetTimer
+          )
+        }
+      )
+    }
+
+  }, [router])
+
   const logout = () => {
 
     localStorage.removeItem(
       'loggedIn'
+    )
+
+    localStorage.removeItem(
+      'user'
     )
 
     router.push(
@@ -71,9 +150,6 @@ export default function HomePage() {
       title:
         'Usage Intelligence',
 
-      description:
-        '',
-
       route:
         '/datix',
     },
@@ -82,9 +158,6 @@ export default function HomePage() {
       title:
         'Command Center',
 
-      description:
-        '',
-
       route:
         '/command-center',
     },
@@ -92,9 +165,6 @@ export default function HomePage() {
     {
       title:
         'Control Tower',
-
-      description:
-        '',
 
       route:
         '/control-tower',
@@ -140,6 +210,8 @@ export default function HomePage() {
           justify-between
           items-center
           mb-10
+          flex-wrap
+          gap-4
         ">
 
           <div>
@@ -162,41 +234,89 @@ export default function HomePage() {
 
           </div>
 
+          <button
+            onClick={
+              logout
+            }
+            className="
+              bg-red-600
+              text-white
+              px-5
+              py-3
+              rounded-2xl
+              font-semibold
+            "
+          >
+            Logout
+          </button>
+
+        </div>
+
+        <div className="
+          bg-white
+          rounded-3xl
+          shadow-lg
+          p-6
+          mb-8
+          flex
+          items-center
+          gap-5
+        ">
+
           <div className="
+            w-20
+            h-20
+            rounded-full
+            bg-black
+            text-white
             flex
             items-center
-            gap-3
+            justify-center
+            text-3xl
+            font-bold
           ">
 
-            <div className="
-              bg-white
-              px-4
-              py-2
-              rounded-xl
-              shadow
-              text-sm
-              font-semibold
+            {
+              user?.name
+                ?.charAt(0)
+                ?.toUpperCase()
+            }
+
+          </div>
+
+          <div>
+
+            <h2 className="
+              text-2xl
+              font-bold
+              text-gray-800
             ">
 
-              {user?.name}
-
-            </div>
-
-            <button
-              onClick={
-                logout
+              {
+                user?.name
               }
-              className="
-                bg-red-600
-                text-white
-                px-4
-                py-2
-                rounded-xl
-                font-semibold
-              "
-            >
-              Logout
-            </button>
+
+            </h2>
+
+            <p className="
+              text-gray-500
+              mt-1
+            ">
+
+              {
+                user?.email
+              }
+
+            </p>
+
+            <p className="
+              text-sm
+              text-green-600
+              font-semibold
+              mt-2
+            ">
+              Active Session
+            </p>
 
           </div>
 
@@ -273,16 +393,6 @@ export default function HomePage() {
                         dashboard.title
                       }
                     </h2>
-
-                    <p className="
-                      text-sm
-                      text-gray-600
-                      leading-6
-                    ">
-                      {
-                        dashboard.description
-                      }
-                    </p>
 
                   </div>
 
