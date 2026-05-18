@@ -57,143 +57,93 @@ export default function CommandCenterPage() {
 
         setError('')
 
+        const response =
+          await fetch(
+            '/api/command-center',
+            {
+
+              method: 'POST',
+
+              headers: {
+                'Content-Type':
+                  'application/json',
+              },
+
+              body: JSON.stringify({
+
+                searches:
+                  simNumbers,
+              }),
+            }
+          )
+
+        const result =
+          await response.json()
+
         const allRows = []
 
-        for (
-          const simNo
-          of simNumbers
-        ) {
+        result.results
+          ?.forEach((item) => {
 
-          try {
+            item?.sims
+              ?.forEach((sim) => {
 
-            const response =
-              await fetch(
-                '/api/command-center',
-                {
+                const device =
+                  item.deviceInfo
+                    ?.find(
 
-                  method: 'POST',
+                      (d) =>
+                        d.simNo ===
+                        sim.simNo
+                    )
 
-                  headers: {
-                    'Content-Type':
-                      'application/json',
-                  },
+                allRows.push({
 
-                  body: JSON.stringify({
+                  simNumber:
+                    sim.simNo || '-',
 
-                    search:
-                      simNo,
-                  }),
-                }
-              )
+                  mobileNumber:
+                    sim.mobileNo || '-',
 
-            const result =
-              await response.json()
+                  simStatus:
+                    sim.status || '-',
 
-            console.log(
-              'RESULT:',
-              result
-            )
+                  plan:
+                    sim.planName || '-',
 
-           const apiData = {
+                  imei:
+                    device
+                      ?.deviceImei ||
+                    '-',
 
-  sims:
-    result.sims || [],
+                  activationDate:
 
-  deviceInfo:
-    result.deviceInfo || [],
-}
+                    sim.activationDate
 
-            console.log(
-              'API DATA:',
-              apiData
-            )
+                      ? sim
+                          .activationDate
+                          .split('T')[0]
 
-            if (
-              apiData &&
-              apiData.sims
-            ) {
+                      : '-',
 
-              apiData.sims
-                .forEach((sim) => {
+                  safeCustodyDate:
 
-                  const device =
-                    apiData
-                      .deviceInfo
-                      ?.find(
+                    sim.safeCustodyDate
 
-                        (d) =>
-                          d.simNo ===
-                          sim.simNo
-                      )
+                      ? sim
+                          .safeCustodyDate
+                          .split('T')[0]
 
-                  allRows.push({
-
-                    simNumber:
-                      sim.simNo ||
-                      '-',
-
-                    mobileNumber:
-                      sim.mobileNo ||
-                      '-',
-
-                    simStatus:
-                      sim.status ||
-                      '-',
-
-                    plan:
-                      sim.planName ||
-                      '-',
-
-                    imei:
-                      device
-                        ?.deviceImei ||
-                      '-',
-
-                    activationDate:
-
-                      sim.activationDate
-
-                        ? sim
-                            .activationDate
-                            .split('T')[0]
-
-                        : '-',
-
-                    safeCustodyDate:
-
-                      sim.safeCustodyDate
-
-                        ? sim
-                            .safeCustodyDate
-                            .split('T')[0]
-
-                        : '-',
-                  })
+                      : '-',
                 })
-            }
-
-          } catch (err) {
-
-            console.log(
-              'ROW ERROR:',
-              err
-            )
-          }
-        }
-
-        console.log(
-          'FINAL ROWS:',
-          allRows
-        )
+              })
+          })
 
         setRows(allRows)
 
       } catch (error) {
 
-        console.log(
-          'SEARCH ERROR:',
-          error
-        )
+        console.log(error)
 
         setError(
           'Search failed'
@@ -293,6 +243,16 @@ export default function CommandCenterPage() {
       a.click()
     }
 
+  const clearData =
+    () => {
+
+      setSearch('')
+
+      setRows([])
+
+      setError('')
+    }
+
   return (
 
     <div className="
@@ -360,6 +320,7 @@ Maximum 500
             flex
             gap-4
             mb-6
+            flex-wrap
           ">
 
             <button
@@ -401,6 +362,22 @@ Maximum 500
               "
             >
               Download CSV
+            </button>
+
+            <button
+              onClick={
+                clearData
+              }
+              className="
+                bg-red-600
+                text-white
+                px-8
+                py-4
+                rounded-2xl
+                font-semibold
+              "
+            >
+              Clear
             </button>
 
           </div>

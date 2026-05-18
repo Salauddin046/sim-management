@@ -5,85 +5,106 @@ export async function POST(req) {
     const body =
       await req.json()
 
-    const search =
-      body.search
+    const searches =
+      body.searches || []
 
-    if (!search) {
+    if (
+      searches.length === 0
+    ) {
 
       return Response.json({
 
         success: false,
 
         message:
-          'Search value required',
+          'No search values',
       })
     }
 
-    const response =
-      await fetch(
+    const requests =
+      searches.map(
 
-        'https://airtelsim.intellicar.in/api/v1/airtel/details',
+        async (search) => {
 
-        {
+          try {
 
-          method: 'POST',
+            const response =
+              await fetch(
 
-          headers: {
+                'https://airtelsim.intellicar.in/api/v1/airtel/details',
 
-            accept:
-              'application/json, text/plain, */*',
+                {
 
-            authorization:
-              'Basic YWlydGVsYXBpOkFpcnRlSW50ZWxsaWNhckAjMTIzNDU=',
+                  method: 'POST',
 
-            'content-type':
-              'application/json',
+                  headers: {
 
-            origin:
-              'https://airtelsim.intellicar.in',
+                    accept:
+                      'application/json, text/plain, */*',
 
-            referer:
-              'https://airtelsim.intellicar.in/debugger',
+                    authorization:
+                      'Basic YWlydGVsYXBpOkFpcnRlSW50ZWxsaWNhckAjMTIzNDU=',
 
-            'user-agent':
-              'Mozilla/5.0',
-          },
+                    'content-type':
+                      'application/json',
 
-          body: JSON.stringify({
+                    origin:
+                      'https://airtelsim.intellicar.in',
 
-            type:
-              'SIMNO',
+                    referer:
+                      'https://airtelsim.intellicar.in/debugger',
 
-            id:
-              search,
+                    'user-agent':
+                      'Mozilla/5.0',
+                  },
 
-            accounttype:
-              '1-28',
-          }),
+                  body: JSON.stringify({
+
+                    type:
+                      'SIMNO',
+
+                    id:
+                      search,
+
+                    accounttype:
+                      '1-28',
+                  }),
+                }
+              )
+
+            const apiResponse =
+              await response.json()
+
+            return {
+
+              sims:
+                apiResponse
+                  ?.data
+                  ?.sims || [],
+
+              deviceInfo:
+                apiResponse
+                  ?.data
+                  ?.deviceInfo || [],
+            }
+
+          } catch {
+
+            return null
+          }
         }
       )
 
-    const apiResponse =
-      await response.json()
-
-    console.log(
-      'API RESPONSE:',
-      apiResponse
-    )
+    const results =
+      await Promise.all(
+        requests
+      )
 
     return Response.json({
 
       success: true,
 
-      sims:
-        apiResponse
-          ?.data
-          ?.sims || [],
-
-      deviceInfo:
-        apiResponse
-          ?.data
-          ?.deviceInfo || [],
+      results,
     })
 
   } catch (error) {
@@ -98,8 +119,7 @@ export async function POST(req) {
       success: false,
 
       message:
-        error.message ||
-        'API search failed',
+        'Bulk search failed',
     })
   }
 }
