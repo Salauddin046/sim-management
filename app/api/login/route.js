@@ -1,8 +1,12 @@
 import { Pool } from 'pg'
-
 import bcrypt from 'bcryptjs'
 
+const globalForPool =
+  global
+
 const pool =
+  globalForPool.pool ||
+
   new Pool({
 
     connectionString:
@@ -11,7 +15,23 @@ const pool =
     ssl: {
       rejectUnauthorized: false,
     },
+
+    max: 20,
+
+    idleTimeoutMillis:
+      30000,
+
+    connectionTimeoutMillis:
+      2000,
   })
+
+if (
+  !globalForPool.pool
+) {
+
+  globalForPool.pool =
+    pool
+}
 
 export async function POST(req) {
 
@@ -39,19 +59,21 @@ export async function POST(req) {
       })
     }
 
-    const user =
+    const result =
       await pool.query(
 
         `
         SELECT *
         FROM users
         WHERE email = $1
+        LIMIT 1
         `,
+
         [email]
       )
 
     if (
-      user.rows.length === 0
+      result.rows.length === 0
     ) {
 
       return Response.json({
@@ -64,11 +86,13 @@ export async function POST(req) {
     }
 
     const dbUser =
-      user.rows[0]
+      result.rows[0]
 
     const validPassword =
       await bcrypt.compare(
+
         password,
+
         dbUser.password
       )
 
@@ -88,9 +112,6 @@ export async function POST(req) {
     return Response.json({
 
       success: true,
-
-      message:
-        'Login successful',
 
       user: {
 

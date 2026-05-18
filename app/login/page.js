@@ -1,147 +1,379 @@
-import { Pool }
-from 'pg'
+'use client'
 
-import bcrypt
-from 'bcryptjs'
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 
-const globalForPool =
-  global
+export default function LoginPage() {
 
-const pool =
-  globalForPool.pool ||
+  const router =
+    useRouter()
 
-  new Pool({
+  const [email, setEmail] =
+    useState('')
 
-    connectionString:
-      process.env.DATABASE_URL,
+  const [password, setPassword] =
+    useState('')
 
-    ssl: {
-      rejectUnauthorized: false,
-    },
+  const [captcha, setCaptcha] =
+    useState('')
 
-    max: 20,
+  const [userCaptcha, setUserCaptcha] =
+    useState('')
 
-    idleTimeoutMillis:
-      30000,
+  const [loading, setLoading] =
+    useState(false)
 
-    connectionTimeoutMillis:
-      2000,
-  })
+  useEffect(() => {
 
-if (
-  !globalForPool.pool
-) {
+    generateCaptcha()
 
-  globalForPool.pool =
-    pool
-}
+  }, [])
 
-export async function POST(req) {
+  const generateCaptcha =
+    () => {
 
-  try {
+      const chars =
+        'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
 
-    const body =
-      await req.json()
+      let value = ''
 
-    const {
-      email,
-      password,
-    } = body
+      for (
+        let i = 0;
+        i < 6;
+        i++
+      ) {
 
-    if (
-      !email ||
-      !password
-    ) {
+        value +=
+          chars.charAt(
 
-      return Response.json({
+            Math.floor(
+              Math.random() *
+              chars.length
+            )
+          )
+      }
 
-        success: false,
-
-        message:
-          'Email and password required',
-      })
+      setCaptcha(value)
     }
 
-    const userResult =
-      await pool.query(
+  const loginUser =
+    async () => {
 
-        `
-        SELECT *
-        FROM users
-        WHERE email = $1
-        LIMIT 1
-        `,
+      if (
+        !email ||
+        !password ||
+        !userCaptcha
+      ) {
 
-        [email]
-      )
+        alert(
+          'Please fill all fields'
+        )
 
-    if (
-      userResult.rows.length === 0
-    ) {
+        return
+      }
 
-      return Response.json({
+      if (
+        userCaptcha !==
+        captcha
+      ) {
 
-        success: false,
+        alert(
+          'Invalid captcha'
+        )
 
-        message:
-          'Invalid email or password',
-      })
+        generateCaptcha()
+
+        setUserCaptcha('')
+
+        return
+      }
+
+      try {
+
+        setLoading(true)
+
+        const response =
+          await fetch(
+            '/api/login',
+            {
+
+              method: 'POST',
+
+              headers: {
+                'Content-Type':
+                  'application/json',
+              },
+
+              body: JSON.stringify({
+
+                email,
+
+                password,
+              }),
+            }
+          )
+
+        const result =
+          await response.json()
+
+        if (
+          !result.success
+        ) {
+
+          alert(
+            result.message
+          )
+
+          return
+        }
+
+        localStorage.setItem(
+
+          'user',
+
+          JSON.stringify(
+            result.user
+          )
+        )
+
+        localStorage.setItem(
+          'loggedIn',
+          'true'
+        )
+
+        router.push('/')
+
+      } catch (error) {
+
+        console.log(error)
+
+        alert(
+          'Login failed'
+        )
+
+      } finally {
+
+        setLoading(false)
+      }
     }
 
-    const user =
-      userResult.rows[0]
+  return (
 
-    const validPassword =
-      await bcrypt.compare(
+    <div className="
+      min-h-screen
+      bg-gradient-to-r
+      from-violet-700
+      to-fuchsia-500
+      flex
+      items-center
+      justify-center
+      p-4
+    ">
 
-        password,
+      <div className="
+        bg-white/10
+        backdrop-blur-xl
+        border
+        border-white/20
+        w-full
+        max-w-md
+        rounded-3xl
+        shadow-2xl
+        p-8
+        text-white
+      ">
 
-        user.password
-      )
+        <div className="
+          text-center
+          mb-8
+        ">
 
-    if (
-      !validPassword
-    ) {
+          <h1 className="
+            text-4xl
+            font-bold
+            mb-2
+          ">
+            Login
+          </h1>
 
-      return Response.json({
+          <p className="
+            text-white/70
+          ">
+            Login to continue
+          </p>
 
-        success: false,
+        </div>
 
-        message:
-          'Invalid email or password',
-      })
-    }
+        <div className="
+          space-y-4
+        ">
 
-    return Response.json({
+          <input
+            type="email"
+            placeholder="Email Address"
+            value={email}
+            onChange={(e) =>
+              setEmail(
+                e.target.value
+              )
+            }
+            className="
+              w-full
+              bg-white/10
+              border
+              border-white/20
+              rounded-2xl
+              p-4
+              outline-none
+              placeholder:text-white/60
+            "
+          />
 
-      success: true,
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) =>
+              setPassword(
+                e.target.value
+              )
+            }
+            className="
+              w-full
+              bg-white/10
+              border
+              border-white/20
+              rounded-2xl
+              p-4
+              outline-none
+              placeholder:text-white/60
+            "
+          />
 
-      user: {
+          <div className="
+            flex
+            gap-3
+            items-center
+          ">
 
-        id:
-          user.id,
+            <div className="
+              bg-black
+              text-white
+              px-4
+              py-3
+              rounded-2xl
+              font-bold
+              tracking-[5px]
+              flex-1
+              text-center
+            ">
 
-        name:
-          user.name,
+              {captcha}
 
-        email:
-          user.email,
-      },
-    })
+            </div>
 
-  } catch (error) {
+            <button
+              onClick={
+                generateCaptcha
+              }
+              className="
+                bg-white
+                text-black
+                px-4
+                py-3
+                rounded-2xl
+                font-semibold
+              "
+            >
+              Refresh
+            </button>
 
-    console.log(
-      'LOGIN ERROR:',
-      error
-    )
+          </div>
 
-    return Response.json({
+          <input
+            type="text"
+            placeholder="Enter Captcha"
+            value={userCaptcha}
+            onChange={(e) =>
+              setUserCaptcha(
+                e.target.value
+              )
+            }
+            className="
+              w-full
+              bg-white/10
+              border
+              border-white/20
+              rounded-2xl
+              p-4
+              outline-none
+              placeholder:text-white/60
+            "
+          />
 
-      success: false,
+          <button
+            onClick={
+              loginUser
+            }
+            disabled={
+              loading
+            }
+            className="
+              w-full
+              bg-white
+              text-violet-700
+              py-4
+              rounded-2xl
+              font-bold
+              text-lg
+            "
+          >
 
-      message:
-        'Login failed',
-    })
-  }
+            {
+              loading
+                ? 'Logging in...'
+                : 'Login'
+            }
+
+          </button>
+
+          <button
+            onClick={() =>
+              router.push(
+                '/signup'
+              )
+            }
+            className="
+              w-full
+              border
+              border-white/20
+              py-4
+              rounded-2xl
+              font-semibold
+            "
+          >
+            Signup
+          </button>
+
+          <button
+            onClick={() =>
+              router.push(
+                '/forgot-password'
+              )
+            }
+            className="
+              w-full
+              text-sm
+              text-white/80
+            "
+          >
+            Forgot Password?
+          </button>
+
+        </div>
+
+      </div>
+
+    </div>
+  )
 }
