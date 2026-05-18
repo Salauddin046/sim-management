@@ -140,6 +140,49 @@ export default function HomePage() {
       )
     }
 
+  const menus = [
+
+    {
+      title:
+        'Home',
+
+      route:
+        '/',
+    },
+
+    {
+      title:
+        'Usage Intelligence',
+
+      route:
+        '/datix',
+    },
+
+    {
+      title:
+        'Command Center',
+
+      route:
+        '/command-center',
+    },
+
+    {
+      title:
+        'Control Tower',
+
+      route:
+        '/control-tower',
+    },
+
+    {
+      title:
+        'SIM Explorer',
+
+      route:
+        '/sim-search',
+    },
+  ]
+
   const cards = [
 
     {
@@ -255,7 +298,6 @@ export default function HomePage() {
                       w-full
                       flex
                       items-center
-                      gap-3
                       px-4
                       py-3
                       rounded-2xl
@@ -272,25 +314,6 @@ export default function HomePage() {
                       }
                     `}
                   >
-
-                    <div className="
-                      w-8
-                      h-8
-                      rounded-xl
-                      bg-black
-                      text-white
-                      flex
-                      items-center
-                      justify-center
-                      text-xs
-                      font-bold
-                    ">
-
-                      {
-                        menu.title[0]
-                      }
-
-                    </div>
 
                     {menu.title}
 
@@ -447,7 +470,7 @@ export default function HomePage() {
             mb-10
           ">
 
-            Stay informed with real-time SIM Management intelligence.
+            Here's what's happening with your system today.
 
           </p>
 
