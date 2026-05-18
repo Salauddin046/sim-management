@@ -208,6 +208,14 @@ export default function HomePage() {
       route:
         '/control-tower',
     },
+
+    {
+      title:
+        'SIM Explorer',
+
+      route:
+        '/sim-search',
+    },
   ]
 
   return (
@@ -219,7 +227,7 @@ export default function HomePage() {
     ">
 
       <div className="
-        w-[280px]
+        w-[260px]
         bg-white
         border-r
         flex
@@ -230,7 +238,7 @@ export default function HomePage() {
         <div>
 
           <div className="
-            p-8
+            p-6
             border-b
             flex
             items-center
@@ -238,15 +246,15 @@ export default function HomePage() {
           ">
 
             <div className="
-              w-14
-              h-14
+              w-12
+              h-12
               rounded-2xl
               bg-black
               text-white
               flex
               items-center
               justify-center
-              text-3xl
+              text-2xl
               font-bold
             ">
               U
@@ -255,7 +263,7 @@ export default function HomePage() {
             <div>
 
               <h1 className="
-                text-2xl
+                text-xl
                 font-bold
                 leading-tight
               ">
@@ -269,8 +277,8 @@ export default function HomePage() {
           </div>
 
           <div className="
-            p-5
-            space-y-3
+            p-4
+            space-y-2
           ">
 
             {
@@ -290,11 +298,11 @@ export default function HomePage() {
                       w-full
                       flex
                       items-center
-                      gap-4
-                      px-5
-                      py-4
+                      gap-3
+                      px-4
+                      py-3
                       rounded-2xl
-                      font-semibold
+                      font-medium
                       transition-all
 
                       ${
@@ -309,15 +317,15 @@ export default function HomePage() {
                   >
 
                     <div className="
-                      w-9
-                      h-9
+                      w-8
+                      h-8
                       rounded-xl
                       bg-black
                       text-white
                       flex
                       items-center
                       justify-center
-                      text-sm
+                      text-xs
                       font-bold
                     ">
 
@@ -339,7 +347,7 @@ export default function HomePage() {
         </div>
 
         <div className="
-          p-5
+          p-4
         ">
 
           <button
@@ -348,20 +356,15 @@ export default function HomePage() {
             }
             className="
               w-full
-              flex
-              items-center
-              gap-4
-              px-5
-              py-4
+              px-4
+              py-3
               rounded-2xl
-              hover:bg-red-100
+              bg-red-50
               text-red-600
               font-semibold
             "
           >
-
             Logout
-
           </button>
 
         </div>
@@ -374,29 +377,29 @@ export default function HomePage() {
 
         <div className="
           bg-white
-          h-[100px]
+          h-[90px]
           border-b
           flex
           items-center
           justify-between
-          px-10
+          px-8
         ">
 
           <div className="
             flex
             items-center
-            gap-6
+            gap-5
           ">
 
             <div className="
-              text-4xl
+              text-3xl
               font-bold
             ">
               ☰
             </div>
 
             <h1 className="
-              text-4xl
+              text-3xl
               font-bold
             ">
               Home
@@ -407,12 +410,12 @@ export default function HomePage() {
           <div className="
             flex
             items-center
-            gap-4
+            gap-3
           ">
 
             <div className="
-              w-12
-              h-12
+              w-11
+              h-11
               rounded-full
               bg-black
               text-white
@@ -434,7 +437,7 @@ export default function HomePage() {
             <div>
 
               <h2 className="
-                text-lg
+                text-base
                 font-bold
               ">
 
@@ -463,13 +466,13 @@ export default function HomePage() {
         </div>
 
         <div className="
-          p-10
+          p-8
         ">
 
           <h1 className="
-            text-5xl
+            text-4xl
             font-bold
-            mb-4
+            mb-3
           ">
 
             Welcome back,
@@ -483,11 +486,11 @@ export default function HomePage() {
 
           <p className="
             text-gray-600
-            text-xl
-            mb-12
+            text-lg
+            mb-10
           ">
 
-            Here's what's happening with your system today.
+            Stay informed with real-time SIM Management intelligence.
 
           </p>
 
@@ -495,8 +498,8 @@ export default function HomePage() {
             grid
             grid-cols-1
             md:grid-cols-2
-            xl:grid-cols-3
-            gap-8
+            xl:grid-cols-4
+            gap-6
           ">
 
             {
@@ -512,36 +515,16 @@ export default function HomePage() {
                       rounded-3xl
                       shadow-sm
                       border
-                      p-8
+                      p-6
                       hover:shadow-xl
                       transition-all
                     "
                   >
 
-                    <div className="
-                      w-16
-                      h-16
-                      rounded-2xl
-                      bg-black
-                      text-white
-                      flex
-                      items-center
-                      justify-center
-                      text-3xl
-                      font-bold
-                      mb-8
-                    ">
-
-                      {
-                        card.title[0]
-                      }
-
-                    </div>
-
                     <h2 className="
-                      text-3xl
+                      text-2xl
                       font-bold
-                      mb-16
+                      mb-10
                     ">
 
                       {
@@ -560,10 +543,9 @@ export default function HomePage() {
                         w-full
                         bg-black
                         text-white
-                        py-4
+                        py-3
                         rounded-2xl
                         font-semibold
-                        text-lg
                       "
                     >
                       Open Dashboard
