@@ -140,49 +140,6 @@ export default function HomePage() {
       )
     }
 
-  const menus = [
-
-    {
-      title:
-        'Home',
-
-      route:
-        '/',
-    },
-
-    {
-      title:
-        'Usage Intelligence',
-
-      route:
-        '/datix',
-    },
-
-    {
-      title:
-        'Command Center',
-
-      route:
-        '/command-center',
-    },
-
-    {
-      title:
-        'Control Tower',
-
-      route:
-        '/control-tower',
-    },
-
-    {
-      title:
-        'SIM Explorer',
-
-      route:
-        '/sim-search',
-    },
-  ]
-
   const cards = [
 
     {
