@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState }
+from 'react'
 
 export default function CommandCenterPage() {
 
@@ -88,17 +89,21 @@ export default function CommandCenterPage() {
             const result =
               await response.json()
 
+            console.log(
+              result
+            )
+
             if (
               result.success &&
-              result.data?.data?.sims
+              result.data &&
+              result.data.sims
             ) {
 
-              result.data.data.sims
+              result.data.sims
                 .forEach((sim) => {
 
                   const device =
                     result.data
-                      .data
                       .deviceInfo
                       ?.find(
 
@@ -110,31 +115,48 @@ export default function CommandCenterPage() {
                   allRows.push({
 
                     simNumber:
-                      sim.simNo,
+                      sim.simNo ||
+
+                    '-',
 
                     mobileNumber:
-                      sim.mobileNo,
+                      sim.mobileNo ||
+
+                    '-',
 
                     simStatus:
-                      sim.status,
+                      sim.status ||
+
+                    '-',
 
                     plan:
-                      sim.planName,
+                      sim.planName ||
+
+                    '-',
 
                     imei:
                       device
                         ?.deviceImei ||
+
                       '-',
 
                     activationDate:
                       sim.activationDate
-                        ?.split('T')[0] ||
-                      '-',
+
+                        ? sim
+                            .activationDate
+                            .split('T')[0]
+
+                        : '-',
 
                     safeCustodyDate:
+
                       sim.safeCustodyDate
-                        ? sim.safeCustodyDate
+
+                        ? sim
+                            .safeCustodyDate
                             .split('T')[0]
+
                         : '-',
                   })
                 })
