@@ -71,7 +71,7 @@ export default function CommandCenterPage() {
         }
 
         setData(
-          result.data
+          result.data.data
         )
 
       } catch (error) {
