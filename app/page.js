@@ -468,7 +468,7 @@ export default function HomePage() {
             mb-10
           ">
 
-            Here's what's happening with your system today.
+            Data-driven visibility into SIM intelligence infrastructure
 
           </p>
 
