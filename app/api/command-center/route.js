@@ -1,513 +1,98 @@
-'use client'
+export async function POST(req) {
 
-import { useState } from 'react'
+  try {
 
-export default function CommandCenterPage() {
+    const body =
+      await req.json()
 
-  const [search, setSearch] =
-    useState('')
+    const search =
+      body.search
 
-  const [loading, setLoading] =
-    useState(false)
+    if (!search) {
 
-  const [rows, setRows] =
-    useState([])
+      return Response.json({
 
-  const [error, setError] =
-    useState('')
+        success: false,
 
-  const searchData =
-    async () => {
-
-      if (!search.trim()) {
-
-        alert(
-          'Enter SIM Numbers'
-        )
-
-        return
-      }
-
-      const simNumbers =
-        search
-          .split('\n')
-          .map(
-            (item) =>
-              item.trim()
-          )
-          .filter(Boolean)
-
-      if (
-        simNumbers.length > 500
-      ) {
-
-        alert(
-          'Maximum 500 searches allowed'
-        )
-
-        return
-      }
-
-      try {
-
-        setLoading(true)
-
-        setError('')
-
-        setRows([])
-
-        const allRows = []
-
-        for (
-          const simNo
-          of simNumbers
-        ) {
-
-          try {
-
-            const response =
-              await fetch(
-                '/api/command-center',
-                {
-
-                  method: 'POST',
-
-                  headers: {
-                    'Content-Type':
-                      'application/json',
-                  },
-
-                  body: JSON.stringify({
-
-                    search:
-                      simNo,
-                  }),
-                }
-              )
-
-            const result =
-              await response.json()
-
-            if (
-              result.success &&
-              result.data?.data?.sims
-            ) {
-
-              result.data.data.sims
-                .forEach((sim) => {
-
-                  const device =
-                    result.data
-                      .data
-                      .deviceInfo
-                      ?.find(
-
-                        (d) =>
-                          d.simNo ===
-                          sim.simNo
-                      )
-
-                  allRows.push({
-
-                    simNumber:
-                      sim.simNo,
-
-                    mobileNumber:
-                      sim.mobileNo,
-
-                    simStatus:
-                      sim.status,
-
-                    plan:
-                      sim.planName,
-
-                    imei:
-                      device
-                        ?.deviceImei ||
-                      '-',
-
-                    activationDate:
-                      sim.activationDate
-                        ?.split('T')[0] ||
-                      '-',
-
-                    safeCustodyDate:
-                      sim.safeCustodyDate
-                        ? sim.safeCustodyDate
-                            .split('T')[0]
-                        : '-',
-                  })
-                })
-            }
-
-          } catch (err) {
-
-            console.log(err)
-          }
-        }
-
-        setRows(allRows)
-
-      } catch (error) {
-
-        console.log(error)
-
-        setError(
-          'Search failed'
-        )
-
-      } finally {
-
-        setLoading(false)
-      }
-    }
-
-  const downloadCSV =
-    () => {
-
-      if (
-        rows.length === 0
-      ) {
-
-        alert(
-          'No data available'
-        )
-
-        return
-      }
-
-      const headers = [
-
-        'SIM Number',
-
-        'Mobile Number',
-
-        'SIM Status',
-
-        'Plan',
-
-        'IMEI No',
-
-        'Activation Date',
-
-        'Safe Custody Date',
-      ]
-
-      const csvRows = [
-
-        headers.join(','),
-      ]
-
-      rows.forEach((row) => {
-
-        csvRows.push(
-
-          [
-
-            row.simNumber,
-
-            row.mobileNumber,
-
-            row.simStatus,
-
-            `"${row.plan}"`,
-
-            row.imei,
-
-            row.activationDate,
-
-            row.safeCustodyDate,
-          ].join(',')
-        )
+        message:
+          'Search value required',
       })
-
-      const blob =
-        new Blob(
-
-          [csvRows.join('\n')],
-
-          {
-            type:
-              'text/csv',
-          }
-        )
-
-      const url =
-        window.URL
-          .createObjectURL(
-            blob
-          )
-
-      const a =
-        document
-          .createElement('a')
-
-      a.href = url
-
-      a.download =
-        `command_center_${Date.now()}.csv`
-
-      a.click()
     }
 
-  return (
+    const response =
+      await fetch(
 
-    <div className="
-      min-h-screen
-      bg-gray-100
-      p-6
-    ">
+        'https://airtelsim.intellicar.in/api/v1/airtel/details',
 
-      <div className="
-        max-w-7xl
-        mx-auto
-      ">
+        {
 
-        <div className="
-          bg-white
-          rounded-3xl
-          shadow-xl
-          p-6
-        ">
+          method: 'POST',
 
-          <div className="
-            mb-6
-          ">
+          headers: {
 
-            <h1 className="
-              text-4xl
-              font-bold
-              mb-2
-            ">
-              Command Center
-            </h1>
+            accept:
+              'application/json, text/plain, */*',
 
-            <p className="
-              text-gray-500
-            ">
-              Bulk SIM Search
-            </p>
+            authorization:
+              'Basic YWlydGVsYXBpOkFpcnRlSW50ZWxsaWNhckAjMTIzNDU=',
 
-          </div>
+            'content-type':
+              'application/json',
 
-          <textarea
-            placeholder="
-Enter SIM Numbers
-One per line
-Maximum 500
-            "
-            value={search}
-            onChange={(e) =>
-              setSearch(
-                e.target.value
-              )
-            }
-            rows={10}
-            className="
-              w-full
-              border
-              rounded-2xl
-              p-4
-              outline-none
-              mb-4
-            "
-          />
+            origin:
+              'https://airtelsim.intellicar.in',
 
-          <div className="
-            flex
-            gap-4
-            mb-6
-          ">
+            referer:
+              'https://airtelsim.intellicar.in/debugger',
 
-            <button
-              onClick={
-                searchData
-              }
-              disabled={
-                loading
-              }
-              className="
-                bg-black
-                text-white
-                px-8
-                py-4
-                rounded-2xl
-                font-semibold
-              "
-            >
+            'user-agent':
+              'Mozilla/5.0',
+          },
 
-              {
-                loading
-                  ? 'Searching...'
-                  : 'Search'
-              }
+          body: JSON.stringify({
 
-            </button>
+            type:
+              'SIMNO',
 
-            <button
-              onClick={
-                downloadCSV
-              }
-              className="
-                bg-green-600
-                text-white
-                px-8
-                py-4
-                rounded-2xl
-                font-semibold
-              "
-            >
-              Download CSV
-            </button>
+            id:
+              search,
 
-          </div>
+            accounttype:
+              '1-28',
+          }),
+        }
+      )
 
-          {
-            error && (
+    const data =
+      await response.json()
 
-              <div className="
-                bg-red-100
-                text-red-700
-                p-4
-                rounded-2xl
-                mb-6
-              ">
+    console.log(
+      'API DATA:',
+      data
+    )
 
-                {error}
+    return Response.json({
 
-              </div>
-            )
-          }
+      success: true,
 
-          <div className="
-            overflow-auto
-          ">
+      data:
+        data,
+    })
 
-            <table className="
-              w-full
-              border-collapse
-              text-sm
-            ">
+  } catch (error) {
 
-              <thead>
+    console.log(
+      'COMMAND CENTER ERROR:',
+      error
+    )
 
-                <tr className="
-                  bg-black
-                  text-white
-                ">
+    return Response.json({
 
-                  <th className="border p-3">
-                    SIM Number
-                  </th>
+      success: false,
 
-                  <th className="border p-3">
-                    Mobile Number
-                  </th>
-
-                  <th className="border p-3">
-                    SIM Status
-                  </th>
-
-                  <th className="border p-3">
-                    Plan
-                  </th>
-
-                  <th className="border p-3">
-                    IMEI No
-                  </th>
-
-                  <th className="border p-3">
-                    Activation Date
-                  </th>
-
-                  <th className="border p-3">
-                    Safe Custody Date
-                  </th>
-
-                </tr>
-
-              </thead>
-
-              <tbody>
-
-                {
-                  rows.length === 0
-                  ? (
-
-                    <tr>
-
-                      <td
-                        colSpan="7"
-                        className="
-                          border
-                          p-8
-                          text-center
-                        "
-                      >
-                        No data found
-                      </td>
-
-                    </tr>
-                  )
-                  : (
-
-                    rows.map(
-                      (
-                        row,
-                        index
-                      ) => (
-
-                        <tr
-                          key={index}
-                          className="
-                            hover:bg-gray-100
-                          "
-                        >
-
-                          <td className="border p-3">
-                            {row.simNumber}
-                          </td>
-
-                          <td className="border p-3">
-                            {row.mobileNumber}
-                          </td>
-
-                          <td className="border p-3">
-                            {row.simStatus}
-                          </td>
-
-                          <td className="border p-3">
-                            {row.plan}
-                          </td>
-
-                          <td className="border p-3">
-                            {row.imei}
-                          </td>
-
-                          <td className="border p-3">
-                            {row.activationDate}
-                          </td>
-
-                          <td className="border p-3">
-                            {row.safeCustodyDate}
-                          </td>
-
-                        </tr>
-                      )
-                    )
-                  )
-                }
-
-              </tbody>
-
-            </table>
-
-          </div>
-
-        </div>
-
-      </div>
-
-    </div>
-  )
+      message:
+        error.message ||
+        'API search failed',
+    })
+  }
 }
