@@ -51,13 +51,67 @@ export async function GET() {
         await response.json()
 
       console.log(
-        'PAGE:',
-        currentPage,
-        result
+        'API RESPONSE:',
+        JSON.stringify(
+          result,
+          null,
+          2
+        )
       )
 
-      const pageData =
-        result?.data ?. sims   || []
+      let pageData = []
+
+      if (
+        Array.isArray(
+          result?.data
+        )
+      ) {
+
+        pageData =
+          result.data
+
+      } else if (
+
+        Array.isArray(
+          result?.data?.sims
+        )
+
+      ) {
+
+        pageData =
+          result.data.sims
+
+      } else if (
+
+        Array.isArray(
+          result?.data?.rows
+        )
+
+      ) {
+
+        pageData =
+          result.data.rows
+
+      } else if (
+
+        Array.isArray(
+          result?.sims
+        )
+
+      ) {
+
+        pageData =
+          result.sims
+
+      } else {
+
+        pageData = []
+      }
+
+      console.log(
+        'PAGE DATA:',
+        pageData.length
+      )
 
       if (
         pageData.length === 0
