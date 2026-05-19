@@ -4,9 +4,13 @@ import { useEffect, useState } from 'react'
 
 export default function ControlTowerPage() {
 
-  const [rows, setRows] = useState([])
-  const [filteredRows, setFilteredRows] =
+  const [rows, setRows] =
     useState([])
+
+  const [
+    filteredRows,
+    setFilteredRows,
+  ] = useState([])
 
   const [loading, setLoading] =
     useState(false)
@@ -20,6 +24,9 @@ export default function ControlTowerPage() {
   const [totalCount, setTotalCount] =
     useState(0)
 
+  const [initialCount, setInitialCount] =
+    useState(0)
+
   const [activeCount, setActiveCount] =
     useState(0)
 
@@ -31,6 +38,11 @@ export default function ControlTowerPage() {
   const [
     safeCustodyCount,
     setSafeCustodyCount,
+  ] = useState(0)
+
+  const [
+    activeTestModeCount,
+    setActiveTestModeCount,
   ] = useState(0)
 
   useEffect(() => {
@@ -66,6 +78,10 @@ export default function ControlTowerPage() {
         result.totalCount || 0
       )
 
+      setInitialCount(
+        result.initialCount || 0
+      )
+
       setActiveCount(
         result.activeCount || 0
       )
@@ -76,6 +92,10 @@ export default function ControlTowerPage() {
 
       setSafeCustodyCount(
         result.safeCustodyCount || 0
+      )
+
+      setActiveTestModeCount(
+        result.activeTestModeCount || 0
       )
 
     } catch (error) {
@@ -264,12 +284,13 @@ export default function ControlTowerPage() {
               text-4xl
               font-bold
             ">
-              SIM Overview
+              Control Tower
             </h1>
 
             <p className="
               text-gray-500
             ">
+              Airtel SIM Dashboard
             </p>
 
           </div>
@@ -411,7 +432,7 @@ Search SIM / Mobile
         <div className="
           grid
           grid-cols-2
-          md:grid-cols-4
+          md:grid-cols-6
           gap-4
           mb-8
         ">
@@ -435,6 +456,24 @@ Search SIM / Mobile
           </div>
 
           <div className="
+            bg-cyan-600
+            text-white
+            rounded-3xl
+            p-6
+          ">
+
+            <p>Available</p>
+
+            <h2 className="
+              text-3xl
+              font-bold
+            ">
+              {initialCount}
+            </h2>
+
+          </div>
+
+          <div className="
             bg-green-600
             text-white
             rounded-3xl
@@ -448,6 +487,28 @@ Search SIM / Mobile
               font-bold
             ">
               {activeCount}
+            </h2>
+
+          </div>
+
+          <div className="
+            bg-pink-600
+            text-white
+            rounded-3xl
+            p-6
+          ">
+
+            <p>
+              Test Mode
+            </p>
+
+            <h2 className="
+              text-3xl
+              font-bold
+            ">
+              {
+                activeTestModeCount
+              }
             </h2>
 
           </div>
@@ -656,6 +717,12 @@ Search SIM / Mobile
                                     .includes('safe')
 
                                 ? 'bg-red-600'
+
+                                : row.status
+                                    ?.toLowerCase()
+                                    .includes('test')
+
+                                ? 'bg-pink-600'
 
                                 : 'bg-gray-500'
                               }

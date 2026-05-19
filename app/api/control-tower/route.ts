@@ -18,11 +18,15 @@ export async function GET(request: Request) {
 
     let totalSimCount = 0
 
+    let initialCount = 0
+
     let activeCount = 0
 
     let tempDisconnectCount = 0
 
     let safeCustodyCount = 0
+
+    let activeTestModeCount = 0
 
     while (hasNext) {
 
@@ -101,6 +105,13 @@ export async function GET(request: Request) {
           .toLowerCase()
 
         if (
+          status.includes('initial')
+        ) {
+
+          initialCount++
+        }
+
+        if (
           status === 'active'
         ) {
 
@@ -120,6 +131,13 @@ export async function GET(request: Request) {
 
           safeCustodyCount++
         }
+
+        if (
+          status.includes('test')
+        ) {
+
+          activeTestModeCount++
+        }
       })
 
       if (
@@ -137,10 +155,14 @@ export async function GET(request: Request) {
 
       page++
 
+      // NORMAL DASHBOARD
+      // COUNT 25 PAGES
+      // SHOW ONLY FIRST PAGE
+
       if (
         download !== 'true'
         &&
-        page > 1
+        page > 25
       ) {
 
         break
@@ -243,11 +265,15 @@ export async function GET(request: Request) {
       totalCount:
         totalSimCount,
 
+      initialCount,
+
       activeCount,
 
       tempDisconnectCount,
 
       safeCustodyCount,
+
+      activeTestModeCount,
 
       count:
         formattedData.length,
