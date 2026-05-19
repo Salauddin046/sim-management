@@ -58,7 +58,7 @@ export async function POST(req) {
     if (search) {
 
       values.push(
-        `%${search}%`
+        `${search}%`
       )
 
       query +=
@@ -66,19 +66,19 @@ export async function POST(req) {
         `
         AND
         (
-          sim_number ILIKE $${values.length}
+          sim_number LIKE $${values.length}
 
           OR
 
-          phone_number ILIKE $${values.length}
+          phone_number LIKE $${values.length}
 
           OR
 
-          client_name ILIKE $${values.length}
+          client_name LIKE $${values.length}
 
           OR
 
-          device_id ILIKE $${values.length}
+          device_id LIKE $${values.length}
         )
         `
     }
@@ -104,19 +104,19 @@ export async function POST(req) {
         AND
         (
 
-          activation_date ILIKE $${values.length}
+          activation_date LIKE $${values.length}
 
           OR
 
-          termination_date ILIKE $${values.length}
+          termination_date LIKE $${values.length}
 
           OR
 
-          safe_custody_move_in ILIKE $${values.length}
+          safe_custody_move_in LIKE $${values.length}
 
           OR
 
-          safe_custody_move_out ILIKE $${values.length}
+          safe_custody_move_out LIKE $${values.length}
 
         )
         `
@@ -126,8 +126,17 @@ export async function POST(req) {
 
       `
       ORDER BY id DESC
-      LIMIT 1000
       `
+
+    console.log(
+      'QUERY:',
+      query
+    )
+
+    console.log(
+      'VALUES:',
+      values
+    )
 
     const result =
       await pool.query(
@@ -138,6 +147,9 @@ export async function POST(req) {
     return Response.json({
 
       success: true,
+
+      count:
+        result.rows.length,
 
       data:
         result.rows,
@@ -155,7 +167,7 @@ export async function POST(req) {
       success: false,
 
       message:
-        'Search failed',
+        error.message,
     })
   }
 }

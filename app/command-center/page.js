@@ -220,7 +220,7 @@ export default function CommandCenterPage() {
               <p className="
                 text-gray-500
               ">
-                PostgreSQL SIM Database Search
+                
               </p>
 
             </div>
