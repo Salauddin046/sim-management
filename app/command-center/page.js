@@ -10,10 +10,10 @@ export default function CommandCenterPage() {
     useState('')
 
   const [fromDate, setFromDate] =
-    useState('2025-04-01')
+    useState('')
 
   const [toDate, setToDate] =
-    useState('2025-04-30')
+    useState('')
 
   const [loading, setLoading] =
     useState(false)
@@ -27,15 +27,6 @@ export default function CommandCenterPage() {
       try {
 
         setLoading(true)
-
-        console.log({
-
-          search,
-
-          fromDate,
-
-          toDate,
-        })
 
         const response =
           await fetch(
@@ -63,11 +54,6 @@ export default function CommandCenterPage() {
         const result =
           await response.json()
 
-        console.log(
-          'RESULT:',
-          result
-        )
-
         if (
           !result.success
         ) {
@@ -85,9 +71,7 @@ export default function CommandCenterPage() {
 
       } catch (error) {
 
-        console.log(
-          error
-        )
+        console.log(error)
 
         alert(
           'Search failed'
@@ -103,6 +87,10 @@ export default function CommandCenterPage() {
     () => {
 
       setSearch('')
+
+      setFromDate('')
+
+      setToDate('')
 
       setRows([])
     }
@@ -199,6 +187,33 @@ export default function CommandCenterPage() {
       a.click()
     }
 
+  const totalRecords =
+    rows.length
+
+  const activeSims =
+    rows.filter(
+      (item) =>
+        !item.termination_date
+    ).length
+
+  const terminatedSims =
+    rows.filter(
+      (item) =>
+        item.termination_date
+    ).length
+
+  const safeCustody =
+    rows.filter(
+      (item) =>
+
+        item.safe_custody_move_in
+
+        &&
+
+        !item.safe_custody_move_out
+
+    ).length
+
   return (
 
     <div className="
@@ -241,7 +256,7 @@ export default function CommandCenterPage() {
               <p className="
                 text-gray-500
               ">
-                PostgreSQL SIM Database Search
+                PostgreSQL SIM Dashboard
               </p>
 
             </div>
@@ -385,6 +400,116 @@ Search SIM / Phone / Client / Device
             >
               Download CSV
             </button>
+
+          </div>
+
+          <div className="
+            grid
+            grid-cols-2
+            md:grid-cols-4
+            gap-4
+            mb-8
+          ">
+
+            <div className="
+              bg-blue-600
+              text-white
+              rounded-3xl
+              p-6
+              shadow-lg
+            ">
+
+              <p className="
+                text-sm
+                opacity-80
+                mb-2
+              ">
+                Total Records
+              </p>
+
+              <h2 className="
+                text-3xl
+                font-bold
+              ">
+                {totalRecords}
+              </h2>
+
+            </div>
+
+            <div className="
+              bg-green-600
+              text-white
+              rounded-3xl
+              p-6
+              shadow-lg
+            ">
+
+              <p className="
+                text-sm
+                opacity-80
+                mb-2
+              ">
+                Active SIMs
+              </p>
+
+              <h2 className="
+                text-3xl
+                font-bold
+              ">
+                {activeSims}
+              </h2>
+
+            </div>
+
+            <div className="
+              bg-red-600
+              text-white
+              rounded-3xl
+              p-6
+              shadow-lg
+            ">
+
+              <p className="
+                text-sm
+                opacity-80
+                mb-2
+              ">
+                Terminated
+              </p>
+
+              <h2 className="
+                text-3xl
+                font-bold
+              ">
+                {terminatedSims}
+              </h2>
+
+            </div>
+
+            <div className="
+              bg-yellow-500
+              text-white
+              rounded-3xl
+              p-6
+              shadow-lg
+            ">
+
+              <p className="
+                text-sm
+                opacity-80
+                mb-2
+              ">
+                Safe Custody
+              </p>
+
+              <h2 className="
+                text-3xl
+                font-bold
+              ">
+                {safeCustody}
+              </h2>
+
+            </div>
 
           </div>
 
