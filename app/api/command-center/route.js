@@ -16,6 +16,12 @@ const pool =
     },
 
     max: 20,
+
+    idleTimeoutMillis:
+      30000,
+
+    connectionTimeoutMillis:
+      2000,
   })
 
 if (
@@ -66,12 +72,15 @@ export async function POST(req) {
           sim_number ILIKE $${values.length}
 
           OR
+
           phone_number ILIKE $${values.length}
 
           OR
+
           client_name ILIKE $${values.length}
 
           OR
+
           device_id ILIKE $${values.length}
         )
         `
@@ -103,9 +112,9 @@ export async function POST(req) {
 
             activation_date_real
             BETWEEN
-            $${values.length - 1}
+            $${values.length - 1}::DATE
             AND
-            $${values.length}
+            $${values.length}::DATE
           )
 
           OR
@@ -117,9 +126,9 @@ export async function POST(req) {
 
             termination_date_real
             BETWEEN
-            $${values.length - 1}
+            $${values.length - 1}::DATE
             AND
-            $${values.length}
+            $${values.length}::DATE
           )
 
           OR
@@ -131,9 +140,9 @@ export async function POST(req) {
 
             safe_custody_move_in_real
             BETWEEN
-            $${values.length - 1}
+            $${values.length - 1}::DATE
             AND
-            $${values.length}
+            $${values.length}::DATE
           )
 
           OR
@@ -145,9 +154,9 @@ export async function POST(req) {
 
             safe_custody_move_out_real
             BETWEEN
-            $${values.length - 1}
+            $${values.length - 1}::DATE
             AND
-            $${values.length}
+            $${values.length}::DATE
           )
 
         )
@@ -158,13 +167,16 @@ export async function POST(req) {
 
       `
       ORDER BY id DESC
+      LIMIT 5000
       `
 
     console.log(
+      'QUERY:',
       query
     )
 
     console.log(
+      'VALUES:',
       values
     )
 
