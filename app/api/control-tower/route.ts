@@ -36,7 +36,7 @@ export async function GET() {
 
             page_no: 1,
 
-            limit: 100,
+            limit: 500,
           }),
 
           cache:
@@ -55,44 +55,13 @@ export async function GET() {
     let rows: any[] = []
 
     if (
-      Array.isArray(result)
-    ) {
-
-      rows = result
-    }
-
-    else if (
-      Array.isArray(result.data)
-    ) {
-
-      rows = result.data
-    }
-
-    else if (
-      Array.isArray(result.rows)
-    ) {
-
-      rows = result.rows
-    }
-
-    else if (
       Array.isArray(
-        result?.data?.rows
+        result?.data?.results
       )
     ) {
 
       rows =
-        result.data.rows
-    }
-
-    else if (
-      Array.isArray(
-        result?.data?.sims
-      )
-    ) {
-
-      rows =
-        result.data.sims
+        result.data.results
     }
 
     const formattedData =
@@ -104,7 +73,7 @@ export async function GET() {
           item.sim_no
           ||
 
-          item.simNumber
+          item.simnumber
           ||
 
           item.iccid
@@ -117,7 +86,7 @@ export async function GET() {
           item.mobile_no
           ||
 
-          item.mobileNumber
+          item.mobileno
           ||
 
           item.msisdn
@@ -130,7 +99,7 @@ export async function GET() {
           item.status
           ||
 
-          item.sim_status
+          item.simstatus
           ||
 
           '-',
@@ -140,20 +109,17 @@ export async function GET() {
           item.activation_date
           ||
 
-          item.activationDate
+          item.activationdate
           ||
 
           '-',
 
         safeCustody_date:
 
-          item.safeCustody_date
-          ||
-
           item.safe_custody_date
           ||
 
-          item.safeCustodyDate
+          item.safecustodydate
           ||
 
           '-',
@@ -165,6 +131,9 @@ export async function GET() {
 
       count:
         formattedData.length,
+
+      totalSim:
+        result?.data?.totalsim,
 
       data:
         formattedData,
