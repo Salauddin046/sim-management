@@ -1,538 +1,487 @@
 'use client'
 
-import {
-  useEffect,
-  useState,
-} from 'react'
+import { useState } from 'react'
 
-import {
-  useRouter,
-} from 'next/navigation'
+export default function CommandCenterPage() {
 
-export default function HomePage() {
+  const [search, setSearch] =
+    useState('')
 
-  const router =
-    useRouter()
+  const [month, setMonth] =
+    useState('')
 
-  const [user, setUser] =
-    useState(null)
+  const [loading, setLoading] =
+    useState(false)
 
-  useEffect(() => {
+  const [rows, setRows] =
+    useState([])
 
-    const loggedIn =
-      localStorage.getItem(
-        'loggedIn'
-      )
+  const searchData =
+    async () => {
 
-    const savedUser =
-      localStorage.getItem(
-        'user'
-      )
+      try {
 
-    if (
-      !loggedIn ||
-      !savedUser
-    ) {
+        setLoading(true)
 
-      router.push(
-        '/login'
-      )
+        const response =
+          await fetch(
+            '/api/command-center',
+            {
 
-      return
-    }
+              method: 'POST',
 
-    setUser(
-      JSON.parse(
-        savedUser
-      )
-    )
+              headers: {
+                'Content-Type':
+                  'application/json',
+              },
 
-  }, [router])
+              body: JSON.stringify({
 
-  useEffect(() => {
+                search,
 
-    let logoutTimer
-
-    const resetTimer =
-      () => {
-
-        clearTimeout(
-          logoutTimer
-        )
-
-        logoutTimer =
-          setTimeout(() => {
-
-            localStorage.removeItem(
-              'loggedIn'
-            )
-
-            localStorage.removeItem(
-              'user'
-            )
-
-            alert(
-              'Session expired'
-            )
-
-            router.push(
-              '/login'
-            )
-
-          }, 10 * 60 * 1000)
-      }
-
-    const events = [
-
-      'mousemove',
-
-      'keydown',
-
-      'click',
-
-      'scroll',
-    ]
-
-    events.forEach(
-      (event) => {
-
-        window.addEventListener(
-          event,
-          resetTimer
-        )
-      }
-    )
-
-    resetTimer()
-
-    return () => {
-
-      clearTimeout(
-        logoutTimer
-      )
-
-      events.forEach(
-        (event) => {
-
-          window.removeEventListener(
-            event,
-            resetTimer
+                month,
+              }),
+            }
           )
+
+        const result =
+          await response.json()
+
+        if (
+          !result.success
+        ) {
+
+          alert(
+            result.message
+          )
+
+          return
         }
-      )
+
+        setRows(
+          result.data
+        )
+
+      } catch (error) {
+
+        console.log(error)
+
+        alert(
+          'Search failed'
+        )
+
+      } finally {
+
+        setLoading(false)
+      }
     }
 
-  }, [router])
-
-  const logout =
+  const clearData =
     () => {
 
-      localStorage.removeItem(
-        'loggedIn'
-      )
+      setSearch('')
 
-      localStorage.removeItem(
-        'user'
-      )
+      setMonth('')
 
-      router.push(
-        '/login'
-      )
+      setRows([])
     }
 
-  const menus = [
+  const downloadCSV =
+    () => {
 
-    {
-      title:
-        'Home',
+      if (
+        rows.length === 0
+      ) {
 
-      route:
-        '/',
-    },
+        alert(
+          'No data found'
+        )
 
-    {
-      title:
-        'Usage Intelligence',
+        return
+      }
 
-      route:
-        '/datix',
-    },
+      const headers = [
 
-    {
-      title:
-        'Command Center',
+        'SIM Number',
 
-      route:
-        '/command-center',
-    },
+        'Phone Number',
 
-    {
-      title:
-        'Control Tower',
+        'Device ID',
 
-      route:
-        '/control-tower',
-    },
+        'Client Name',
 
-    {
-      title:
-        'SIM Explorer',
+        'Activation Date',
 
-      route:
-        '/sim-explorer',
-    },
-  ]
+        'Termination Date',
 
-  const cards = [
+        'Safe Custody Move In',
 
-    {
-      title:
-        'Usage Intelligence',
+        'Safe Custody Move Out',
+      ]
 
-      route:
-        '/datix',
-    },
+      const csvRows = [
 
-    {
-      title:
-        'Command Center',
+        headers.join(','),
+      ]
 
-      route:
-        '/command-center',
-    },
+      rows.forEach((row) => {
 
-    {
-      title:
-        'Control Tower',
+        csvRows.push(
 
-      route:
-        '/control-tower',
-    },
+          [
 
-    {
-      title:
-        'SIM Explorer',
+            row.sim_number,
 
-      route:
-        '/sim-explorer',
-    },
-  ]
+            row.phone_number,
+
+            row.device_id,
+
+            `"${row.client_name}"`,
+
+            row.activation_date,
+
+            row.termination_date,
+
+            row.safe_custody_move_in,
+
+            row.safe_custody_move_out,
+          ].join(',')
+        )
+      })
+
+      const blob =
+        new Blob(
+
+          [csvRows.join('\n')],
+
+          {
+            type:
+              'text/csv',
+          }
+        )
+
+      const url =
+        window.URL
+          .createObjectURL(
+            blob
+          )
+
+      const a =
+        document
+          .createElement('a')
+
+      a.href = url
+
+      a.download =
+        `command_center_${Date.now()}.csv`
+
+      a.click()
+    }
 
   return (
 
     <div className="
-      flex
       min-h-screen
-      bg-[#f5f5f7]
+      bg-gray-100
+      p-6
     ">
 
       <div className="
-        w-[260px]
-        bg-white
-        border-r
-        flex
-        flex-col
-        justify-between
-      ">
-
-        <div>
-
-          <div className="
-            p-6
-            border-b
-            flex
-            items-center
-            gap-4
-          ">
-
-            <div className="
-              w-12
-              h-12
-              rounded-2xl
-              bg-black
-              text-white
-              flex
-              items-center
-              justify-center
-              text-2xl
-              font-bold
-            ">
-              I
-            </div>
-
-            <div>
-
-             <h1 className="text-3xl font-bold tracking-tight text-gray-900">
-               IntelliSIM
-            </h1>
-
-             <h3 className="text-sm font-medium text-gray-500 mt-1 tracking-wide">
-             SIM Intelligence & Control Platform
-               </h3>
-
-            </div>
-
-          </div>
-
-          <div className="
-            p-4
-            space-y-2
-          ">
-
-            {
-              menus.map(
-                (menu) => (
-
-                  <button
-                    key={
-                      menu.title
-                    }
-                    onClick={() =>
-                      router.push(
-                        menu.route
-                      )
-                    }
-                    className={`
-                      w-full
-                      flex
-                      items-center
-                      px-4
-                      py-3
-                      rounded-2xl
-                      font-medium
-                      transition-all
-
-                      ${
-                        menu.title ===
-                        'Home'
-
-                          ? 'bg-black text-white'
-
-                          : 'hover:bg-gray-100'
-                      }
-                    `}
-                  >
-
-                    {menu.title}
-
-                  </button>
-                )
-              )
-            }
-
-          </div>
-
-        </div>
-
-        <div className="
-          p-4
-        ">
-
-          <button
-            onClick={
-              logout
-            }
-            className="
-              w-full
-              px-4
-              py-3
-              rounded-2xl
-              bg-red-50
-              text-red-600
-              font-semibold
-            "
-          >
-            Logout
-          </button>
-
-        </div>
-
-      </div>
-
-      <div className="
-        flex-1
+        max-w-7xl
+        mx-auto
       ">
 
         <div className="
           bg-white
-          h-[90px]
-          border-b
-          flex
-          items-center
-          justify-between
-          px-8
+          rounded-3xl
+          shadow-xl
+          p-6
         ">
 
           <div className="
             flex
             items-center
-            gap-5
+            justify-between
+            mb-6
+            flex-wrap
+            gap-4
           ">
-
-            <div className="
-              text-3xl
-              font-bold
-            ">
-              ☰
-            </div>
-
-            <h1 className="
-              text-3xl
-              font-bold
-            ">
-              Home
-            </h1>
-
-          </div>
-
-          <div className="
-            flex
-            items-center
-            gap-3
-          ">
-
-            <div className="
-              w-11
-              h-11
-              rounded-full
-              bg-black
-              text-white
-              flex
-              items-center
-              justify-center
-              text-lg
-              font-bold
-            ">
-
-              {
-                user?.name
-                  ?.charAt(0)
-                  ?.toUpperCase()
-              }
-
-            </div>
 
             <div>
 
-              <h2 className="
-                text-base
+              <h1 className="
+                text-4xl
                 font-bold
+                mb-2
               ">
-
-                {
-                  user?.name ||
-                  'User'
-                }
-
-              </h2>
+                Command Center
+              </h1>
 
               <p className="
-                text-sm
                 text-gray-500
               ">
-
-                {
-                  user?.email
-                }
-
+                PostgreSQL SIM Database Search
               </p>
 
             </div>
 
+            <button
+              onClick={() =>
+                window.history.back()
+              }
+              className="
+                bg-black
+                text-white
+                px-6
+                py-3
+                rounded-2xl
+                font-semibold
+              "
+            >
+              Back
+            </button>
+
           </div>
-
-        </div>
-
-        <div className="
-          p-8
-        ">
-
-          <h1 className="
-            text-4xl
-            font-bold
-            mb-3
-          ">
-
-            Welcome back,
-            {' '}
-            {
-              user?.name ||
-              'User'
-            }!
-
-          </h1>
-
-          <p className="
-            text-gray-600
-            text-lg
-            mb-10
-          ">
-
-            Data-driven visibility into SIM intelligence infrastructure
-
-          </p>
 
           <div className="
             grid
-            grid-cols-1
-            md:grid-cols-2
-            xl:grid-cols-4
-            gap-6
+            md:grid-cols-3
+            gap-4
+            mb-6
           ">
 
-            {
-              cards.map(
-                (card) => (
-
-                  <div
-                    key={
-                      card.title
-                    }
-                    className="
-                      bg-white
-                      rounded-3xl
-                      shadow-sm
-                      border
-                      p-6
-                      hover:shadow-xl
-                      transition-all
-                    "
-                  >
-
-                    <h2 className="
-                      text-2xl
-                      font-bold
-                      mb-10
-                    ">
-
-                      {
-                        card.title
-                      }
-
-                    </h2>
-
-                    <button
-                      onClick={() =>
-                        router.push(
-                          card.route
-                        )
-                      }
-                      className="
-                        w-full
-                        bg-black
-                        text-white
-                        py-3
-                        rounded-2xl
-                        font-semibold
-                      "
-                    >
-                      Open Dashboard
-                    </button>
-
-                  </div>
+            <input
+              type="text"
+              placeholder="
+Search SIM / Phone / Client / Device ID
+              "
+              value={search}
+              onChange={(e) =>
+                setSearch(
+                  e.target.value
                 )
-              )
-            }
+              }
+              className="
+                border
+                rounded-2xl
+                p-4
+                outline-none
+              "
+            />
+
+            <input
+              type="month"
+              value={month}
+              onChange={(e) =>
+                setMonth(
+                  e.target.value
+                )
+              }
+              className="
+                border
+                rounded-2xl
+                p-4
+                outline-none
+              "
+            />
+
+            <button
+              onClick={
+                searchData
+              }
+              disabled={
+                loading
+              }
+              className="
+                bg-black
+                text-white
+                rounded-2xl
+                font-semibold
+              "
+            >
+
+              {
+                loading
+                  ? 'Searching...'
+                  : 'Search'
+              }
+
+            </button>
+
+          </div>
+
+          <div className="
+            flex
+            gap-4
+            mb-6
+            flex-wrap
+          ">
+
+            <button
+              onClick={
+                clearData
+              }
+              className="
+                bg-red-600
+                text-white
+                px-8
+                py-4
+                rounded-2xl
+                font-semibold
+              "
+            >
+              Clear
+            </button>
+
+            <button
+              onClick={
+                downloadCSV
+              }
+              className="
+                bg-green-600
+                text-white
+                px-8
+                py-4
+                rounded-2xl
+                font-semibold
+              "
+            >
+              Download CSV
+            </button>
+
+          </div>
+
+          <div className="
+            overflow-auto
+          ">
+
+            <table className="
+              w-full
+              border-collapse
+              text-sm
+            ">
+
+              <thead>
+
+                <tr className="
+                  bg-black
+                  text-white
+                ">
+
+                  <th className="border p-3">
+                    SIM Number
+                  </th>
+
+                  <th className="border p-3">
+                    Phone Number
+                  </th>
+
+                  <th className="border p-3">
+                    Device ID
+                  </th>
+
+                  <th className="border p-3">
+                    Client Name
+                  </th>
+
+                  <th className="border p-3">
+                    Activation Date
+                  </th>
+
+                  <th className="border p-3">
+                    Termination Date
+                  </th>
+
+                  <th className="border p-3">
+                    Safe Custody Move In
+                  </th>
+
+                  <th className="border p-3">
+                    Safe Custody Move Out
+                  </th>
+
+                </tr>
+
+              </thead>
+
+              <tbody>
+
+                {
+                  rows.length === 0
+                  ? (
+
+                    <tr>
+
+                      <td
+                        colSpan="8"
+                        className="
+                          border
+                          p-10
+                          text-center
+                          text-gray-500
+                        "
+                      >
+                        No data found
+                      </td>
+
+                    </tr>
+                  )
+                  : (
+
+                    rows.map(
+                      (
+                        row,
+                        index
+                      ) => (
+
+                        <tr
+                          key={index}
+                          className="
+                            hover:bg-gray-100
+                          "
+                        >
+
+                          <td className="border p-3">
+                            {row.sim_number}
+                          </td>
+
+                          <td className="border p-3">
+                            {row.phone_number}
+                          </td>
+
+                          <td className="border p-3">
+                            {row.device_id}
+                          </td>
+
+                          <td className="border p-3">
+                            {row.client_name}
+                          </td>
+
+                          <td className="border p-3">
+                            {row.activation_date}
+                          </td>
+
+                          <td className="border p-3">
+                            {row.termination_date}
+                          </td>
+
+                          <td className="border p-3">
+                            {row.safe_custody_move_in}
+                          </td>
+
+                          <td className="border p-3">
+                            {row.safe_custody_move_out}
+                          </td>
+
+                        </tr>
+                      )
+                    )
+                  )
+                }
+
+              </tbody>
+
+            </table>
 
           </div>
 
