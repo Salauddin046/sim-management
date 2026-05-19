@@ -1,6 +1,9 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import {
+  useEffect,
+  useState,
+} from 'react'
 
 export default function CommandCenterPage() {
 
@@ -43,11 +46,11 @@ export default function CommandCenterPage() {
         ) {
 
           setMonths(
+
             result.months.map(
-            (item) =>
-            item.month
-           )
-           )
+              (item) =>
+                item.month
+            )
           )
         }
 
@@ -127,6 +130,98 @@ export default function CommandCenterPage() {
       setRows([])
     }
 
+  const downloadCSV =
+    () => {
+
+      if (
+        rows.length === 0
+      ) {
+
+        alert(
+          'No data found'
+        )
+
+        return
+      }
+
+      const headers = [
+
+        'SIM Number',
+
+        'Phone Number',
+
+        'Device ID',
+
+        'Client Name',
+
+        'Activation Date',
+
+        'Termination Date',
+
+        'Safe Custody Move In',
+
+        'Safe Custody Move Out',
+      ]
+
+      const csvRows = [
+
+        headers.join(','),
+      ]
+
+      rows.forEach((row) => {
+
+        csvRows.push(
+
+          [
+
+            row.sim_number,
+
+            row.phone_number,
+
+            row.device_id,
+
+            `"${row.client_name}"`,
+
+            row.activation_date,
+
+            row.termination_date,
+
+            row.safe_custody_move_in,
+
+            row.safe_custody_move_out,
+          ].join(',')
+        )
+      })
+
+      const blob =
+        new Blob(
+
+          [csvRows.join('\n')],
+
+          {
+            type:
+              'text/csv',
+          }
+        )
+
+      const url =
+        window.URL
+          .createObjectURL(
+            blob
+          )
+
+      const a =
+        document
+          .createElement('a')
+
+      a.href = url
+
+      a.download =
+        `command_center_${Date.now()}.csv`
+
+      a.click()
+    }
+
   return (
 
     <div className="
@@ -152,6 +247,8 @@ export default function CommandCenterPage() {
             items-center
             justify-between
             mb-6
+            flex-wrap
+            gap-4
           ">
 
             <div>
@@ -283,6 +380,7 @@ Search SIM / Phone / Client / Device ID
             flex
             gap-4
             mb-6
+            flex-wrap
           ">
 
             <button
@@ -299,6 +397,22 @@ Search SIM / Phone / Client / Device ID
               "
             >
               Clear
+            </button>
+
+            <button
+              onClick={
+                downloadCSV
+              }
+              className="
+                bg-green-600
+                text-white
+                px-8
+                py-4
+                rounded-2xl
+                font-semibold
+              "
+            >
+              Download CSV
             </button>
 
           </div>
@@ -370,6 +484,7 @@ Search SIM / Phone / Client / Device ID
                           border
                           p-10
                           text-center
+                          text-gray-500
                         "
                       >
                         No data found
@@ -387,6 +502,9 @@ Search SIM / Phone / Client / Device ID
 
                         <tr
                           key={index}
+                          className="
+                            hover:bg-gray-100
+                          "
                         >
 
                           <td className="border p-3">
