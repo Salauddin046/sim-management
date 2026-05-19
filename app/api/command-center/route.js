@@ -20,6 +20,7 @@ export async function GET() {
 
         `
         SELECT DISTINCT
+
         SUBSTRING(
           activation_date,
           4,
@@ -38,25 +39,22 @@ export async function GET() {
         `
       )
 
-    console.log(
-      'MONTH RESULT:',
-      result.rows
-    )
+    const months =
+      result.rows.map(
+        (item) =>
+          item.month
+      )
 
     return Response.json({
 
       success: true,
 
-      months:
-        result.rows,
+      months,
     })
 
   } catch (error) {
 
-    console.log(
-      'MONTH API ERROR:',
-      error
-    )
+    console.log(error)
 
     return Response.json({
 

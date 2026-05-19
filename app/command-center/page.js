@@ -41,16 +41,17 @@ export default function CommandCenterPage() {
         const result =
           await response.json()
 
+        console.log(
+          'MONTH RESULT:',
+          result
+        )
+
         if (
           result.success
         ) {
 
           setMonths(
-
-            result.months.map(
-              (item) =>
-                item.month
-            )
+            result.months
           )
         }
 
