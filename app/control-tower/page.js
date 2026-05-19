@@ -57,7 +57,7 @@ export default function ControlTowerPage() {
 
   }, [])
 
-  // TABLE DATA
+  // FETCH TABLE DATA
 
   const fetchData = async () => {
 
@@ -92,7 +92,7 @@ export default function ControlTowerPage() {
     }
   }
 
-  // CARD COUNTS
+  // FETCH COUNTS
 
   const fetchCounts = async () => {
 
@@ -180,7 +180,7 @@ export default function ControlTowerPage() {
     setFilteredRows(filtered)
   }
 
-  // STATUS LIST
+  // UNIQUE STATUS
 
   const uniqueStatus = [
 
@@ -708,7 +708,7 @@ function Card({
 
   color,
 
-}: any) {
+}) {
 
   return (
 
