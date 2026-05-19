@@ -10,10 +10,10 @@ export default function CommandCenterPage() {
     useState('')
 
   const [fromDate, setFromDate] =
-    useState('')
+    useState('2025-04-01')
 
   const [toDate, setToDate] =
-    useState('')
+    useState('2025-04-30')
 
   const [loading, setLoading] =
     useState(false)
@@ -27,6 +27,15 @@ export default function CommandCenterPage() {
       try {
 
         setLoading(true)
+
+        console.log({
+
+          search,
+
+          fromDate,
+
+          toDate,
+        })
 
         const response =
           await fetch(
@@ -54,7 +63,10 @@ export default function CommandCenterPage() {
         const result =
           await response.json()
 
-        console.log(result)
+        console.log(
+          'RESULT:',
+          result
+        )
 
         if (
           !result.success
@@ -73,7 +85,9 @@ export default function CommandCenterPage() {
 
       } catch (error) {
 
-        console.log(error)
+        console.log(
+          error
+        )
 
         alert(
           'Search failed'
@@ -89,10 +103,6 @@ export default function CommandCenterPage() {
     () => {
 
       setSearch('')
-
-      setFromDate('')
-
-      setToDate('')
 
       setRows([])
     }
@@ -264,7 +274,7 @@ export default function CommandCenterPage() {
             <input
               type="text"
               placeholder="
-Search SIM / Phone / Client / Device ID
+Search SIM / Phone / Client / Device
               "
               value={search}
               onChange={(e) =>
