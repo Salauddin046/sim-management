@@ -1,7 +1,6 @@
 'use client'
 
 import {
-  useEffect,
   useState,
 } from 'react'
 
@@ -10,56 +9,17 @@ export default function CommandCenterPage() {
   const [search, setSearch] =
     useState('')
 
-  const [month, setMonth] =
+  const [fromDate, setFromDate] =
     useState('')
 
-  const [months, setMonths] =
-    useState([])
+  const [toDate, setToDate] =
+    useState('')
 
   const [loading, setLoading] =
     useState(false)
 
   const [rows, setRows] =
     useState([])
-
-  useEffect(() => {
-
-    loadMonths()
-
-  }, [])
-
-  const loadMonths =
-    async () => {
-
-      try {
-
-        const response =
-          await fetch(
-            '/api/command-center/months'
-          )
-
-        const result =
-          await response.json()
-
-        console.log(
-          'MONTH RESULT:',
-          result
-        )
-
-        if (
-          result.success
-        ) {
-
-          setMonths(
-            result.months
-          )
-        }
-
-      } catch (error) {
-
-        console.log(error)
-      }
-    }
 
   const searchData =
     async () => {
@@ -84,7 +44,9 @@ export default function CommandCenterPage() {
 
                 search,
 
-                month,
+                fromDate,
+
+                toDate,
               }),
             }
           )
@@ -126,7 +88,9 @@ export default function CommandCenterPage() {
 
       setSearch('')
 
-      setMonth('')
+      setFromDate('')
+
+      setToDate('')
 
       setRows([])
     }
@@ -290,7 +254,7 @@ export default function CommandCenterPage() {
 
           <div className="
             grid
-            md:grid-cols-3
+            md:grid-cols-4
             gap-4
             mb-6
           ">
@@ -314,10 +278,11 @@ Search SIM / Phone / Client / Device ID
               "
             />
 
-            <select
-              value={month}
+            <input
+              type="date"
+              value={fromDate}
               onChange={(e) =>
-                setMonth(
+                setFromDate(
                   e.target.value
                 )
               }
@@ -327,30 +292,23 @@ Search SIM / Phone / Client / Device ID
                 p-4
                 outline-none
               "
-            >
+            />
 
-              <option value="">
-                Select Month
-              </option>
-
-              {
-                months.map(
-                  (
-                    item,
-                    index
-                  ) => (
-
-                    <option
-                      key={index}
-                      value={item}
-                    >
-                      {item}
-                    </option>
-                  )
+            <input
+              type="date"
+              value={toDate}
+              onChange={(e) =>
+                setToDate(
+                  e.target.value
                 )
               }
-
-            </select>
+              className="
+                border
+                rounded-2xl
+                p-4
+                outline-none
+              "
+            />
 
             <button
               onClick={
