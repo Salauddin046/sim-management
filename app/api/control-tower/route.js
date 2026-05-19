@@ -29,11 +29,32 @@ export async function GET() {
               accept:
                 'application/json, text/plain, */*',
 
+              'accept-language':
+                'en-GB,en-US;q=0.9,en;q=0.8',
+
               authorization:
                 'Basic YWlydGVsYXBpOkFpcnRlSW50ZWxsaWNhckAjMTIzNDU=',
 
+              'cache-control':
+                'no-cache',
+
               'content-type':
                 'application/json',
+
+              origin:
+                'https://airtelsim.intellicar.in',
+
+              pragma:
+                'no-cache',
+
+              referer:
+                'https://airtelsim.intellicar.in/analysis',
+
+              'user-agent':
+                'Mozilla/5.0',
+
+              cookie:
+                `_hjSessionUser_2360475=eyJpZCI6IjAzODJhMDNlLTA1M2EtNWY4OC1iZmE3LWU2ZmRkZmU0NWEzZiIsImNyZWF0ZWQiOjE3NjM2MzY0MzM5ODUsImV4aXN0aW5nIjp0cnVlfQ==; rootStore={"impPerm":true,"skipImp":"false","token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyaW5mbyI6eyJ1c2VyaWQiOjEyMTA4LCJ1c2VybmFtZSI6Im9ta2FrYWRlQGludGVsbGljYXIuaW4ifSwiaWF0IjoxNzc2Nzc3MTcyLCJleHAiOjE3ODAzNzcxNzJ9.Ki_RsEGOdx5JOFoahTVHuGftlIOXYbNbY4t2Ck6iKWo","userInfo":"{\\"userid\\":12108,\\"username\\":\\"omkakade@intellicar.in\\"}"}; _ga=GA1.1.844658595.1762511068`,
             },
 
             body: JSON.stringify({
@@ -51,7 +72,7 @@ export async function GET() {
         await response.json()
 
       console.log(
-        'API RESPONSE:',
+        'FULL RESPONSE:',
         JSON.stringify(
           result,
           null,
@@ -102,10 +123,6 @@ export async function GET() {
 
         pageData =
           result.sims
-
-      } else {
-
-        pageData = []
       }
 
       console.log(
