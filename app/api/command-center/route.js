@@ -90,7 +90,7 @@ export async function POST(req) {
         monthValue,
       ] = month.split('-')
 
-      const months = {
+      const monthMap = {
 
         '01': 'Jan',
 
@@ -117,12 +117,12 @@ export async function POST(req) {
         '12': 'Dec',
       }
 
-      const monthPattern =
+      const formattedMonth =
 
-        `${months[monthValue]}-${year}`
+        `${monthMap[monthValue]}-${year}`
 
       values.push(
-        `%${monthPattern}%`
+        `%${formattedMonth}%`
       )
 
       query +=
@@ -131,19 +131,19 @@ export async function POST(req) {
         AND
         (
 
-          activation_date LIKE $${values.length}
+          activation_date ILIKE $${values.length}
 
           OR
 
-          termination_date LIKE $${values.length}
+          termination_date ILIKE $${values.length}
 
           OR
 
-          safe_custody_move_in LIKE $${values.length}
+          safe_custody_move_in ILIKE $${values.length}
 
           OR
 
-          safe_custody_move_out LIKE $${values.length}
+          safe_custody_move_out ILIKE $${values.length}
 
         )
         `
