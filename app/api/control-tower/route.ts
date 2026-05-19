@@ -18,7 +18,7 @@ export async function GET(request: Request) {
 
     let totalSimCount = 0
 
-    let initialCount = 0
+    let availableCount = 0
 
     let activeCount = 0
 
@@ -104,12 +104,16 @@ export async function GET(request: Request) {
           )
           .toLowerCase()
 
+        // AVAILABLE
+
         if (
-          status.includes('initial')
+          status.includes('available')
         ) {
 
-          initialCount++
+          availableCount++
         }
+
+        // ACTIVE
 
         if (
           status === 'active'
@@ -118,19 +122,7 @@ export async function GET(request: Request) {
           activeCount++
         }
 
-        if (
-          status.includes('temp')
-        ) {
-
-          tempDisconnectCount++
-        }
-
-        if (
-          status.includes('safe')
-        ) {
-
-          safeCustodyCount++
-        }
+        // TEST MODE
 
         if (
           status.includes('test')
@@ -138,7 +130,27 @@ export async function GET(request: Request) {
 
           activeTestModeCount++
         }
+
+        // TEMP DISCONNECT
+
+        if (
+          status.includes('temp')
+        ) {
+
+          tempDisconnectCount++
+        }
+
+        // SAFE CUSTODY
+
+        if (
+          status.includes('safe')
+        ) {
+
+          safeCustodyCount++
+        }
       })
+
+      // DOWNLOAD ALL DATA
 
       if (
         download === 'true'
@@ -155,17 +167,17 @@ export async function GET(request: Request) {
 
       page++
 
-      // NORMAL DASHBOARD
-      // COUNT 25 PAGES
-      // SHOW ONLY FIRST PAGE
+      // FOR NORMAL DASHBOARD
+      // ONLY SHOW FIRST PAGE
+      // BUT CONTINUE COUNTING
 
       if (
         download !== 'true'
         &&
-        page > 25
+        page > 1
       ) {
 
-        break
+        allRows = []
       }
     }
 
@@ -265,15 +277,15 @@ export async function GET(request: Request) {
       totalCount:
         totalSimCount,
 
-      initialCount,
+      availableCount,
 
       activeCount,
+
+      activeTestModeCount,
 
       tempDisconnectCount,
 
       safeCustodyCount,
-
-      activeTestModeCount,
 
       count:
         formattedData.length,
