@@ -28,13 +28,15 @@ export async function GET() {
             referer:
               'https://airtelsim.intellicar.in/analysis',
 
-            cookie:
-              `PASTE_FULL_COOKIE_HERE`,
+            'user-agent':
+              'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
           },
 
           body: JSON.stringify({
 
             page_no: 1,
+
+            limit: 100,
           }),
 
           cache:
