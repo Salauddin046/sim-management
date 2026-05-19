@@ -16,12 +16,6 @@ const pool =
     },
 
     max: 20,
-
-    idleTimeoutMillis:
-      30000,
-
-    connectionTimeoutMillis:
-      2000,
   })
 
 if (
@@ -30,48 +24,6 @@ if (
 
   globalForPool.pool =
     pool
-}
-
-function convertDate(
-  date
-) {
-
-  if (!date)
-    return ''
-
-  const d =
-    new Date(date)
-
-  const day =
-    String(
-      d.getDate()
-    ).padStart(2, '0')
-
-  const months = [
-
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-  ]
-
-  const month =
-    months[
-      d.getMonth()
-    ]
-
-  const year =
-    d.getFullYear()
-
-  return `${day}-${month}-${year}`
 }
 
 export async function POST(req) {
@@ -114,15 +66,12 @@ export async function POST(req) {
           sim_number LIKE $${values.length}
 
           OR
-
           phone_number LIKE $${values.length}
 
           OR
-
           client_name LIKE $${values.length}
 
           OR
-
           device_id LIKE $${values.length}
         )
         `
@@ -133,15 +82,13 @@ export async function POST(req) {
       toDate
     ) {
 
-      const from =
-        convertDate(
-          fromDate
-        )
+      values.push(
+        fromDate
+      )
 
-      const to =
-        convertDate(
-          toDate
-        )
+      values.push(
+        toDate
+      )
 
       query +=
 
@@ -149,19 +96,35 @@ export async function POST(req) {
         AND
         (
 
-          activation_date BETWEEN '${from}' AND '${to}'
+          activation_date_real
+          BETWEEN
+          $${values.length - 1}
+          AND
+          $${values.length}
 
           OR
 
-          termination_date BETWEEN '${from}' AND '${to}'
+          termination_date_real
+          BETWEEN
+          $${values.length - 1}
+          AND
+          $${values.length}
 
           OR
 
-          safe_custody_move_in BETWEEN '${from}' AND '${to}'
+          safe_custody_move_in_real
+          BETWEEN
+          $${values.length - 1}
+          AND
+          $${values.length}
 
           OR
 
-          safe_custody_move_out BETWEEN '${from}' AND '${to}'
+          safe_custody_move_out_real
+          BETWEEN
+          $${values.length - 1}
+          AND
+          $${values.length}
 
         )
         `
@@ -173,11 +136,6 @@ export async function POST(req) {
       ORDER BY id DESC
       `
 
-    console.log(
-      'QUERY:',
-      query
-    )
-
     const result =
       await pool.query(
         query,
@@ -188,26 +146,20 @@ export async function POST(req) {
 
       success: true,
 
-      count:
-        result.rows.length,
-
       data:
         result.rows,
     })
 
   } catch (error) {
 
-    console.log(
-      'COMMAND CENTER ERROR:',
-      error
-    )
+    console.log(error)
 
     return Response.json({
 
       success: false,
 
       message:
-        error.message,
+        'Search failed',
     })
   }
 }
