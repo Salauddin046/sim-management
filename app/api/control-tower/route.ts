@@ -2,71 +2,85 @@ export async function GET() {
 
   try {
 
-    const response =
-      await fetch(
+    let allRows: any[] = []
 
-        'https://airtelsim.intellicar.in/api/v1/airtel/sims/list',
+    let page = 1
 
-        {
+    let hasNext = true
 
-          method: 'POST',
+    while (hasNext) {
 
-          headers: {
-
-            accept:
-              'application/json, text/plain, */*',
-
-            authorization:
-              'Basic YWlydGVsYXBpOkFpcnRlSW50ZWxsaWNhckAjMTIzNDU=',
-
-            'content-type':
-              'application/json',
-
-            origin:
-              'https://airtelsim.intellicar.in',
-
-            referer:
-              'https://airtelsim.intellicar.in/analysis',
-
-            'user-agent':
-              'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-          },
-
-          body: JSON.stringify({
-
-            page_no: 1,
-
-            limit: 500,
-          }),
-
-          cache:
-            'no-store',
-        }
+      console.log(
+        `Fetching Page: ${page}`
       )
 
-    const result =
-      await response.json()
+      const response =
+        await fetch(
 
-    console.log(
-      'RAW RESPONSE:',
-      result
-    )
+          'https://airtelsim.intellicar.in/api/v1/airtel/sims/list',
 
-    let rows: any[] = []
+          {
 
-    if (
-      Array.isArray(
-        result?.data?.results
+            method: 'POST',
+
+            headers: {
+
+              accept:
+                'application/json, text/plain, */*',
+
+              authorization:
+                'Basic YWlydGVsYXBpOkFpcnRlSW50ZWxsaWNhckAjMTIzNDU=',
+
+              'content-type':
+                'application/json',
+
+              origin:
+                'https://airtelsim.intellicar.in',
+
+              referer:
+                'https://airtelsim.intellicar.in/analysis',
+
+              'user-agent':
+                'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+            },
+
+            body: JSON.stringify({
+
+              page_no: page,
+
+              limit: 500,
+            }),
+
+            cache:
+              'no-store',
+          }
+        )
+
+      const result =
+        await response.json()
+
+      console.log(
+        `Page ${page} Count:`,
+        result?.data?.results?.length
       )
-    ) {
 
-      rows =
-        result.data.results
+      const rows =
+        result?.data?.results || []
+
+      allRows = [
+        ...allRows,
+        ...rows,
+      ]
+
+      hasNext =
+        result?.data?.hasnext || false
+
+      page++
     }
 
     const formattedData =
 
-      rows.map((item: any) => ({
+      allRows.map((item: any) => ({
 
         sim_no:
 
@@ -110,9 +124,18 @@ export async function GET() {
           ||
 
           item.activationdate
-          ||
 
-          '-',
+            ? new Date(
+
+                item.activation_date
+                ||
+                item.activationdate
+
+              ).toLocaleDateString(
+                'en-GB'
+              )
+
+            : '-',
 
         safeCustody_date:
 
@@ -120,9 +143,18 @@ export async function GET() {
           ||
 
           item.safecustodydate
-          ||
 
-          '-',
+            ? new Date(
+
+                item.safe_custody_date
+                ||
+                item.safecustodydate
+
+              ).toLocaleDateString(
+                'en-GB'
+              )
+
+            : '-',
       }))
 
     return Response.json({
@@ -131,9 +163,6 @@ export async function GET() {
 
       count:
         formattedData.length,
-
-      totalSim:
-        result?.data?.totalsim,
 
       data:
         formattedData,
