@@ -33,24 +33,32 @@ export async function GET() {
 
         `
         SELECT DISTINCT
-        RIGHT(
+
+        SUBSTRING(
           activation_date,
-          8
+          4,
+          9
         ) AS month
+
         FROM sim_data3
+
         WHERE
         activation_date IS NOT NULL
+
         AND
         activation_date <> ''
+
         ORDER BY month
         `
       )
 
     const months =
-      result.rows.map(
-        (item) =>
-          item.month
-      )
+      result.rows
+        .map(
+          (item) =>
+            item.month
+        )
+        .filter(Boolean)
 
     return Response.json({
 
