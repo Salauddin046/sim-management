@@ -46,7 +46,7 @@ export async function GET() {
       await response.text()
 
     console.log(
-      'RAW TEXT:',
+      'RAW RESPONSE:',
       text
     )
 
@@ -68,14 +68,22 @@ export async function GET() {
 
   } catch (error) {
 
-    console.log(error)
+    console.log(
+      'CONTROL TOWER ERROR:',
+      error
+    )
 
     return Response.json({
 
       success: false,
 
       message:
-        error.message,
+
+        error instanceof Error
+
+          ? error.message
+
+          : 'Unknown error',
     })
   }
 }
