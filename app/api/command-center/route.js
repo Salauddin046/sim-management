@@ -1,11 +1,6 @@
 import { Pool } from 'pg'
 
-const globalForPool =
-  global
-
 const pool =
-  globalForPool.pool ||
-
   new Pool({
 
     connectionString:
@@ -15,14 +10,6 @@ const pool =
       rejectUnauthorized: false,
     },
   })
-
-if (
-  !globalForPool.pool
-) {
-
-  globalForPool.pool =
-    pool
-}
 
 export async function GET() {
 
@@ -38,63 +25,30 @@ export async function GET() {
           4,
           9
         ) AS month
+
         FROM sim_data3
-        WHERE activation_date IS NOT NULL
-        AND activation_date <> ''
 
-        UNION
+        WHERE
+        activation_date IS NOT NULL
 
-        SELECT DISTINCT
-        SUBSTRING(
-          termination_date,
-          4,
-          9
-        ) AS month
-        FROM sim_data3
-        WHERE termination_date IS NOT NULL
-        AND termination_date <> ''
-
-        UNION
-
-        SELECT DISTINCT
-        SUBSTRING(
-          safe_custody_move_in,
-          4,
-          9
-        ) AS month
-        FROM sim_data3
-        WHERE safe_custody_move_in IS NOT NULL
-        AND safe_custody_move_in <> ''
-
-        UNION
-
-        SELECT DISTINCT
-        SUBSTRING(
-          safe_custody_move_out,
-          4,
-          9
-        ) AS month
-        FROM sim_data3
-        WHERE safe_custody_move_out IS NOT NULL
-        AND safe_custody_move_out <> ''
+        AND
+        activation_date <> ''
 
         ORDER BY month
         `
       )
 
-    const months =
+    console.log(
+      'MONTH RESULT:',
       result.rows
-        .map(
-          (item) =>
-            item.month
-        )
-        .filter(Boolean)
+    )
 
     return Response.json({
 
       success: true,
 
-      months,
+      months:
+        result.rows,
     })
 
   } catch (error) {
