@@ -167,7 +167,6 @@ export async function POST(req) {
 
       `
       ORDER BY id DESC
-      LIMIT 5000
       `
 
     console.log(
