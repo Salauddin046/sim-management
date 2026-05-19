@@ -16,16 +16,13 @@ export async function GET(request: Request) {
 
     let totalSimCount = 0
 
-    while (
+    let activeCount = 0
 
-      hasNext &&
+    let tempDisconnectCount = 0
 
-      (
-        download === 'true'
-          ? true
-          : page <= 1
-      )
-    ) {
+    let safeCustodyCount = 0
+
+    while (hasNext) {
 
       console.log(
         `Fetching Page: ${page}`
@@ -84,133 +81,226 @@ export async function GET(request: Request) {
           result?.data?.totalsim || 0
         )
 
-      allRows = [
-        ...allRows,
-        ...rows,
-      ]
+      rows.forEach((item: any) => {
+
+        const status =
+          (
+            item.status
+            ||
+            item.simstatus
+            ||
+            ''
+          )
+          .toLowerCase()
+
+        if (
+          status === 'active'
+        ) {
+
+          activeCount++
+        }
+
+        if (
+          status.includes('temp')
+        ) {
+
+          tempDisconnectCount++
+        }
+
+        if (
+          status.includes('safe')
+        ) {
+
+          safeCustodyCount++
+        }
+      })
+
+      if (
+        download === 'true'
+      ) {
+
+        allRows = [
+          ...allRows,
+          ...rows,
+        ]
+      }
 
       hasNext =
         result?.data?.hasnext || false
 
       page++
+
+      if (
+        download !== 'true'
+        &&
+        page > 1
+      ) {
+
+        break
+      }
     }
 
     const formattedData =
 
-      allRows.map(
-        (item: any) => ({
+      allRows.length > 0
 
-          sim_no:
+      ? allRows.map(
+          (item: any) => ({
 
-            item.sim_no
-            ||
+            sim_no:
 
-            item.simnumber
-            ||
+              item.sim_no
+              ||
 
-            item.iccid
-            ||
+              item.simnumber
+              ||
 
-            '-',
+              item.iccid
+              ||
 
-          mobile_no:
+              '-',
 
-            item.mobile_no
-            ||
+            mobile_no:
 
-            item.mobileno
-            ||
+              item.mobile_no
+              ||
 
-            item.msisdn
-            ||
+              item.mobileno
+              ||
 
-            '-',
+              item.msisdn
+              ||
 
-          status:
+              '-',
 
-            item.status
-            ||
+            status:
 
-            item.simstatus
-            ||
+              item.status
+              ||
 
-            '-',
+              item.simstatus
+              ||
 
-          activation_date:
+              '-',
 
-            item.activation_date
-            ||
+            activation_date:
 
-            item.activationdate
+              item.activation_date
+              ||
 
-              ? new Date(
+              item.activationdate
 
-                  item.activation_date
-                  ||
-                  item.activationdate
+                ? new Date(
 
-                ).toLocaleDateString(
-                  'en-GB'
-                )
+                    item.activation_date
+                    ||
+                    item.activationdate
 
-              : '-',
+                  ).toLocaleDateString(
+                    'en-GB'
+                  )
 
-          safeCustody_date:
+                : '-',
 
-            item.safe_custody_date
-            ||
+            safeCustody_date:
 
-            item.safecustodydate
+              item.safe_custody_date
+              ||
 
-              ? new Date(
+              item.safecustodydate
 
-                  item.safe_custody_date
-                  ||
-                  item.safecustodydate
+                ? new Date(
 
-                ).toLocaleDateString(
-                  'en-GB'
-                )
+                    item.safe_custody_date
+                    ||
+                    item.safecustodydate
 
-              : '-',
-        })
-      )
+                  ).toLocaleDateString(
+                    'en-GB'
+                  )
 
-    const activeCount =
+                : '-',
+          })
+        )
 
-      formattedData.filter(
+      : rows.map(
+          (item: any) => ({
 
-        (item: any) =>
+            sim_no:
 
-          item.status
-            ?.toLowerCase()
-            === 'active'
+              item.sim_no
+              ||
 
-      ).length
+              item.simnumber
+              ||
 
-    const tempDisconnectCount =
+              item.iccid
+              ||
 
-      formattedData.filter(
+              '-',
 
-        (item: any) =>
+            mobile_no:
 
-          item.status
-            ?.toLowerCase()
-            .includes('temp')
+              item.mobile_no
+              ||
 
-      ).length
+              item.mobileno
+              ||
 
-    const safeCustodyCount =
+              item.msisdn
+              ||
 
-      formattedData.filter(
+              '-',
 
-        (item: any) =>
+            status:
 
-          item.status
-            ?.toLowerCase()
-            .includes('safe')
+              item.status
+              ||
 
-      ).length
+              item.simstatus
+              ||
+
+              '-',
+
+            activation_date:
+
+              item.activation_date
+              ||
+
+              item.activationdate
+
+                ? new Date(
+
+                    item.activation_date
+                    ||
+                    item.activationdate
+
+                  ).toLocaleDateString(
+                    'en-GB'
+                  )
+
+                : '-',
+
+            safeCustody_date:
+
+              item.safe_custody_date
+              ||
+
+              item.safecustodydate
+
+                ? new Date(
+
+                    item.safe_custody_date
+                    ||
+                    item.safecustodydate
+
+                  ).toLocaleDateString(
+                    'en-GB'
+                  )
+
+                : '-',
+          })
+        )
 
     return Response.json({
 
