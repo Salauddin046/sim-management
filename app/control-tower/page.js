@@ -18,42 +18,6 @@ export default function ControlTowerPage() {
 
   }, [])
 
-  useEffect(() => {
-
-    let filtered = [...rows]
-
-    if (search) {
-
-      filtered = filtered.filter((item) =>
-
-        item.sim_no
-          ?.toString()
-          .toLowerCase()
-          .includes(search.toLowerCase())
-
-        ||
-
-        item.mobile_no
-          ?.toString()
-          .toLowerCase()
-          .includes(search.toLowerCase())
-      )
-    }
-
-    if (status) {
-
-      filtered = filtered.filter((item) =>
-
-        item.status
-          ?.toLowerCase()
-          === status.toLowerCase()
-      )
-    }
-
-    setFilteredRows(filtered)
-
-  }, [search, status, rows])
-
   const fetchData = async () => {
 
     try {
@@ -71,24 +35,10 @@ export default function ControlTowerPage() {
       let apiData = []
 
       if (
-        Array.isArray(result)
-      ) {
-
-        apiData = result
-      }
-
-      else if (
         Array.isArray(result.data)
       ) {
 
         apiData = result.data
-      }
-
-      else if (
-        Array.isArray(result.rows)
-      ) {
-
-        apiData = result.rows
       }
 
       setRows(apiData)
@@ -106,19 +56,65 @@ export default function ControlTowerPage() {
     }
   }
 
+  const handleSearch = () => {
+
+    let filtered = [...rows]
+
+    if (search) {
+
+      filtered =
+        filtered.filter((item) =>
+
+          item.sim_no
+            ?.toString()
+            .toLowerCase()
+            .includes(
+              search.toLowerCase()
+            )
+
+          ||
+
+          item.mobile_no
+            ?.toString()
+            .toLowerCase()
+            .includes(
+              search.toLowerCase()
+            )
+        )
+    }
+
+    if (status) {
+
+      filtered =
+        filtered.filter((item) =>
+
+          item.status
+            ?.toLowerCase()
+            ===
+          status.toLowerCase()
+        )
+    }
+
+    setFilteredRows(filtered)
+  }
+
   const uniqueStatus = [
 
     ...new Set(
 
       rows
-        .map((item) => item.status)
+        .map((item) =>
+          item.status
+        )
         .filter(Boolean)
     ),
   ]
 
   const downloadCSV = () => {
 
-    if (filteredRows.length === 0) {
+    if (
+      filteredRows.length === 0
+    ) {
 
       alert('No data found')
       return
@@ -168,7 +164,7 @@ export default function ControlTowerPage() {
     a.href = url
 
     a.download =
-      `control_tower.csv`
+      'control_tower.csv'
 
     a.click()
   }
@@ -236,32 +232,57 @@ export default function ControlTowerPage() {
 
         <div className="
           grid
-          md:grid-cols-3
+          md:grid-cols-4
           gap-4
           mb-6
         ">
 
-          <input
-            type="text"
-            placeholder="
+          <div className="
+            flex
+            gap-2
+          ">
+
+            <input
+              type="text"
+              placeholder="
 Search SIM / Mobile
-            "
-            value={search}
-            onChange={(e) =>
-              setSearch(e.target.value)
-            }
-            className="
-              border
-              rounded-2xl
-              p-4
-              outline-none
-            "
-          />
+              "
+              value={search}
+              onChange={(e) =>
+                setSearch(
+                  e.target.value
+                )
+              }
+              className="
+                border
+                rounded-2xl
+                p-4
+                outline-none
+                w-full
+              "
+            />
+
+            <button
+              onClick={handleSearch}
+              className="
+                bg-blue-600
+                text-white
+                px-6
+                rounded-2xl
+                font-semibold
+              "
+            >
+              Search
+            </button>
+
+          </div>
 
           <select
             value={status}
             onChange={(e) =>
-              setStatus(e.target.value)
+              setStatus(
+                e.target.value
+              )
             }
             className="
               border
@@ -276,7 +297,10 @@ Search SIM / Mobile
 
             {
               uniqueStatus.map(
-                (item, index) => (
+                (
+                  item,
+                  index
+                ) => (
 
                   <option
                     key={index}
@@ -291,9 +315,21 @@ Search SIM / Mobile
           </select>
 
           <button
-            onClick={downloadCSV}
+            onClick={handleSearch}
             className="
               bg-green-600
+              text-white
+              rounded-2xl
+              font-semibold
+            "
+          >
+            Apply Filter
+          </button>
+
+          <button
+            onClick={downloadCSV}
+            className="
+              bg-purple-600
               text-white
               rounded-2xl
               font-semibold
@@ -449,6 +485,7 @@ Search SIM / Mobile
 
               {
                 loading
+
                 ? (
 
                   <tr>
@@ -488,7 +525,10 @@ Search SIM / Mobile
                 : (
 
                   filteredRows.map(
-                    (row, index) => (
+                    (
+                      row,
+                      index
+                    ) => (
 
                       <tr
                         key={index}

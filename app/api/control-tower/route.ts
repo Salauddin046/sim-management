@@ -42,29 +42,131 @@ export async function GET() {
         }
       )
 
-    const text =
-      await response.text()
+    const result =
+      await response.json()
 
     console.log(
       'RAW RESPONSE:',
-      text
+      result
     )
 
-    return new Response(
+    let rows: any[] = []
 
-      text,
+    if (
+      Array.isArray(result)
+    ) {
 
-      {
+      rows = result
+    }
 
-        status: 200,
+    else if (
+      Array.isArray(result.data)
+    ) {
 
-        headers: {
+      rows = result.data
+    }
 
-          'Content-Type':
-            'application/json',
-        },
-      }
-    )
+    else if (
+      Array.isArray(result.rows)
+    ) {
+
+      rows = result.rows
+    }
+
+    else if (
+      Array.isArray(
+        result?.data?.rows
+      )
+    ) {
+
+      rows =
+        result.data.rows
+    }
+
+    else if (
+      Array.isArray(
+        result?.data?.sims
+      )
+    ) {
+
+      rows =
+        result.data.sims
+    }
+
+    const formattedData =
+
+      rows.map((item: any) => ({
+
+        sim_no:
+
+          item.sim_no
+          ||
+
+          item.simNumber
+          ||
+
+          item.iccid
+          ||
+
+          '-',
+
+        mobile_no:
+
+          item.mobile_no
+          ||
+
+          item.mobileNumber
+          ||
+
+          item.msisdn
+          ||
+
+          '-',
+
+        status:
+
+          item.status
+          ||
+
+          item.sim_status
+          ||
+
+          '-',
+
+        activation_date:
+
+          item.activation_date
+          ||
+
+          item.activationDate
+          ||
+
+          '-',
+
+        safeCustody_date:
+
+          item.safeCustody_date
+          ||
+
+          item.safe_custody_date
+          ||
+
+          item.safeCustodyDate
+          ||
+
+          '-',
+      }))
+
+    return Response.json({
+
+      success: true,
+
+      count:
+        formattedData.length,
+
+      data:
+        formattedData,
+    })
 
   } catch (error) {
 
