@@ -55,7 +55,7 @@ export async function POST(req) {
     if (search) {
 
       values.push(
-        `${search}%`
+        `%${search}%`
       )
 
       query +=
@@ -66,15 +66,12 @@ export async function POST(req) {
           sim_number ILIKE $${values.length}
 
           OR
-
           phone_number ILIKE $${values.length}
 
           OR
-
           client_name ILIKE $${values.length}
 
           OR
-
           device_id ILIKE $${values.length}
         )
         `
@@ -99,35 +96,59 @@ export async function POST(req) {
         AND
         (
 
-          activation_date_real
-          BETWEEN
-          $${values.length - 1}::DATE
-          AND
-          $${values.length}::DATE
+          (
+            activation_date_real IS NOT NULL
+
+            AND
+
+            activation_date_real
+            BETWEEN
+            $${values.length - 1}
+            AND
+            $${values.length}
+          )
 
           OR
 
-          termination_date_real
-          BETWEEN
-          $${values.length - 1}::DATE
-          AND
-          $${values.length}::DATE
+          (
+            termination_date_real IS NOT NULL
+
+            AND
+
+            termination_date_real
+            BETWEEN
+            $${values.length - 1}
+            AND
+            $${values.length}
+          )
 
           OR
 
-          safe_custody_move_in_real
-          BETWEEN
-          $${values.length - 1}::DATE
-          AND
-          $${values.length}::DATE
+          (
+            safe_custody_move_in_real IS NOT NULL
+
+            AND
+
+            safe_custody_move_in_real
+            BETWEEN
+            $${values.length - 1}
+            AND
+            $${values.length}
+          )
 
           OR
 
-          safe_custody_move_out_real
-          BETWEEN
-          $${values.length - 1}::DATE
-          AND
-          $${values.length}::DATE
+          (
+            safe_custody_move_out_real IS NOT NULL
+
+            AND
+
+            safe_custody_move_out_real
+            BETWEEN
+            $${values.length - 1}
+            AND
+            $${values.length}
+          )
 
         )
         `
@@ -138,6 +159,14 @@ export async function POST(req) {
       `
       ORDER BY id DESC
       `
+
+    console.log(
+      query
+    )
+
+    console.log(
+      values
+    )
 
     const result =
       await pool.query(
