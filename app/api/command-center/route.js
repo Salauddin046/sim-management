@@ -1,6 +1,11 @@
 import { Pool } from 'pg'
 
+const globalForPool =
+  global
+
 const pool =
+  globalForPool.pool ||
+
   new Pool({
 
     connectionString:
@@ -11,6 +16,14 @@ const pool =
     },
   })
 
+if (
+  !globalForPool.pool
+) {
+
+  globalForPool.pool =
+    pool
+}
+
 export async function GET() {
 
   try {
@@ -20,13 +33,15 @@ export async function GET() {
 
         `
         SELECT DISTINCT
-        SUBSTRING(
-          activation_date
-          FROM 4
-          FOR 8
+        RIGHT(
+          activation_date,
+          8
         ) AS month
         FROM sim_data3
-        WHERE activation_date IS NOT NULL
+        WHERE
+        activation_date IS NOT NULL
+        AND
+        activation_date <> ''
         ORDER BY month
         `
       )
@@ -46,7 +61,10 @@ export async function GET() {
 
   } catch (error) {
 
-    console.log(error)
+    console.log(
+      'MONTH API ERROR:',
+      error
+    )
 
     return Response.json({
 
