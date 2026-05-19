@@ -46,6 +46,8 @@ export default function CommandCenterPage() {
             result.months.map(
             (item) =>
             item.month
+           )
+           )
           )
         }
 
