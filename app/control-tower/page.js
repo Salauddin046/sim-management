@@ -1,118 +1,16 @@
 'use client'
 
-import {
-  useEffect,
-  useState,
-} from 'react'
+import { useEffect, useState } from 'react'
 
 export default function ControlTowerPage() {
 
-  const [rows, setRows] =
-    useState([])
+  const [rows, setRows] = useState([])
+  const [filteredRows, setFilteredRows] = useState([])
 
-  const [filteredRows, setFilteredRows] =
-    useState([])
+  const [loading, setLoading] = useState(false)
 
-  const [loading, setLoading] =
-    useState(false)
-
-  const [search, setSearch] =
-    useState('')
-
-  const [status, setStatus] =
-    useState('')
-
-  const [plan, setPlan] =
-    useState('')
-
-  const fetchData =
-    async () => {
-
-      try {
-
-        setLoading(true)
-
-        const response =
-          await fetch(
-            '/api/control-tower'
-          )
-
-        const result =
-          await response.json()
-
-        console.log(
-          'API RESPONSE:',
-          result
-        )
-
-        let apiData = []
-
-        if (
-          Array.isArray(
-            result?.data
-          )
-        ) {
-
-          apiData =
-            result.data
-        }
-
-        else if (
-
-          Array.isArray(
-            result?.rawResponse?.data
-          )
-
-        ) {
-
-          apiData =
-            result.rawResponse.data
-        }
-
-        else if (
-
-          Array.isArray(
-            result?.rawResponse?.data?.rows
-          )
-
-        ) {
-
-          apiData =
-            result.rawResponse.data.rows
-        }
-
-        else if (
-
-          Array.isArray(
-            result?.rawResponse?.data?.sims
-          )
-
-        ) {
-
-          apiData =
-            result.rawResponse.data.sims
-        }
-
-        setRows(apiData)
-
-        setFilteredRows(apiData)
-
-      } catch (error) {
-
-        console.log(
-          'FULL ERROR:',
-          error
-        )
-
-        alert(
-          'Failed to load data'
-        )
-
-      } finally {
-
-        setLoading(false)
-      }
-    }
+  const [search, setSearch] = useState('')
+  const [status, setStatus] = useState('')
 
   useEffect(() => {
 
@@ -122,186 +20,158 @@ export default function ControlTowerPage() {
 
   useEffect(() => {
 
-    let filtered =
-      [...rows]
+    let filtered = [...rows]
 
     if (search) {
 
-      filtered =
-        filtered.filter(
-          (item) =>
+      filtered = filtered.filter((item) =>
 
-            item.sim_number
-              ?.toString()
-              .toLowerCase()
-              .includes(
-                search.toLowerCase()
-              )
+        item.sim_no
+          ?.toString()
+          .toLowerCase()
+          .includes(search.toLowerCase())
 
-            ||
+        ||
 
-            item.phone_number
-              ?.toString()
-              .toLowerCase()
-              .includes(
-                search.toLowerCase()
-              )
-
-            ||
-
-            item.client_name
-              ?.toString()
-              .toLowerCase()
-              .includes(
-                search.toLowerCase()
-              )
-        )
+        item.mobile_no
+          ?.toString()
+          .toLowerCase()
+          .includes(search.toLowerCase())
+      )
     }
 
     if (status) {
 
-      filtered =
-        filtered.filter(
-          (item) =>
+      filtered = filtered.filter((item) =>
 
-            item.status
-              ?.toString()
-              .toLowerCase()
-              ===
-            status.toLowerCase()
-        )
+        item.status
+          ?.toLowerCase()
+          === status.toLowerCase()
+      )
     }
 
-    if (plan) {
+    setFilteredRows(filtered)
 
-      filtered =
-        filtered.filter(
-          (item) =>
+  }, [search, status, rows])
 
-            item.plan
-              ?.toString()
-              .toLowerCase()
-              ===
-            plan.toLowerCase()
-        )
-    }
+  const fetchData = async () => {
 
-    setFilteredRows(
-      filtered
-    )
+    try {
 
-  }, [
-    search,
-    status,
-    plan,
-    rows,
-  ])
+      setLoading(true)
 
-  const uniqueStatus =
-    [
-      ...new Set(
+      const response =
+        await fetch('/api/control-tower')
 
-        rows
-          .map(
-            (item) =>
-              item.status
-          )
-          .filter(Boolean)
-      ),
-    ]
+      const result =
+        await response.json()
 
-  const uniquePlans =
-    [
-      ...new Set(
+      console.log(result)
 
-        rows
-          .map(
-            (item) =>
-              item.plan
-          )
-          .filter(Boolean)
-      ),
-    ]
-
-  const downloadCSV =
-    () => {
+      let apiData = []
 
       if (
-        filteredRows.length === 0
+        Array.isArray(result)
       ) {
 
-        alert(
-          'No data found'
-        )
-
-        return
+        apiData = result
       }
 
-      const headers = [
+      else if (
+        Array.isArray(result.data)
+      ) {
 
-        'SIM Number',
+        apiData = result.data
+      }
 
-        'Phone Number',
+      else if (
+        Array.isArray(result.rows)
+      ) {
 
-        'Client Name',
+        apiData = result.rows
+      }
 
-        'Status',
+      setRows(apiData)
+      setFilteredRows(apiData)
 
-        'Plan',
-      ]
+    } catch (error) {
 
-      const csvRows = [
+      console.log(error)
 
-        headers.join(','),
-      ]
+      alert('No data found')
 
-      filteredRows.forEach((row) => {
+    } finally {
 
-        csvRows.push(
-
-          [
-
-            row.sim_number,
-
-            row.phone_number,
-
-            `"${row.client_name || ''}"`,
-
-            row.status,
-
-            row.plan,
-          ].join(',')
-        )
-      })
-
-      const blob =
-        new Blob(
-
-          [csvRows.join('\n')],
-
-          {
-            type:
-              'text/csv',
-          }
-        )
-
-      const url =
-        window.URL
-          .createObjectURL(
-            blob
-          )
-
-      const a =
-        document
-          .createElement('a')
-
-      a.href = url
-
-      a.download =
-        `control_tower_${Date.now()}.csv`
-
-      a.click()
+      setLoading(false)
     }
+  }
+
+  const uniqueStatus = [
+
+    ...new Set(
+
+      rows
+        .map((item) => item.status)
+        .filter(Boolean)
+    ),
+  ]
+
+  const downloadCSV = () => {
+
+    if (filteredRows.length === 0) {
+
+      alert('No data found')
+      return
+    }
+
+    const headers = [
+
+      'SIM No',
+      'Mobile No',
+      'Status',
+      'Activation Date',
+      'Safe Custody Date',
+    ]
+
+    const csvRows = [
+      headers.join(',')
+    ]
+
+    filteredRows.forEach((row) => {
+
+      csvRows.push([
+
+        row.sim_no || '',
+        row.mobile_no || '',
+        row.status || '',
+        row.activation_date || '',
+        row.safeCustody_date || '',
+
+      ].join(','))
+    })
+
+    const blob = new Blob(
+
+      [csvRows.join('\n')],
+
+      {
+        type: 'text/csv',
+      }
+    )
+
+    const url =
+      window.URL.createObjectURL(blob)
+
+    const a =
+      document.createElement('a')
+
+    a.href = url
+
+    a.download =
+      `control_tower.csv`
+
+    a.click()
+  }
 
   return (
 
@@ -314,404 +184,369 @@ export default function ControlTowerPage() {
       <div className="
         max-w-7xl
         mx-auto
+        bg-white
+        rounded-3xl
+        shadow-xl
+        p-6
       ">
 
         <div className="
-          bg-white
-          rounded-3xl
-          shadow-xl
-          p-6
+          flex
+          justify-between
+          items-center
+          mb-6
+          flex-wrap
+          gap-4
+        ">
+
+          <div>
+
+            <h1 className="
+              text-4xl
+              font-bold
+            ">
+              Control Tower
+            </h1>
+
+            <p className="
+              text-gray-500
+            ">
+              Airtel SIM Dashboard
+            </p>
+
+          </div>
+
+          <button
+            onClick={() =>
+              window.history.back()
+            }
+            className="
+              bg-black
+              text-white
+              px-6
+              py-3
+              rounded-2xl
+              font-semibold
+            "
+          >
+            Back
+          </button>
+
+        </div>
+
+        <div className="
+          grid
+          md:grid-cols-3
+          gap-4
+          mb-6
+        ">
+
+          <input
+            type="text"
+            placeholder="
+Search SIM / Mobile
+            "
+            value={search}
+            onChange={(e) =>
+              setSearch(e.target.value)
+            }
+            className="
+              border
+              rounded-2xl
+              p-4
+              outline-none
+            "
+          />
+
+          <select
+            value={status}
+            onChange={(e) =>
+              setStatus(e.target.value)
+            }
+            className="
+              border
+              rounded-2xl
+              p-4
+            "
+          >
+
+            <option value="">
+              All Status
+            </option>
+
+            {
+              uniqueStatus.map(
+                (item, index) => (
+
+                  <option
+                    key={index}
+                    value={item}
+                  >
+                    {item}
+                  </option>
+                )
+              )
+            }
+
+          </select>
+
+          <button
+            onClick={downloadCSV}
+            className="
+              bg-green-600
+              text-white
+              rounded-2xl
+              font-semibold
+            "
+          >
+            Download CSV
+          </button>
+
+        </div>
+
+        <div className="
+          grid
+          grid-cols-2
+          md:grid-cols-3
+          gap-4
+          mb-8
         ">
 
           <div className="
-            flex
-            items-center
-            justify-between
-            mb-6
-            flex-wrap
-            gap-4
+            bg-blue-600
+            text-white
+            rounded-3xl
+            p-6
           ">
 
-            <div>
+            <p>Total Records</p>
 
-              <h1 className="
-                text-4xl
-                font-bold
-                mb-2
-              ">
-                Control Tower
-              </h1>
+            <h2 className="
+              text-3xl
+              font-bold
+            ">
+              {filteredRows.length}
+            </h2>
 
-              <p className="
-                text-gray-500
-              ">
-                Airtel SIM Dashboard
-              </p>
+          </div>
 
-            </div>
+          <div className="
+            bg-green-600
+            text-white
+            rounded-3xl
+            p-6
+          ">
 
-            <button
-              onClick={() =>
-                window.history.back()
+            <p>Active</p>
+
+            <h2 className="
+              text-3xl
+              font-bold
+            ">
+
+              {
+                filteredRows.filter(
+                  (item) =>
+
+                    item.status
+                      ?.toLowerCase()
+                      === 'active'
+                ).length
               }
-              className="
+
+            </h2>
+
+          </div>
+
+          <div className="
+            bg-red-600
+            text-white
+            rounded-3xl
+            p-6
+          ">
+
+            <p>Inactive</p>
+
+            <h2 className="
+              text-3xl
+              font-bold
+            ">
+
+              {
+                filteredRows.filter(
+                  (item) =>
+
+                    item.status
+                      ?.toLowerCase()
+                      === 'inactive'
+                ).length
+              }
+
+            </h2>
+
+          </div>
+
+        </div>
+
+        <div className="
+          overflow-auto
+          border
+          rounded-2xl
+        ">
+
+          <table className="
+            w-full
+            border-collapse
+          ">
+
+            <thead>
+
+              <tr className="
                 bg-black
                 text-white
-                px-6
-                py-3
-                rounded-2xl
-                font-semibold
-              "
-            >
-              Back
-            </button>
-
-          </div>
-
-          <div className="
-            grid
-            md:grid-cols-4
-            gap-4
-            mb-6
-          ">
-
-            <input
-              type="text"
-              placeholder="
-Search SIM / Phone / Client
-              "
-              value={search}
-              onChange={(e) =>
-                setSearch(
-                  e.target.value
-                )
-              }
-              className="
-                border
-                rounded-2xl
-                p-4
-                outline-none
-              "
-            />
-
-            <select
-              value={status}
-              onChange={(e) =>
-                setStatus(
-                  e.target.value
-                )
-              }
-              className="
-                border
-                rounded-2xl
-                p-4
-              "
-            >
-
-              <option value="">
-                All Status
-              </option>
-
-              {
-                uniqueStatus.map(
-                  (
-                    item,
-                    index
-                  ) => (
-
-                    <option
-                      key={index}
-                      value={item}
-                    >
-                      {item}
-                    </option>
-                  )
-                )
-              }
-
-            </select>
-
-            <select
-              value={plan}
-              onChange={(e) =>
-                setPlan(
-                  e.target.value
-                )
-              }
-              className="
-                border
-                rounded-2xl
-                p-4
-              "
-            >
-
-              <option value="">
-                All Plans
-              </option>
-
-              {
-                uniquePlans.map(
-                  (
-                    item,
-                    index
-                  ) => (
-
-                    <option
-                      key={index}
-                      value={item}
-                    >
-                      {item}
-                    </option>
-                  )
-                )
-              }
-
-            </select>
-
-            <button
-              onClick={
-                downloadCSV
-              }
-              className="
-                bg-green-600
-                text-white
-                rounded-2xl
-                font-semibold
-              "
-            >
-              Download CSV
-            </button>
-
-          </div>
-
-          <div className="
-            grid
-            grid-cols-2
-            md:grid-cols-4
-            gap-4
-            mb-8
-          ">
-
-            <div className="
-              bg-blue-600
-              text-white
-              rounded-3xl
-              p-6
-            ">
-
-              <p>Total Records</p>
-
-              <h2 className="
-                text-3xl
-                font-bold
-              ">
-                {filteredRows.length}
-              </h2>
-
-            </div>
-
-            <div className="
-              bg-green-600
-              text-white
-              rounded-3xl
-              p-6
-            ">
-
-              <p>Active</p>
-
-              <h2 className="
-                text-3xl
-                font-bold
               ">
 
-                {
-                  filteredRows.filter(
-                    (item) =>
-                      item.status
-                        ?.toLowerCase()
-                        === 'active'
-                  ).length
-                }
-
-              </h2>
-
-            </div>
-
-            <div className="
-              bg-red-600
-              text-white
-              rounded-3xl
-              p-6
-            ">
-
-              <p>Inactive</p>
-
-              <h2 className="
-                text-3xl
-                font-bold
-              ">
-
-                {
-                  filteredRows.filter(
-                    (item) =>
-                      item.status
-                        ?.toLowerCase()
-                        === 'inactive'
-                  ).length
-                }
-
-              </h2>
-
-            </div>
-
-            <div className="
-              bg-purple-600
-              text-white
-              rounded-3xl
-              p-6
-            ">
-
-              <p>Plans</p>
-
-              <h2 className="
-                text-3xl
-                font-bold
-              ">
-                {uniquePlans.length}
-              </h2>
-
-            </div>
-
-          </div>
-
-          <div className="
-            overflow-auto
-            rounded-2xl
-            border
-          ">
-
-            <table className="
-              w-full
-              border-collapse
-              text-sm
-            ">
-
-              <thead>
-
-                <tr className="
-                  bg-black
-                  text-white
+                <th className="
+                  border
+                  p-4
                 ">
+                  SIM No
+                </th>
 
-                  <th className="border p-3">
-                    SIM Number
-                  </th>
+                <th className="
+                  border
+                  p-4
+                ">
+                  Mobile No
+                </th>
 
-                  <th className="border p-3">
-                    Phone Number
-                  </th>
+                <th className="
+                  border
+                  p-4
+                ">
+                  Status
+                </th>
 
-                  <th className="border p-3">
-                    Client Name
-                  </th>
+                <th className="
+                  border
+                  p-4
+                ">
+                  Activation Date
+                </th>
 
-                  <th className="border p-3">
-                    Status
-                  </th>
+                <th className="
+                  border
+                  p-4
+                ">
+                  Safe Custody Date
+                </th>
 
-                  <th className="border p-3">
-                    Plan
-                  </th>
+              </tr>
 
-                </tr>
+            </thead>
 
-              </thead>
+            <tbody>
 
-              <tbody>
+              {
+                loading
+                ? (
 
-                {
-                  loading
-                  ? (
+                  <tr>
 
-                    <tr>
+                    <td
+                      colSpan="5"
+                      className="
+                        text-center
+                        p-10
+                      "
+                    >
+                      Loading...
+                    </td>
 
-                      <td
-                        colSpan="5"
+                  </tr>
+                )
+
+                : filteredRows.length === 0
+
+                ? (
+
+                  <tr>
+
+                    <td
+                      colSpan="5"
+                      className="
+                        text-center
+                        p-10
+                      "
+                    >
+                      No data found
+                    </td>
+
+                  </tr>
+                )
+
+                : (
+
+                  filteredRows.map(
+                    (row, index) => (
+
+                      <tr
+                        key={index}
                         className="
-                          border
-                          p-10
-                          text-center
+                          hover:bg-gray-100
                         "
                       >
-                        Loading...
-                      </td>
 
-                    </tr>
-                  )
-                  : filteredRows.length === 0
-                  ? (
-
-                    <tr>
-
-                      <td
-                        colSpan="5"
-                        className="
+                        <td className="
                           border
-                          p-10
-                          text-center
-                        "
-                      >
-                        No data found
-                      </td>
+                          p-3
+                        ">
+                          {row.sim_no}
+                        </td>
 
-                    </tr>
-                  )
-                  : (
+                        <td className="
+                          border
+                          p-3
+                        ">
+                          {row.mobile_no}
+                        </td>
 
-                    filteredRows.map(
-                      (
-                        row,
-                        index
-                      ) => (
+                        <td className="
+                          border
+                          p-3
+                        ">
+                          {row.status}
+                        </td>
 
-                        <tr
-                          key={index}
-                          className="
-                            hover:bg-gray-100
-                          "
-                        >
+                        <td className="
+                          border
+                          p-3
+                        ">
+                          {
+                            row.activation_date
+                            || '-'
+                          }
+                        </td>
 
-                          <td className="border p-3">
-                            {row.sim_number}
-                          </td>
+                        <td className="
+                          border
+                          p-3
+                        ">
+                          {
+                            row.safeCustody_date
+                            || '-'
+                          }
+                        </td>
 
-                          <td className="border p-3">
-                            {row.phone_number}
-                          </td>
-
-                          <td className="border p-3">
-                            {row.client_name}
-                          </td>
-
-                          <td className="border p-3">
-                            {row.status}
-                          </td>
-
-                          <td className="border p-3">
-                            {row.plan}
-                          </td>
-
-                        </tr>
-                      )
+                      </tr>
                     )
                   )
-                }
+                )
+              }
 
-              </tbody>
+            </tbody>
 
-            </table>
-
-          </div>
+          </table>
 
         </div>
 
