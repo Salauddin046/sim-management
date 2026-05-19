@@ -10,6 +10,8 @@ export async function GET(request: Request) {
 
     let allRows: any[] = []
 
+    let firstPageRows: any[] = []
+
     let page = 1
 
     let hasNext = true
@@ -76,6 +78,11 @@ export async function GET(request: Request) {
       const rows =
         result?.data?.results || []
 
+      if (page === 1) {
+
+        firstPageRows = rows
+      }
+
       totalSimCount =
         Number(
           result?.data?.totalsim || 0
@@ -140,167 +147,94 @@ export async function GET(request: Request) {
       }
     }
 
+    const rowsToFormat =
+
+      download === 'true'
+
+      ? allRows
+
+      : firstPageRows
+
     const formattedData =
 
-      allRows.length > 0
+      rowsToFormat.map(
+        (item: any) => ({
 
-      ? allRows.map(
-          (item: any) => ({
+          sim_no:
 
-            sim_no:
+            item.sim_no
+            ||
 
-              item.sim_no
-              ||
+            item.simnumber
+            ||
 
-              item.simnumber
-              ||
+            item.iccid
+            ||
 
-              item.iccid
-              ||
+            '-',
 
-              '-',
+          mobile_no:
 
-            mobile_no:
+            item.mobile_no
+            ||
 
-              item.mobile_no
-              ||
+            item.mobileno
+            ||
 
-              item.mobileno
-              ||
+            item.msisdn
+            ||
 
-              item.msisdn
-              ||
+            '-',
 
-              '-',
+          status:
 
-            status:
+            item.status
+            ||
 
-              item.status
-              ||
+            item.simstatus
+            ||
 
-              item.simstatus
-              ||
+            '-',
 
-              '-',
+          activation_date:
 
-            activation_date:
+            item.activation_date
+            ||
 
-              item.activation_date
-              ||
+            item.activationdate
 
-              item.activationdate
+              ? new Date(
 
-                ? new Date(
+                  item.activation_date
+                  ||
+                  item.activationdate
 
-                    item.activation_date
-                    ||
-                    item.activationdate
+                ).toLocaleDateString(
+                  'en-GB'
+                )
 
-                  ).toLocaleDateString(
-                    'en-GB'
-                  )
+              : '-',
 
-                : '-',
+          safeCustody_date:
 
-            safeCustody_date:
+            item.safe_custody_date
+            ||
 
-              item.safe_custody_date
-              ||
+            item.safecustodydate
 
-              item.safecustodydate
+              ? new Date(
 
-                ? new Date(
+                  item.safe_custody_date
+                  ||
+                  item.safecustodydate
 
-                    item.safe_custody_date
-                    ||
-                    item.safecustodydate
+                ).toLocaleDateString(
+                  'en-GB'
+                )
 
-                  ).toLocaleDateString(
-                    'en-GB'
-                  )
-
-                : '-',
-          })
-        )
-
-      : rows.map(
-          (item: any) => ({
-
-            sim_no:
-
-              item.sim_no
-              ||
-
-              item.simnumber
-              ||
-
-              item.iccid
-              ||
-
-              '-',
-
-            mobile_no:
-
-              item.mobile_no
-              ||
-
-              item.mobileno
-              ||
-
-              item.msisdn
-              ||
-
-              '-',
-
-            status:
-
-              item.status
-              ||
-
-              item.simstatus
-              ||
-
-              '-',
-
-            activation_date:
-
-              item.activation_date
-              ||
-
-              item.activationdate
-
-                ? new Date(
-
-                    item.activation_date
-                    ||
-                    item.activationdate
-
-                  ).toLocaleDateString(
-                    'en-GB'
-                  )
-
-                : '-',
-
-            safeCustody_date:
-
-              item.safe_custody_date
-              ||
-
-              item.safecustodydate
-
-                ? new Date(
-
-                    item.safe_custody_date
-                    ||
-                    item.safecustodydate
-
-                  ).toLocaleDateString(
-                    'en-GB'
-                  )
-
-                : '-',
-          })
-        )
+              : '-',
+        })
+      )
 
     return Response.json({
 
