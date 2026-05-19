@@ -4,7 +4,5 @@ export async function GET() {
 
     success: true,
 
-    message: 'Test API Working',
-
   })
 }
