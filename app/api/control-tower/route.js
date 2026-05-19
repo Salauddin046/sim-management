@@ -1,10 +1,10 @@
-export async function GET() {
+export async function GET(req) {
 
   return Response.json({
 
     success: true,
 
     message:
-      'API working',
-    })
+      'Control Tower API Working',
+  })
 }
