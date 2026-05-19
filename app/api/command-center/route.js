@@ -90,12 +90,12 @@ export async function POST(req) {
         monthValue,
       ] = month.split('-')
 
-      const formattedMonth =
+      const monthPattern =
 
-        `${monthValue}-${year}`
+        `/${monthValue}/${year}`
 
       values.push(
-        `%${formattedMonth}%`
+        monthPattern
       )
 
       query +=
@@ -104,19 +104,19 @@ export async function POST(req) {
         AND
         (
 
-          activation_date LIKE $${values.length}
+          activation_date LIKE '%' || $${values.length} || '%'
 
           OR
 
-          termination_date LIKE $${values.length}
+          termination_date LIKE '%' || $${values.length} || '%'
 
           OR
 
-          safe_custody_move_in LIKE $${values.length}
+          safe_custody_move_in LIKE '%' || $${values.length} || '%'
 
           OR
 
-          safe_custody_move_out LIKE $${values.length}
+          safe_custody_move_out LIKE '%' || $${values.length} || '%'
 
         )
         `
