@@ -202,7 +202,7 @@ export default function CommandCenterPage() {
         item.termination_date
     ).length
 
-  const safeCustody =
+  const safeCustodyIn =
     rows.filter(
       (item) =>
 
@@ -210,7 +210,19 @@ export default function CommandCenterPage() {
 
         &&
 
-        !item.safe_custody_move_out
+        item.safe_custody_move_in !== ''
+
+    ).length
+
+  const safeCustodyOut =
+    rows.filter(
+      (item) =>
+
+        item.safe_custody_move_out
+
+        &&
+
+        item.safe_custody_move_out !== ''
 
     ).length
 
@@ -256,7 +268,7 @@ export default function CommandCenterPage() {
               <p className="
                 text-gray-500
               ">
-                PostgreSQL SIM Dashboard
+                
               </p>
 
             </div>
@@ -406,7 +418,7 @@ Search SIM / Phone / Client / Device
           <div className="
             grid
             grid-cols-2
-            md:grid-cols-4
+            md:grid-cols-5
             gap-4
             mb-8
           ">
@@ -499,14 +511,39 @@ Search SIM / Phone / Client / Device
                 opacity-80
                 mb-2
               ">
-                Safe Custody
+                Safe Custody IN
               </p>
 
               <h2 className="
                 text-3xl
                 font-bold
               ">
-                {safeCustody}
+                {safeCustodyIn}
+              </h2>
+
+            </div>
+
+            <div className="
+              bg-purple-600
+              text-white
+              rounded-3xl
+              p-6
+              shadow-lg
+            ">
+
+              <p className="
+                text-sm
+                opacity-80
+                mb-2
+              ">
+                Safe Custody OUT
+              </p>
+
+              <h2 className="
+                text-3xl
+                font-bold
+              ">
+                {safeCustodyOut}
               </h2>
 
             </div>
