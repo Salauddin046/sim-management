@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 export default function CommandCenterPage() {
 
@@ -10,11 +10,48 @@ export default function CommandCenterPage() {
   const [month, setMonth] =
     useState('')
 
+  const [months, setMonths] =
+    useState([])
+
   const [loading, setLoading] =
     useState(false)
 
   const [rows, setRows] =
     useState([])
+
+  useEffect(() => {
+
+    loadMonths()
+
+  }, [])
+
+  const loadMonths =
+    async () => {
+
+      try {
+
+        const response =
+          await fetch(
+            '/api/command-center/months'
+          )
+
+        const result =
+          await response.json()
+
+        if (
+          result.success
+        ) {
+
+          setMonths(
+            result.months
+          )
+        }
+
+      } catch (error) {
+
+        console.log(error)
+      }
+    }
 
   const searchData =
     async () => {
@@ -86,98 +123,6 @@ export default function CommandCenterPage() {
       setRows([])
     }
 
-  const downloadCSV =
-    () => {
-
-      if (
-        rows.length === 0
-      ) {
-
-        alert(
-          'No data found'
-        )
-
-        return
-      }
-
-      const headers = [
-
-        'SIM Number',
-
-        'Phone Number',
-
-        'Device ID',
-
-        'Client Name',
-
-        'Activation Date',
-
-        'Termination Date',
-
-        'Safe Custody Move In',
-
-        'Safe Custody Move Out',
-      ]
-
-      const csvRows = [
-
-        headers.join(','),
-      ]
-
-      rows.forEach((row) => {
-
-        csvRows.push(
-
-          [
-
-            row.sim_number,
-
-            row.phone_number,
-
-            row.device_id,
-
-            `"${row.client_name}"`,
-
-            row.activation_date,
-
-            row.termination_date,
-
-            row.safe_custody_move_in,
-
-            row.safe_custody_move_out,
-          ].join(',')
-        )
-      })
-
-      const blob =
-        new Blob(
-
-          [csvRows.join('\n')],
-
-          {
-            type:
-              'text/csv',
-          }
-        )
-
-      const url =
-        window.URL
-          .createObjectURL(
-            blob
-          )
-
-      const a =
-        document
-          .createElement('a')
-
-      a.href = url
-
-      a.download =
-        `command_center_${Date.now()}.csv`
-
-      a.click()
-    }
-
   return (
 
     <div className="
@@ -203,8 +148,6 @@ export default function CommandCenterPage() {
             items-center
             justify-between
             mb-6
-            flex-wrap
-            gap-4
           ">
 
             <div>
@@ -288,53 +231,22 @@ Search SIM / Phone / Client / Device ID
                 Select Month
               </option>
 
-              <option value="2025-01">
-                Jan 2025
-              </option>
+              {
+                months.map(
+                  (
+                    item,
+                    index
+                  ) => (
 
-              <option value="2025-02">
-                Feb 2025
-              </option>
-
-              <option value="2025-03">
-                Mar 2025
-              </option>
-
-              <option value="2025-04">
-                Apr 2025
-              </option>
-
-              <option value="2025-05">
-                May 2025
-              </option>
-
-              <option value="2025-06">
-                Jun 2025
-              </option>
-
-              <option value="2025-07">
-                Jul 2025
-              </option>
-
-              <option value="2025-08">
-                Aug 2025
-              </option>
-
-              <option value="2025-09">
-                Sep 2025
-              </option>
-
-              <option value="2025-10">
-                Oct 2025
-              </option>
-
-              <option value="2025-11">
-                Nov 2025
-              </option>
-
-              <option value="2025-12">
-                Dec 2025
-              </option>
+                    <option
+                      key={index}
+                      value={item}
+                    >
+                      {item}
+                    </option>
+                  )
+                )
+              }
 
             </select>
 
@@ -367,7 +279,6 @@ Search SIM / Phone / Client / Device ID
             flex
             gap-4
             mb-6
-            flex-wrap
           ">
 
             <button
@@ -384,22 +295,6 @@ Search SIM / Phone / Client / Device ID
               "
             >
               Clear
-            </button>
-
-            <button
-              onClick={
-                downloadCSV
-              }
-              className="
-                bg-green-600
-                text-white
-                px-8
-                py-4
-                rounded-2xl
-                font-semibold
-              "
-            >
-              Download CSV
             </button>
 
           </div>
@@ -471,7 +366,6 @@ Search SIM / Phone / Client / Device ID
                           border
                           p-10
                           text-center
-                          text-gray-500
                         "
                       >
                         No data found
@@ -489,9 +383,6 @@ Search SIM / Phone / Client / Device ID
 
                         <tr
                           key={index}
-                          className="
-                            hover:bg-gray-100
-                          "
                         >
 
                           <td className="border p-3">
