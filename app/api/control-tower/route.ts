@@ -1,6 +1,12 @@
-export async function GET() {
+export async function GET(request: Request) {
 
   try {
+
+    const { searchParams } =
+      new URL(request.url)
+
+    const download =
+      searchParams.get('download')
 
     let allRows: any[] = []
 
@@ -8,7 +14,16 @@ export async function GET() {
 
     let hasNext = true
 
-    while (hasNext) {
+    while (
+
+      hasNext &&
+
+      (
+        download === 'true'
+          ? true
+          : page <= 1
+      )
+    ) {
 
       console.log(
         `Fetching Page: ${page}`
@@ -41,7 +56,7 @@ export async function GET() {
                 'https://airtelsim.intellicar.in/analysis',
 
               'user-agent':
-                'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+                'Mozilla/5.0',
             },
 
             body: JSON.stringify({
@@ -59,11 +74,6 @@ export async function GET() {
       const result =
         await response.json()
 
-      console.log(
-        `Page ${page} Count:`,
-        result?.data?.results?.length
-      )
-
       const rows =
         result?.data?.results || []
 
@@ -76,90 +86,191 @@ export async function GET() {
         result?.data?.hasnext || false
 
       page++
+
+      if (
+        download !== 'true'
+      ) {
+
+        return Response.json({
+
+          success: true,
+
+          totalCount:
+            result?.data?.totalsim || 0,
+
+          count:
+            rows.length,
+
+          data:
+
+            rows.map(
+              (item: any) => ({
+
+                sim_no:
+
+                  item.sim_no
+                  ||
+
+                  item.simnumber
+                  ||
+
+                  item.iccid
+                  ||
+
+                  '-',
+
+                mobile_no:
+
+                  item.mobile_no
+                  ||
+
+                  item.mobileno
+                  ||
+
+                  item.msisdn
+                  ||
+
+                  '-',
+
+                status:
+
+                  item.status
+                  ||
+
+                  item.simstatus
+                  ||
+
+                  '-',
+
+                activation_date:
+
+                  item.activation_date
+                  ||
+
+                  item.activationdate
+
+                    ? new Date(
+
+                        item.activation_date
+                        ||
+                        item.activationdate
+
+                      ).toLocaleDateString(
+                        'en-GB'
+                      )
+
+                    : '-',
+
+                safeCustody_date:
+
+                  item.safe_custody_date
+                  ||
+
+                  item.safecustodydate
+
+                    ? new Date(
+
+                        item.safe_custody_date
+                        ||
+                        item.safecustodydate
+
+                      ).toLocaleDateString(
+                        'en-GB'
+                      )
+
+                    : '-',
+              }))
+        })
+      }
     }
 
     const formattedData =
 
-      allRows.map((item: any) => ({
+      allRows.map(
+        (item: any) => ({
 
-        sim_no:
+          sim_no:
 
-          item.sim_no
-          ||
+            item.sim_no
+            ||
 
-          item.simnumber
-          ||
+            item.simnumber
+            ||
 
-          item.iccid
-          ||
+            item.iccid
+            ||
 
-          '-',
+            '-',
 
-        mobile_no:
+          mobile_no:
 
-          item.mobile_no
-          ||
+            item.mobile_no
+            ||
 
-          item.mobileno
-          ||
+            item.mobileno
+            ||
 
-          item.msisdn
-          ||
+            item.msisdn
+            ||
 
-          '-',
+            '-',
 
-        status:
+          status:
 
-          item.status
-          ||
+            item.status
+            ||
 
-          item.simstatus
-          ||
+            item.simstatus
+            ||
 
-          '-',
+            '-',
 
-        activation_date:
+          activation_date:
 
-          item.activation_date
-          ||
+            item.activation_date
+            ||
 
-          item.activationdate
+            item.activationdate
 
-            ? new Date(
+              ? new Date(
 
-                item.activation_date
-                ||
-                item.activationdate
+                  item.activation_date
+                  ||
+                  item.activationdate
 
-              ).toLocaleDateString(
-                'en-GB'
-              )
+                ).toLocaleDateString(
+                  'en-GB'
+                )
 
-            : '-',
+              : '-',
 
-        safeCustody_date:
+          safeCustody_date:
 
-          item.safe_custody_date
-          ||
+            item.safe_custody_date
+            ||
 
-          item.safecustodydate
+            item.safecustodydate
 
-            ? new Date(
+              ? new Date(
 
-                item.safe_custody_date
-                ||
-                item.safecustodydate
+                  item.safe_custody_date
+                  ||
+                  item.safecustodydate
 
-              ).toLocaleDateString(
-                'en-GB'
-              )
+                ).toLocaleDateString(
+                  'en-GB'
+                )
 
-            : '-',
-      }))
+              : '-',
+        })
+      )
 
     return Response.json({
 
       success: true,
+
+      totalCount:
+        formattedData.length,
 
       count:
         formattedData.length,
@@ -170,10 +281,7 @@ export async function GET() {
 
   } catch (error) {
 
-    console.log(
-      'CONTROL TOWER ERROR:',
-      error
-    )
+    console.log(error)
 
     return Response.json({
 

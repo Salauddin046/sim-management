@@ -207,7 +207,7 @@ export default function ControlTowerPage() {
             <p className="
               text-gray-500
             ">
-              Airtel SIM Dashboard
+              SIM Overview
             </p>
 
           </div>
