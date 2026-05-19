@@ -138,13 +138,17 @@ export default function ControlTowerPage() {
 
       } catch (error) {
 
-        console.log(error)
+  console.log(
+    'FULL ERROR:',
+    error
+  )
 
-        alert(
-          'Failed to fetch Airtel data'
-        )
+  alert(
+    JSON.stringify(error)
+  )
+}
 
-      } finally {
+ finally {
 
         setLoading(false)
       }
