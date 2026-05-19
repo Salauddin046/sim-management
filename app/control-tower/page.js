@@ -12,6 +12,9 @@ export default function ControlTowerPage() {
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState('')
 
+  const [totalCount, setTotalCount] =
+    useState(0)
+
   useEffect(() => {
 
     fetchData()
@@ -25,7 +28,9 @@ export default function ControlTowerPage() {
       setLoading(true)
 
       const response =
-        await fetch('/api/control-tower')
+        await fetch(
+          '/api/control-tower'
+        )
 
       const result =
         await response.json()
@@ -42,7 +47,12 @@ export default function ControlTowerPage() {
       }
 
       setRows(apiData)
+
       setFilteredRows(apiData)
+
+      setTotalCount(
+        result.totalCount || 0
+      )
 
     } catch (error) {
 
@@ -110,64 +120,146 @@ export default function ControlTowerPage() {
     ),
   ]
 
-  const downloadCSV = () => {
+  const downloadCSV =
+    async () => {
 
-    if (
-      filteredRows.length === 0
-    ) {
+      try {
 
-      alert('No data found')
-      return
+        const response =
+          await fetch(
+            '/api/control-tower?download=true'
+          )
+
+        const result =
+          await response.json()
+
+        const data =
+          result.data || []
+
+        const headers = [
+
+          'SIM No',
+          'Mobile No',
+          'Status',
+          'Activation Date',
+          'Safe Custody Date',
+        ]
+
+        const csvRows = [
+          headers.join(',')
+        ]
+
+        data.forEach((row) => {
+
+          csvRows.push([
+
+            row.sim_no || '',
+            row.mobile_no || '',
+            row.status || '',
+            row.activation_date || '',
+            row.safeCustody_date || '',
+
+          ].join(','))
+        })
+
+        const blob =
+          new Blob(
+
+            [csvRows.join('\n')],
+
+            {
+              type:
+                'text/csv',
+            }
+          )
+
+        const url =
+          window.URL.createObjectURL(
+            blob
+          )
+
+        const a =
+          document.createElement(
+            'a'
+          )
+
+        a.href = url
+
+        a.download =
+          'all_sim_data.csv'
+
+        a.click()
+
+      } catch (error) {
+
+        console.log(error)
+
+        alert(
+          'CSV Download Failed'
+        )
+      }
     }
 
-    const headers = [
+  const statusCards =
 
-      'SIM No',
-      'Mobile No',
-      'Status',
-      'Activation Date',
-      'Safe Custody Date',
-    ]
+    uniqueStatus.map(
+      (statusName, index) => {
 
-    const csvRows = [
-      headers.join(',')
-    ]
+        const count =
+          rows.filter(
+            (item) =>
 
-    filteredRows.forEach((row) => {
+              item.status
+                ?.toLowerCase()
 
-      csvRows.push([
+              ===
 
-        row.sim_no || '',
-        row.mobile_no || '',
-        row.status || '',
-        row.activation_date || '',
-        row.safeCustody_date || '',
+              statusName
+                ?.toLowerCase()
+          ).length
 
-      ].join(','))
-    })
+        const colors = [
 
-    const blob = new Blob(
+          'bg-green-600',
 
-      [csvRows.join('\n')],
+          'bg-blue-600',
 
-      {
-        type: 'text/csv',
+          'bg-yellow-500',
+
+          'bg-red-600',
+
+          'bg-purple-600',
+
+          'bg-pink-600',
+        ]
+
+        return (
+
+          <div
+            key={index}
+            className={`
+              ${colors[index % colors.length]}
+              text-white
+              rounded-3xl
+              p-6
+            `}
+          >
+
+            <p>
+              {statusName}
+            </p>
+
+            <h2 className="
+              text-3xl
+              font-bold
+            ">
+              {count}
+            </h2>
+
+          </div>
+        )
       }
     )
-
-    const url =
-      window.URL.createObjectURL(blob)
-
-    const a =
-      document.createElement('a')
-
-    a.href = url
-
-    a.download =
-      'control_tower.csv'
-
-    a.click()
-  }
 
   return (
 
@@ -201,13 +293,12 @@ export default function ControlTowerPage() {
               text-4xl
               font-bold
             ">
-              Control Tower
+              SIM Overview
             </h1>
 
             <p className="
               text-gray-500
             ">
-              SIM Overview
             </p>
 
           </div>
@@ -263,7 +354,9 @@ Search SIM / Mobile
             />
 
             <button
-              onClick={handleSearch}
+              onClick={
+                handleSearch
+              }
               className="
                 bg-blue-600
                 text-white
@@ -315,7 +408,9 @@ Search SIM / Mobile
           </select>
 
           <button
-            onClick={handleSearch}
+            onClick={
+              handleSearch
+            }
             className="
               bg-green-600
               text-white
@@ -327,7 +422,9 @@ Search SIM / Mobile
           </button>
 
           <button
-            onClick={downloadCSV}
+            onClick={
+              downloadCSV
+            }
             className="
               bg-purple-600
               text-white
@@ -343,13 +440,13 @@ Search SIM / Mobile
         <div className="
           grid
           grid-cols-2
-          md:grid-cols-3
+          md:grid-cols-4
           gap-4
           mb-8
         ">
 
           <div className="
-            bg-blue-600
+            bg-indigo-600
             text-white
             rounded-3xl
             p-6
@@ -361,66 +458,12 @@ Search SIM / Mobile
               text-3xl
               font-bold
             ">
-              {filteredRows.length}
+              {totalCount}
             </h2>
 
           </div>
 
-          <div className="
-            bg-green-600
-            text-white
-            rounded-3xl
-            p-6
-          ">
-
-            <p>Active</p>
-
-            <h2 className="
-              text-3xl
-              font-bold
-            ">
-
-              {
-                filteredRows.filter(
-                  (item) =>
-
-                    item.status
-                      ?.toLowerCase()
-                      === 'active'
-                ).length
-              }
-
-            </h2>
-
-          </div>
-
-          <div className="
-            bg-red-600
-            text-white
-            rounded-3xl
-            p-6
-          ">
-
-            <p>Inactive</p>
-
-            <h2 className="
-              text-3xl
-              font-bold
-            ">
-
-              {
-                filteredRows.filter(
-                  (item) =>
-
-                    item.status
-                      ?.toLowerCase()
-                      === 'inactive'
-                ).length
-              }
-
-            </h2>
-
-          </div>
+          {statusCards}
 
         </div>
 
@@ -555,7 +598,20 @@ Search SIM / Mobile
                           border
                           p-3
                         ">
-                          {row.status}
+
+                          <span
+                            className="
+                              bg-green-600
+                              text-white
+                              px-3
+                              py-1
+                              rounded-full
+                              text-sm
+                            "
+                          >
+                            {row.status}
+                          </span>
+
                         </td>
 
                         <td className="
