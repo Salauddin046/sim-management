@@ -1,10 +1,24 @@
-export async function GET(req) {
+export async function GET() {
 
-  return Response.json({
+  return new Response(
 
-    success: true,
+    JSON.stringify({
 
-    message:
-      'Control Tower API Working',
-  })
+      success: true,
+
+      message:
+        'Control Tower API Working',
+    }),
+
+    {
+
+      status: 200,
+
+      headers: {
+
+        'Content-Type':
+          'application/json',
+      },
+    }
+  )
 }
