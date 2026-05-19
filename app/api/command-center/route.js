@@ -1,74 +1,208 @@
-export async function GET() {
+import { Pool } from 'pg'
+
+const globalForPool =
+  global
+
+const pool =
+  globalForPool.pool ||
+
+  new Pool({
+
+    connectionString:
+      process.env.DATABASE_URL,
+
+    ssl: {
+      rejectUnauthorized: false,
+    },
+
+    max: 20,
+
+    idleTimeoutMillis:
+      30000,
+
+    connectionTimeoutMillis:
+      2000,
+  })
+
+if (
+  !globalForPool.pool
+) {
+
+  globalForPool.pool =
+    pool
+}
+
+export async function POST(req) {
 
   try {
 
-    const response =
-      await fetch(
+    const body =
+      await req.json()
 
-        'https://airtelsim.intellicar.in/api/v1/airtel/sims/list',
+    const search =
+      body.search || ''
 
-        {
+    const fromDate =
+      body.fromDate || ''
 
-          method: 'POST',
+    const toDate =
+      body.toDate || ''
 
-          headers: {
+    let query =
 
-            accept:
-              'application/json, text/plain, */*',
+      `
+      SELECT *
+      FROM sim_data3
+      WHERE 1=1
+      `
 
-            authorization:
-              'Basic YWlydGVsYXBpOkFpcnRlSW50ZWxsaWNhckAjMTIzNDU=',
+    const values = []
 
-            'content-type':
-              'application/json',
+    if (search) {
 
-            origin:
-              'https://airtelsim.intellicar.in',
-
-            referer:
-              'https://airtelsim.intellicar.in/analysis',
-
-            cookie:
-              `PASTE_FULL_COOKIE_HERE`,
-          },
-
-          body: JSON.stringify({
-
-            page_no: 1,
-          }),
-
-          cache:
-            'no-store',
-        }
+      values.push(
+        `%${search}%`
       )
 
-    const text =
-      await response.text()
+      query +=
+
+        `
+        AND
+        (
+          sim_number ILIKE $${values.length}
+
+          OR
+
+          phone_number ILIKE $${values.length}
+
+          OR
+
+          client_name ILIKE $${values.length}
+
+          OR
+
+          device_id ILIKE $${values.length}
+        )
+        `
+    }
+
+    if (
+      fromDate &&
+      toDate
+    ) {
+
+      values.push(
+        fromDate
+      )
+
+      values.push(
+        toDate
+      )
+
+      query +=
+
+        `
+        AND
+        (
+
+          (
+            activation_date_real IS NOT NULL
+
+            AND
+
+            activation_date_real
+            BETWEEN
+            $${values.length - 1}::DATE
+            AND
+            $${values.length}::DATE
+          )
+
+          OR
+
+          (
+            termination_date_real IS NOT NULL
+
+            AND
+
+            termination_date_real
+            BETWEEN
+            $${values.length - 1}::DATE
+            AND
+            $${values.length}::DATE
+          )
+
+          OR
+
+          (
+            safe_custody_move_in_real IS NOT NULL
+
+            AND
+
+            safe_custody_move_in_real
+            BETWEEN
+            $${values.length - 1}::DATE
+            AND
+            $${values.length}::DATE
+          )
+
+          OR
+
+          (
+            safe_custody_move_out_real IS NOT NULL
+
+            AND
+
+            safe_custody_move_out_real
+            BETWEEN
+            $${values.length - 1}::DATE
+            AND
+            $${values.length}::DATE
+          )
+
+        )
+        `
+    }
+
+    query +=
+
+      `
+      ORDER BY id DESC
+      LIMIT 5000
+      `
 
     console.log(
-      'RAW TEXT:',
-      text
+      'QUERY:',
+      query
     )
 
-    return new Response(
-
-      text,
-
-      {
-
-        status: 200,
-
-        headers: {
-
-          'Content-Type':
-            'application/json',
-        },
-      }
+    console.log(
+      'VALUES:',
+      values
     )
 
-  } catch (error: any) {
+    const result =
+      await pool.query(
+        query,
+        values
+      )
 
-    console.log(error)
+    return Response.json({
+
+      success: true,
+
+      count:
+        result.rows.length,
+
+      data:
+        result.rows,
+    })
+
+  } catch (error) {
+
+    console.log(
+      'COMMAND CENTER ERROR:',
+      error
+    )
 
     return Response.json({
 
