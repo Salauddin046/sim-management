@@ -1,207 +1,74 @@
-import { Pool } from 'pg'
-
-const globalForPool =
-  global
-
-const pool =
-  globalForPool.pool ||
-
-  new Pool({
-
-    connectionString:
-      process.env.DATABASE_URL,
-
-    ssl: {
-      rejectUnauthorized: false,
-    },
-
-    max: 20,
-
-    idleTimeoutMillis:
-      30000,
-
-    connectionTimeoutMillis:
-      2000,
-  })
-
-if (
-  !globalForPool.pool
-) {
-
-  globalForPool.pool =
-    pool
-}
-
-export async function POST(req) {
+export async function GET() {
 
   try {
 
-    const body =
-      await req.json()
+    const response =
+      await fetch(
 
-    const search =
-      body.search || ''
+        'https://airtelsim.intellicar.in/api/v1/airtel/sims/list',
 
-    const fromDate =
-      body.fromDate || ''
+        {
 
-    const toDate =
-      body.toDate || ''
+          method: 'POST',
 
-    let query =
+          headers: {
 
-      `
-      SELECT *
-      FROM sim_data3
-      WHERE 1=1
-      `
+            accept:
+              'application/json, text/plain, */*',
 
-    const values = []
+            authorization:
+              'Basic YWlydGVsYXBpOkFpcnRlSW50ZWxsaWNhckAjMTIzNDU=',
 
-    if (search) {
+            'content-type':
+              'application/json',
 
-      values.push(
-        `%${search}%`
+            origin:
+              'https://airtelsim.intellicar.in',
+
+            referer:
+              'https://airtelsim.intellicar.in/analysis',
+
+            cookie:
+              `PASTE_FULL_COOKIE_HERE`,
+          },
+
+          body: JSON.stringify({
+
+            page_no: 1,
+          }),
+
+          cache:
+            'no-store',
+        }
       )
 
-      query +=
-
-        `
-        AND
-        (
-          sim_number ILIKE $${values.length}
-
-          OR
-
-          phone_number ILIKE $${values.length}
-
-          OR
-
-          client_name ILIKE $${values.length}
-
-          OR
-
-          device_id ILIKE $${values.length}
-        )
-        `
-    }
-
-    if (
-      fromDate &&
-      toDate
-    ) {
-
-      values.push(
-        fromDate
-      )
-
-      values.push(
-        toDate
-      )
-
-      query +=
-
-        `
-        AND
-        (
-
-          (
-            activation_date_real IS NOT NULL
-
-            AND
-
-            activation_date_real
-            BETWEEN
-            $${values.length - 1}::DATE
-            AND
-            $${values.length}::DATE
-          )
-
-          OR
-
-          (
-            termination_date_real IS NOT NULL
-
-            AND
-
-            termination_date_real
-            BETWEEN
-            $${values.length - 1}::DATE
-            AND
-            $${values.length}::DATE
-          )
-
-          OR
-
-          (
-            safe_custody_move_in_real IS NOT NULL
-
-            AND
-
-            safe_custody_move_in_real
-            BETWEEN
-            $${values.length - 1}::DATE
-            AND
-            $${values.length}::DATE
-          )
-
-          OR
-
-          (
-            safe_custody_move_out_real IS NOT NULL
-
-            AND
-
-            safe_custody_move_out_real
-            BETWEEN
-            $${values.length - 1}::DATE
-            AND
-            $${values.length}::DATE
-          )
-
-        )
-        `
-    }
-
-    query +=
-
-      `
-      ORDER BY id DESC
-      `
+    const text =
+      await response.text()
 
     console.log(
-      'QUERY:',
-      query
+      'RAW TEXT:',
+      text
     )
 
-    console.log(
-      'VALUES:',
-      values
+    return new Response(
+
+      text,
+
+      {
+
+        status: 200,
+
+        headers: {
+
+          'Content-Type':
+            'application/json',
+        },
+      }
     )
 
-    const result =
-      await pool.query(
-        query,
-        values
-      )
+  } catch (error: any) {
 
-    return Response.json({
-
-      success: true,
-
-      count:
-        result.rows.length,
-
-      data:
-        result.rows,
-    })
-
-  } catch (error) {
-
-    console.log(
-      'COMMAND CENTER ERROR:',
-      error
-    )
+    console.log(error)
 
     return Response.json({
 
