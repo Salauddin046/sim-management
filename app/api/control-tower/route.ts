@@ -14,6 +14,8 @@ export async function GET(request: Request) {
 
     let hasNext = true
 
+    let totalSimCount = 0
+
     while (
 
       hasNext &&
@@ -77,6 +79,11 @@ export async function GET(request: Request) {
       const rows =
         result?.data?.results || []
 
+      totalSimCount =
+        Number(
+          result?.data?.totalsim || 0
+        )
+
       allRows = [
         ...allRows,
         ...rows,
@@ -86,102 +93,6 @@ export async function GET(request: Request) {
         result?.data?.hasnext || false
 
       page++
-
-      if (
-        download !== 'true'
-      ) {
-
-        return Response.json({
-
-          success: true,
-
-          totalCount:
-            result?.data?.totalsim || 0,
-
-          count:
-            rows.length,
-
-          data:
-
-            rows.map(
-              (item: any) => ({
-
-                sim_no:
-
-                  item.sim_no
-                  ||
-
-                  item.simnumber
-                  ||
-
-                  item.iccid
-                  ||
-
-                  '-',
-
-                mobile_no:
-
-                  item.mobile_no
-                  ||
-
-                  item.mobileno
-                  ||
-
-                  item.msisdn
-                  ||
-
-                  '-',
-
-                status:
-
-                  item.status
-                  ||
-
-                  item.simstatus
-                  ||
-
-                  '-',
-
-                activation_date:
-
-                  item.activation_date
-                  ||
-
-                  item.activationdate
-
-                    ? new Date(
-
-                        item.activation_date
-                        ||
-                        item.activationdate
-
-                      ).toLocaleDateString(
-                        'en-GB'
-                      )
-
-                    : '-',
-
-                safeCustody_date:
-
-                  item.safe_custody_date
-                  ||
-
-                  item.safecustodydate
-
-                    ? new Date(
-
-                        item.safe_custody_date
-                        ||
-                        item.safecustodydate
-
-                      ).toLocaleDateString(
-                        'en-GB'
-                      )
-
-                    : '-',
-              }))
-        })
-      }
     }
 
     const formattedData =
@@ -265,12 +176,54 @@ export async function GET(request: Request) {
         })
       )
 
+    const activeCount =
+
+      formattedData.filter(
+
+        (item: any) =>
+
+          item.status
+            ?.toLowerCase()
+            === 'active'
+
+      ).length
+
+    const tempDisconnectCount =
+
+      formattedData.filter(
+
+        (item: any) =>
+
+          item.status
+            ?.toLowerCase()
+            .includes('temp')
+
+      ).length
+
+    const safeCustodyCount =
+
+      formattedData.filter(
+
+        (item: any) =>
+
+          item.status
+            ?.toLowerCase()
+            .includes('safe')
+
+      ).length
+
     return Response.json({
 
       success: true,
 
       totalCount:
-        formattedData.length,
+        totalSimCount,
+
+      activeCount,
+
+      tempDisconnectCount,
+
+      safeCustodyCount,
 
       count:
         formattedData.length,
@@ -281,7 +234,10 @@ export async function GET(request: Request) {
 
   } catch (error) {
 
-    console.log(error)
+    console.log(
+      'CONTROL TOWER ERROR:',
+      error
+    )
 
     return Response.json({
 

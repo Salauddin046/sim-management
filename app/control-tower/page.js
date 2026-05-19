@@ -5,15 +5,33 @@ import { useEffect, useState } from 'react'
 export default function ControlTowerPage() {
 
   const [rows, setRows] = useState([])
-  const [filteredRows, setFilteredRows] = useState([])
+  const [filteredRows, setFilteredRows] =
+    useState([])
 
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] =
+    useState(false)
 
-  const [search, setSearch] = useState('')
-  const [status, setStatus] = useState('')
+  const [search, setSearch] =
+    useState('')
+
+  const [status, setStatus] =
+    useState('')
 
   const [totalCount, setTotalCount] =
     useState(0)
+
+  const [activeCount, setActiveCount] =
+    useState(0)
+
+  const [
+    tempDisconnectCount,
+    setTempDisconnectCount,
+  ] = useState(0)
+
+  const [
+    safeCustodyCount,
+    setSafeCustodyCount,
+  ] = useState(0)
 
   useEffect(() => {
 
@@ -37,14 +55,8 @@ export default function ControlTowerPage() {
 
       console.log(result)
 
-      let apiData = []
-
-      if (
-        Array.isArray(result.data)
-      ) {
-
-        apiData = result.data
-      }
+      const apiData =
+        result.data || []
 
       setRows(apiData)
 
@@ -52,6 +64,18 @@ export default function ControlTowerPage() {
 
       setTotalCount(
         result.totalCount || 0
+      )
+
+      setActiveCount(
+        result.activeCount || 0
+      )
+
+      setTempDisconnectCount(
+        result.tempDisconnectCount || 0
+      )
+
+      setSafeCustodyCount(
+        result.safeCustodyCount || 0
       )
 
     } catch (error) {
@@ -113,8 +137,9 @@ export default function ControlTowerPage() {
     ...new Set(
 
       rows
-        .map((item) =>
-          item.status
+        .map(
+          (item) =>
+            item.status
         )
         .filter(Boolean)
     ),
@@ -127,6 +152,7 @@ export default function ControlTowerPage() {
 
         const response =
           await fetch(
+
             '/api/control-tower?download=true'
           )
 
@@ -139,9 +165,13 @@ export default function ControlTowerPage() {
         const headers = [
 
           'SIM No',
+
           'Mobile No',
+
           'Status',
+
           'Activation Date',
+
           'Safe Custody Date',
         ]
 
@@ -154,9 +184,13 @@ export default function ControlTowerPage() {
           csvRows.push([
 
             row.sim_no || '',
+
             row.mobile_no || '',
+
             row.status || '',
+
             row.activation_date || '',
+
             row.safeCustody_date || '',
 
           ].join(','))
@@ -174,14 +208,12 @@ export default function ControlTowerPage() {
           )
 
         const url =
-          window.URL.createObjectURL(
-            blob
-          )
+          window.URL
+            .createObjectURL(blob)
 
         const a =
-          document.createElement(
-            'a'
-          )
+          document
+            .createElement('a')
 
         a.href = url
 
@@ -199,67 +231,6 @@ export default function ControlTowerPage() {
         )
       }
     }
-
-  const statusCards =
-
-    uniqueStatus.map(
-      (statusName, index) => {
-
-        const count =
-          rows.filter(
-            (item) =>
-
-              item.status
-                ?.toLowerCase()
-
-              ===
-
-              statusName
-                ?.toLowerCase()
-          ).length
-
-        const colors = [
-
-          'bg-green-600',
-
-          'bg-blue-600',
-
-          'bg-yellow-500',
-
-          'bg-red-600',
-
-          'bg-purple-600',
-
-          'bg-pink-600',
-        ]
-
-        return (
-
-          <div
-            key={index}
-            className={`
-              ${colors[index % colors.length]}
-              text-white
-              rounded-3xl
-              p-6
-            `}
-          >
-
-            <p>
-              {statusName}
-            </p>
-
-            <h2 className="
-              text-3xl
-              font-bold
-            ">
-              {count}
-            </h2>
-
-          </div>
-        )
-      }
-    )
 
   return (
 
@@ -463,7 +434,67 @@ Search SIM / Mobile
 
           </div>
 
-          {statusCards}
+          <div className="
+            bg-green-600
+            text-white
+            rounded-3xl
+            p-6
+          ">
+
+            <p>Active</p>
+
+            <h2 className="
+              text-3xl
+              font-bold
+            ">
+              {activeCount}
+            </h2>
+
+          </div>
+
+          <div className="
+            bg-yellow-500
+            text-white
+            rounded-3xl
+            p-6
+          ">
+
+            <p>
+              Temp Disconnect
+            </p>
+
+            <h2 className="
+              text-3xl
+              font-bold
+            ">
+              {
+                tempDisconnectCount
+              }
+            </h2>
+
+          </div>
+
+          <div className="
+            bg-red-600
+            text-white
+            rounded-3xl
+            p-6
+          ">
+
+            <p>
+              Safe Custody
+            </p>
+
+            <h2 className="
+              text-3xl
+              font-bold
+            ">
+              {
+                safeCustodyCount
+              }
+            </h2>
+
+          </div>
 
         </div>
 
@@ -600,16 +631,39 @@ Search SIM / Mobile
                         ">
 
                           <span
-                            className="
-                              bg-green-600
+                            className={`
                               text-white
                               px-3
                               py-1
                               rounded-full
                               text-sm
-                            "
+
+                              ${
+                                row.status
+                                  ?.toLowerCase()
+                                  === 'active'
+
+                                ? 'bg-green-600'
+
+                                : row.status
+                                    ?.toLowerCase()
+                                    .includes('temp')
+
+                                ? 'bg-yellow-500'
+
+                                : row.status
+                                    ?.toLowerCase()
+                                    .includes('safe')
+
+                                ? 'bg-red-600'
+
+                                : 'bg-gray-500'
+                              }
+                            `}
                           >
+
                             {row.status}
+
                           </span>
 
                         </td>
