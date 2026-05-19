@@ -57,7 +57,7 @@ export async function GET() {
       )
 
       const pageData =
-        result?.data || []
+        result?.data ?. sims   || []
 
       if (
         pageData.length === 0
