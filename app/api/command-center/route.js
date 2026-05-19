@@ -63,16 +63,19 @@ export async function POST(req) {
         `
         AND
         (
-          sim_number LIKE $${values.length}
+          sim_number ILIKE $${values.length}
 
           OR
-          phone_number LIKE $${values.length}
+
+          phone_number ILIKE $${values.length}
 
           OR
-          client_name LIKE $${values.length}
+
+          client_name ILIKE $${values.length}
 
           OR
-          device_id LIKE $${values.length}
+
+          device_id ILIKE $${values.length}
         )
         `
     }
@@ -98,33 +101,33 @@ export async function POST(req) {
 
           activation_date_real
           BETWEEN
-          $${values.length - 1}
+          $${values.length - 1}::DATE
           AND
-          $${values.length}
+          $${values.length}::DATE
 
           OR
 
           termination_date_real
           BETWEEN
-          $${values.length - 1}
+          $${values.length - 1}::DATE
           AND
-          $${values.length}
+          $${values.length}::DATE
 
           OR
 
           safe_custody_move_in_real
           BETWEEN
-          $${values.length - 1}
+          $${values.length - 1}::DATE
           AND
-          $${values.length}
+          $${values.length}::DATE
 
           OR
 
           safe_custody_move_out_real
           BETWEEN
-          $${values.length - 1}
+          $${values.length - 1}::DATE
           AND
-          $${values.length}
+          $${values.length}::DATE
 
         )
         `
@@ -146,20 +149,26 @@ export async function POST(req) {
 
       success: true,
 
+      count:
+        result.rows.length,
+
       data:
         result.rows,
     })
 
   } catch (error) {
 
-    console.log(error)
+    console.log(
+      'COMMAND CENTER ERROR:',
+      error
+    )
 
     return Response.json({
 
       success: false,
 
       message:
-        'Search failed',
+        error.message,
     })
   }
 }
