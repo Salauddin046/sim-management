@@ -90,12 +90,39 @@ export async function POST(req) {
         monthValue,
       ] = month.split('-')
 
+      const months = {
+
+        '01': 'Jan',
+
+        '02': 'Feb',
+
+        '03': 'Mar',
+
+        '04': 'Apr',
+
+        '05': 'May',
+
+        '06': 'Jun',
+
+        '07': 'Jul',
+
+        '08': 'Aug',
+
+        '09': 'Sep',
+
+        '10': 'Oct',
+
+        '11': 'Nov',
+
+        '12': 'Dec',
+      }
+
       const monthPattern =
 
-        `/${monthValue}/${year}`
+        `${months[monthValue]}-${year}`
 
       values.push(
-        monthPattern
+        `%${monthPattern}%`
       )
 
       query +=
@@ -104,19 +131,19 @@ export async function POST(req) {
         AND
         (
 
-          activation_date LIKE '%' || $${values.length} || '%'
+          activation_date LIKE $${values.length}
 
           OR
 
-          termination_date LIKE '%' || $${values.length} || '%'
+          termination_date LIKE $${values.length}
 
           OR
 
-          safe_custody_move_in LIKE '%' || $${values.length} || '%'
+          safe_custody_move_in LIKE $${values.length}
 
           OR
 
-          safe_custody_move_out LIKE '%' || $${values.length} || '%'
+          safe_custody_move_out LIKE $${values.length}
 
         )
         `
