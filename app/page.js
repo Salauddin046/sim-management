@@ -1,494 +1,539 @@
 'use client'
 
-import { useState } from 'react'
+import {useEffect,useState,} from 'react'
 
-export default function CommandCenterPage() {
+import {useRouter,} from 'next/navigation'
 
-  const [search, setSearch] =
-    useState('')
+export default function HomePage() {
 
-  const [month, setMonth] =
-    useState('')
+const router =useRouter()
 
-  const [loading, setLoading] =
-    useState(false)
+const [user, setUser] =useState(null)
 
-  const [rows, setRows] =
-    useState([])
+useEffect(() => {
 
-  const searchData =
-    async () => {
+const loggedIn =
+  localStorage.getItem(
+    'loggedIn'
+  )
 
-      try {
+const savedUser =
+  localStorage.getItem(
+    'user'
+  )
 
-        setLoading(true)
+if (
+  !loggedIn ||
+  !savedUser
+) {
 
-        const response =
-          await fetch(
-            '/api/command-center',
-            {
+  router.push(
+    '/login'
+  )
 
-              method: 'POST',
+  return
+}
 
-              headers: {
-                'Content-Type':
-                  'application/json',
-              },
+setUser(
+  JSON.parse(
+    savedUser
+  )
+)
 
-              body: JSON.stringify({
+}, [router])
 
-                search,
+useEffect(() => {
 
-                month,
-              }),
-            }
-          )
+let logoutTimer
 
-        const result =
-          await response.json()
+const resetTimer =
+  () => {
 
-        if (
-          !result.success
-        ) {
+    clearTimeout(
+      logoutTimer
+    )
 
-          alert(
-            result.message
-          )
+    logoutTimer =
+      setTimeout(() => {
 
-          return
-        }
-
-        setRows(
-          result.data
+        localStorage.removeItem(
+          'loggedIn'
         )
 
-      } catch (error) {
-
-        console.log(error)
+        localStorage.removeItem(
+          'user'
+        )
 
         alert(
-          'Search failed'
+          'Session expired'
         )
 
-      } finally {
+        router.push(
+          '/login'
+        )
 
-        setLoading(false)
-      }
+      }, 10 * 60 * 1000)
+  }
+
+const events = [
+
+  'mousemove',
+
+  'keydown',
+
+  'click',
+
+  'scroll',
+]
+
+events.forEach(
+  (event) => {
+
+    window.addEventListener(
+      event,
+      resetTimer
+    )
+  }
+)
+
+resetTimer()
+
+return () => {
+
+  clearTimeout(
+    logoutTimer
+  )
+
+  events.forEach(
+    (event) => {
+
+      window.removeEventListener(
+        event,
+        resetTimer
+      )
     }
+  )
+}
 
-  const clearData =
-    () => {
+}, [router])
 
-      setSearch('')
+const logout =() => {
 
-      setMonth('')
+  localStorage.removeItem(
+    'loggedIn'
+  )
 
-      setRows([])
-    }
+  localStorage.removeItem(
+    'user'
+  )
 
-  const downloadCSV =
-    () => {
+  router.push(
+    '/login'
+  )
+}
 
-      if (
-        rows.length === 0
-      ) {
+const menus = [
 
-        alert(
-          'No data found'
-        )
+{
+  title:
+    'Home',
 
-        return
-      }
+  route:
+    '/',
+},
 
-      const headers = [
+{
+  title:
+    'Usage Intelligence',
 
-        'SIM Number',
+  route:
+    '/datix',
+},
 
-        'Phone Number',
+{
+  title:
+    'Command Center',
 
-        'Device ID',
+  route:
+    '/command-center',
+},
 
-        'Client Name',
+{
+  title:
+    'Control Tower',
 
-        'Activation Date',
+  route:
+    '/control-tower',
+},
 
-        'Termination Date',
+{
+  title:
+    'SIM Explorer',
 
-        'Safe Custody Move In',
+  route:
+    '/sim-explorer',
+},
 
-        'Safe Custody Move Out',
-      ]
+]
 
-      const csvRows = [
+const cards = [
 
-        headers.join(','),
-      ]
+{
+  title:
+    'Usage Intelligence',
 
-      rows.forEach((row) => {
+  route:
+    '/datix',
+},
 
-        csvRows.push(
+{
+  title:
+    'Command Center',
 
-          [
+  route:
+    '/command-center',
+},
 
-            row.sim_number,
+{
+  title:
+    'Control Tower',
 
-            row.phone_number,
+  route:
+    '/control-tower',
+},
 
-            row.device_id,
+{
+  title:
+    'SIM Explorer',
 
-            `"${row.client_name}"`,
+  route:
+    '/sim-explorer',
+},
 
-            row.activation_date,
+]
 
-            row.termination_date,
+return (
 
-            row.safe_custody_move_in,
+<div className="
+  flex
+  min-h-screen
+  bg-[#f5f5f7]
+">
 
-            row.safe_custody_move_out,
-          ].join(',')
-        )
-      })
+  <div className="
+    w-[260px]
+    bg-white
+    border-r
+    flex
+    flex-col
+    justify-between
+  ">
 
-      const blob =
-        new Blob(
-
-          [csvRows.join('\n')],
-
-          {
-            type:
-              'text/csv',
-          }
-        )
-
-      const url =
-        window.URL
-          .createObjectURL(
-            blob
-          )
-
-      const a =
-        document
-          .createElement('a')
-
-      a.href = url
-
-      a.download =
-        `command_center_${Date.now()}.csv`
-
-      a.click()
-    }
-
-  return (
-
-    <div className="
-      min-h-screen
-      bg-gray-100
-      p-6
-    ">
+    <div>
 
       <div className="
-        max-w-7xl
-        mx-auto
+        p-6
+        border-b
+        flex
+        items-center
+        gap-4
       ">
 
         <div className="
-          bg-white
-          rounded-3xl
-          shadow-xl
-          p-6
+          w-12
+          h-12
+          rounded-2xl
+          bg-black
+          text-white
+          flex
+          items-center
+          justify-center
+          text-2xl
+          font-bold
         ">
+          I
+        </div>
 
-          <div className="
-            flex
-            items-center
-            justify-between
-            mb-6
-            flex-wrap
-            gap-4
-          ">
+        <div>
 
-            <div>
+         <h1 className="text-3xl font-bold tracking-tight text-gray-900">
+           IntelliSIM
+        </h1>
 
-              <h1 className="
-                text-4xl
-                font-bold
-                mb-2
-              ">
-                Command Center
-              </h1>
+         <h3 className="text-sm font-medium text-gray-500 mt-1 tracking-wide">
+         SIM Intelligence & Control Platform
+           </h3>
 
-              <p className="
-                text-gray-500
-              ">
-                PostgreSQL SIM Database Search
-              </p>
+        </div>
 
-            </div>
+      </div>
 
-            <button
-              onClick={() =>
-                window.history.back()
-              }
-              className="
-                bg-black
-                text-white
-                px-6
-                py-3
-                rounded-2xl
-                font-semibold
-              "
-            >
-              Back
-            </button>
+      <div className="
+        p-4
+        space-y-2
+      ">
 
-          </div>
+        {
+          menus.map(
+            (menu) => (
 
-          <div className="
-            grid
-            md:grid-cols-3
-            gap-4
-            mb-6
-          ">
-
-            <input
-              type="text"
-              placeholder="
-Search SIM / Phone / Client / Device ID
-              "
-              value={search}
-              onChange={(e) =>
-                setSearch(
-                  e.target.value
-                )
-              }
-              className="
-                border
-                rounded-2xl
-                p-4
-                outline-none
-              "
-            />
-
-            <input
-              type="month"
-              value={month}
-              onChange={(e) =>
-                setMonth(
-                  e.target.value
-                )
-              }
-              className="
-                border
-                rounded-2xl
-                p-4
-                outline-none
-              "
-            />
-
-            <button
-              onClick={
-                searchData
-              }
-              disabled={
-                loading
-              }
-              className="
-                bg-black
-                text-white
-                rounded-2xl
-                font-semibold
-              "
-            >
-
-              {
-                loading
-                  ? 'Searching...'
-                  : 'Search'
-              }
-
-            </button>
-
-          </div>
-
-          <div className="
-            flex
-            gap-4
-            mb-6
-            flex-wrap
-          ">
-
-            <button
-              onClick={
-                clearData
-              }
-              className="
-                bg-red-600
-                text-white
-                px-8
-                py-4
-                rounded-2xl
-                font-semibold
-              "
-            >
-              Clear
-            </button>
-
-            <button
-              onClick={
-                downloadCSV
-              }
-              className="
-                bg-green-600
-                text-white
-                px-8
-                py-4
-                rounded-2xl
-                font-semibold
-              "
-            >
-              Download CSV
-            </button>
-
-          </div>
-
-          <div className="
-            overflow-auto
-          ">
-
-            <table className="
-              w-full
-              border-collapse
-              text-sm
-            ">
-
-              <thead>
-
-                <tr className="
-                  bg-black
-                  text-white
-                ">
-
-                  <th className="border p-3">
-                    SIM Number
-                  </th>
-
-                  <th className="border p-3">
-                    Phone Number
-                  </th>
-
-                  <th className="border p-3">
-                    Device ID
-                  </th>
-
-                  <th className="border p-3">
-                    Client Name
-                  </th>
-
-                  <th className="border p-3">
-                    Activation Date
-                  </th>
-
-                  <th className="border p-3">
-                    Termination Date
-                  </th>
-
-                  <th className="border p-3">
-                    Safe Custody Move In
-                  </th>
-
-                  <th className="border p-3">
-                    Safe Custody Move Out
-                  </th>
-
-                </tr>
-
-              </thead>
-
-              <tbody>
-
-                {
-                  rows.length === 0
-                  ? (
-
-                    <tr>
-
-                      <td
-                        colSpan="8"
-                        className="
-                          border
-                          p-10
-                          text-center
-                          text-gray-500
-                        "
-                      >
-                        No data found
-                      </td>
-
-                    </tr>
-                  )
-                  : (
-
-                    rows.map(
-                      (
-                        row,
-                        index
-                      ) => (
-
-                        <tr
-                          key={index}
-                          className="
-                            hover:bg-gray-100
-                          "
-                        >
-
-                          <td className="border p-3">
-                            {row.sim_number}
-                          </td>
-
-                          <td className="border p-3">
-                            {row.phone_number}
-                          </td>
-
-                          <td className="border p-3">
-                            {row.device_id}
-                          </td>
-
-                          <td className="border p-3">
-                            {row.client_name}
-                          </td>
-
-                          <td className="border p-3">
-                            {row.activation_date}
-                          </td>
-
-                          <td className="border p-3">
-                            {row.termination_date}
-                          </td>
-
-                          <td className="border p-3">
-                            {row.safe_custody_move_in}
-                          </td>
-
-                          <td className="border p-3">
-                            {row.safe_custody_move_out}
-                          </td>
-
-                        </tr>
-                      )
-                    )
+              <button
+                key={
+                  menu.title
+                }
+                onClick={() =>
+                  router.push(
+                    menu.route
                   )
                 }
+                className={`
+                  w-full
+                  flex
+                  items-center
+                  px-4
+                  py-3
+                  rounded-2xl
+                  font-medium
+                  transition-all
 
-              </tbody>
+                  ${
+                    menu.title ===
+                    'Home'
 
-            </table>
+                      ? 'bg-black text-white'
 
-          </div>
+                      : 'hover:bg-gray-100'
+                  }
+                `}
+              >
+
+                {menu.title}
+
+              </button>
+            )
+          )
+        }
+
+      </div>
+
+    </div>
+
+    <div className="
+      p-4
+    ">
+
+      <button
+        onClick={
+          logout
+        }
+        className="
+          w-full
+          px-4
+          py-3
+          rounded-2xl
+          bg-red-50
+          text-red-600
+          font-semibold
+        "
+      >
+        Logout
+      </button>
+
+    </div>
+
+  </div>
+
+  <div className="
+    flex-1
+  ">
+
+    <div className="
+      bg-white
+      h-[90px]
+      border-b
+      flex
+      items-center
+      justify-between
+      px-8
+    ">
+
+      <div className="
+        flex
+        items-center
+        gap-5
+      ">
+
+        <div className="
+          text-3xl
+          font-bold
+        ">
+          ☰
+        </div>
+
+        <h1 className="
+          text-3xl
+          font-bold
+        ">
+          Home
+        </h1>
+
+      </div>
+
+      <div className="
+        flex
+        items-center
+        gap-3
+      ">
+
+        <div className="
+          w-11
+          h-11
+          rounded-full
+          bg-black
+          text-white
+          flex
+          items-center
+          justify-center
+          text-lg
+          font-bold
+        ">
+
+          {
+            user?.name
+              ?.charAt(0)
+              ?.toUpperCase()
+          }
+
+        </div>
+
+        <div>
+
+          <h2 className="
+            text-base
+            font-bold
+          ">
+
+            {
+              user?.name ||
+              'User'
+            }
+
+          </h2>
+
+          <p className="
+            text-sm
+            text-gray-500
+          ">
+
+            {
+              user?.email
+            }
+
+          </p>
 
         </div>
 
       </div>
 
     </div>
-  )
-}
+
+    <div className="
+      p-8
+    ">
+
+      <h1 className="
+        text-4xl
+        font-bold
+        mb-3
+      ">
+
+        Welcome back,
+        {' '}
+        {
+          user?.name ||
+          'User'
+        }!
+
+      </h1>
+
+      <p className="
+        text-gray-600
+        text-lg
+        mb-10
+      ">
+
+        Data-driven visibility into SIM intelligence infrastructure
+
+      </p>
+
+      <div className="
+        grid
+        grid-cols-1
+        md:grid-cols-2
+        xl:grid-cols-4
+        gap-6
+      ">
+
+        {
+          cards.map(
+            (card) => (
+
+              <div
+                key={
+                  card.title
+                }
+                className="
+                  bg-white
+                  rounded-3xl
+                  shadow-sm
+                  border
+                  p-6
+                  hover:shadow-xl
+                  transition-all
+                "
+              >
+
+                <h2 className="
+                  text-2xl
+                  font-bold
+                  mb-10
+                ">
+
+                  {
+                    card.title
+                  }
+
+                </h2>
+
+                <button
+                  onClick={() =>
+                    router.push(
+                      card.route
+                    )
+                  }
+                  className="
+                    w-full
+                    bg-black
+                    text-white
+                    py-3
+                    rounded-2xl
+                    font-semibold
+                  "
+                >
+                  Open Dashboard
+                </button>
+
+              </div>
+            )
+          )
+        }
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+)}

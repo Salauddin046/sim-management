@@ -7,6 +7,9 @@ export default function CommandCenterPage() {
   const [search, setSearch] =
     useState('')
 
+  const [month, setMonth] =
+    useState('')
+
   const [loading, setLoading] =
     useState(false)
 
@@ -15,15 +18,6 @@ export default function CommandCenterPage() {
 
   const searchData =
     async () => {
-
-      if (!search.trim()) {
-
-        alert(
-          'Enter SIM Number or Phone Number'
-        )
-
-        return
-      }
 
       try {
 
@@ -44,6 +38,8 @@ export default function CommandCenterPage() {
               body: JSON.stringify({
 
                 search,
+
+                month,
               }),
             }
           )
@@ -84,6 +80,8 @@ export default function CommandCenterPage() {
     () => {
 
       setSearch('')
+
+      setMonth('')
 
       setRows([])
     }
@@ -205,6 +203,8 @@ export default function CommandCenterPage() {
             items-center
             justify-between
             mb-6
+            flex-wrap
+            gap-4
           ">
 
             <div>
@@ -244,16 +244,16 @@ export default function CommandCenterPage() {
           </div>
 
           <div className="
-            flex
+            grid
+            md:grid-cols-3
             gap-4
             mb-6
-            flex-wrap
           ">
 
             <input
               type="text"
               placeholder="
-Search SIM Number or Phone Number
+Search SIM / Phone / Client / Device ID
               "
               value={search}
               onChange={(e) =>
@@ -262,7 +262,22 @@ Search SIM Number or Phone Number
                 )
               }
               className="
-                flex-1
+                border
+                rounded-2xl
+                p-4
+                outline-none
+              "
+            />
+
+            <input
+              type="month"
+              value={month}
+              onChange={(e) =>
+                setMonth(
+                  e.target.value
+                )
+              }
+              className="
                 border
                 rounded-2xl
                 p-4
@@ -280,8 +295,6 @@ Search SIM Number or Phone Number
               className="
                 bg-black
                 text-white
-                px-8
-                py-4
                 rounded-2xl
                 font-semibold
               "
@@ -294,6 +307,15 @@ Search SIM Number or Phone Number
               }
 
             </button>
+
+          </div>
+
+          <div className="
+            flex
+            gap-4
+            mb-6
+            flex-wrap
+          ">
 
             <button
               onClick={
@@ -394,8 +416,9 @@ Search SIM Number or Phone Number
                         colSpan="8"
                         className="
                           border
-                          p-8
+                          p-10
                           text-center
+                          text-gray-500
                         "
                       >
                         No data found
