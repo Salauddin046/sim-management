@@ -21,14 +21,23 @@ export default function ControlTowerPage() {
   const [status, setStatus] =
     useState('')
 
+  // COUNTS
+
   const [totalCount, setTotalCount] =
     useState(0)
 
-  const [initialCount, setInitialCount] =
-    useState(0)
+  const [
+    availableCount,
+    setAvailableCount,
+  ] = useState(0)
 
   const [activeCount, setActiveCount] =
     useState(0)
+
+  const [
+    activeTestModeCount,
+    setActiveTestModeCount,
+  ] = useState(0)
 
   const [
     tempDisconnectCount,
@@ -40,16 +49,15 @@ export default function ControlTowerPage() {
     setSafeCustodyCount,
   ] = useState(0)
 
-  const [
-    activeTestModeCount,
-    setActiveTestModeCount,
-  ] = useState(0)
-
   useEffect(() => {
 
     fetchData()
 
+    fetchCounts()
+
   }, [])
+
+  // TABLE DATA
 
   const fetchData = async () => {
 
@@ -65,38 +73,12 @@ export default function ControlTowerPage() {
       const result =
         await response.json()
 
-      console.log(result)
-
       const apiData =
         result.data || []
 
       setRows(apiData)
 
       setFilteredRows(apiData)
-
-      setTotalCount(
-        result.totalCount || 0
-      )
-
-      setInitialCount(
-        result.initialCount || 0
-      )
-
-      setActiveCount(
-        result.activeCount || 0
-      )
-
-      setTempDisconnectCount(
-        result.tempDisconnectCount || 0
-      )
-
-      setSafeCustodyCount(
-        result.safeCustodyCount || 0
-      )
-
-      setActiveTestModeCount(
-        result.activeTestModeCount || 0
-      )
 
     } catch (error) {
 
@@ -109,6 +91,52 @@ export default function ControlTowerPage() {
       setLoading(false)
     }
   }
+
+  // CARD COUNTS
+
+  const fetchCounts = async () => {
+
+    try {
+
+      const response =
+        await fetch(
+          '/api/control-tower-counts'
+        )
+
+      const result =
+        await response.json()
+
+      setTotalCount(
+        result.totalCount || 0
+      )
+
+      setAvailableCount(
+        result.availableCount || 0
+      )
+
+      setActiveCount(
+        result.activeCount || 0
+      )
+
+      setActiveTestModeCount(
+        result.activeTestModeCount || 0
+      )
+
+      setTempDisconnectCount(
+        result.tempDisconnectCount || 0
+      )
+
+      setSafeCustodyCount(
+        result.safeCustodyCount || 0
+      )
+
+    } catch (error) {
+
+      console.log(error)
+    }
+  }
+
+  // SEARCH
 
   const handleSearch = () => {
 
@@ -152,6 +180,8 @@ export default function ControlTowerPage() {
     setFilteredRows(filtered)
   }
 
+  // STATUS LIST
+
   const uniqueStatus = [
 
     ...new Set(
@@ -165,6 +195,8 @@ export default function ControlTowerPage() {
     ),
   ]
 
+  // CSV DOWNLOAD
+
   const downloadCSV =
     async () => {
 
@@ -172,7 +204,6 @@ export default function ControlTowerPage() {
 
         const response =
           await fetch(
-
             '/api/control-tower?download=true'
           )
 
@@ -269,6 +300,8 @@ export default function ControlTowerPage() {
         p-6
       ">
 
+        {/* HEADER */}
+
         <div className="
           flex
           justify-between
@@ -284,13 +317,12 @@ export default function ControlTowerPage() {
               text-4xl
               font-bold
             ">
-              Control Tower
+              SIM Overview
             </h1>
 
             <p className="
               text-gray-500
             ">
-              Airtel SIM Dashboard
             </p>
 
           </div>
@@ -312,6 +344,8 @@ export default function ControlTowerPage() {
           </button>
 
         </div>
+
+        {/* FILTERS */}
 
         <div className="
           grid
@@ -429,6 +463,8 @@ Search SIM / Mobile
 
         </div>
 
+        {/* CARDS */}
+
         <div className="
           grid
           grid-cols-2
@@ -437,127 +473,45 @@ Search SIM / Mobile
           mb-8
         ">
 
-          <div className="
-            bg-indigo-600
-            text-white
-            rounded-3xl
-            p-6
-          ">
+          <Card
+            title="Total"
+            value={totalCount}
+            color="bg-indigo-600"
+          />
 
-            <p>Total Records</p>
+          <Card
+            title="Available"
+            value={availableCount}
+            color="bg-cyan-600"
+          />
 
-            <h2 className="
-              text-3xl
-              font-bold
-            ">
-              {totalCount}
-            </h2>
+          <Card
+            title="Active"
+            value={activeCount}
+            color="bg-green-600"
+          />
 
-          </div>
+          <Card
+            title="Test Mode"
+            value={activeTestModeCount}
+            color="bg-pink-600"
+          />
 
-          <div className="
-            bg-cyan-600
-            text-white
-            rounded-3xl
-            p-6
-          ">
+          <Card
+            title="Temp Disconnect"
+            value={tempDisconnectCount}
+            color="bg-yellow-500"
+          />
 
-            <p>Available</p>
-
-            <h2 className="
-              text-3xl
-              font-bold
-            ">
-              {initialCount}
-            </h2>
-
-          </div>
-
-          <div className="
-            bg-green-600
-            text-white
-            rounded-3xl
-            p-6
-          ">
-
-            <p>Active</p>
-
-            <h2 className="
-              text-3xl
-              font-bold
-            ">
-              {activeCount}
-            </h2>
-
-          </div>
-
-          <div className="
-            bg-pink-600
-            text-white
-            rounded-3xl
-            p-6
-          ">
-
-            <p>
-              Test Mode
-            </p>
-
-            <h2 className="
-              text-3xl
-              font-bold
-            ">
-              {
-                activeTestModeCount
-              }
-            </h2>
-
-          </div>
-
-          <div className="
-            bg-yellow-500
-            text-white
-            rounded-3xl
-            p-6
-          ">
-
-            <p>
-              Temp Disconnect
-            </p>
-
-            <h2 className="
-              text-3xl
-              font-bold
-            ">
-              {
-                tempDisconnectCount
-              }
-            </h2>
-
-          </div>
-
-          <div className="
-            bg-red-600
-            text-white
-            rounded-3xl
-            p-6
-          ">
-
-            <p>
-              Safe Custody
-            </p>
-
-            <h2 className="
-              text-3xl
-              font-bold
-            ">
-              {
-                safeCustodyCount
-              }
-            </h2>
-
-          </div>
+          <Card
+            title="Safe Custody"
+            value={safeCustodyCount}
+            color="bg-red-600"
+          />
 
         </div>
+
+        {/* TABLE */}
 
         <div className="
           overflow-auto
@@ -692,45 +646,16 @@ Search SIM / Mobile
                         ">
 
                           <span
-                            className={`
+                            className="
+                              bg-green-600
                               text-white
                               px-3
                               py-1
                               rounded-full
                               text-sm
-
-                              ${
-                                row.status
-                                  ?.toLowerCase()
-                                  === 'active'
-
-                                ? 'bg-green-600'
-
-                                : row.status
-                                    ?.toLowerCase()
-                                    .includes('temp')
-
-                                ? 'bg-yellow-500'
-
-                                : row.status
-                                    ?.toLowerCase()
-                                    .includes('safe')
-
-                                ? 'bg-red-600'
-
-                                : row.status
-                                    ?.toLowerCase()
-                                    .includes('test')
-
-                                ? 'bg-pink-600'
-
-                                : 'bg-gray-500'
-                              }
-                            `}
+                            "
                           >
-
                             {row.status}
-
                           </span>
 
                         </td>
@@ -768,6 +693,40 @@ Search SIM / Mobile
         </div>
 
       </div>
+
+    </div>
+  )
+}
+
+// CARD COMPONENT
+
+function Card({
+
+  title,
+
+  value,
+
+  color,
+
+}: any) {
+
+  return (
+
+    <div className={`
+      ${color}
+      text-white
+      rounded-3xl
+      p-6
+    `}>
+
+      <p>{title}</p>
+
+      <h2 className="
+        text-3xl
+        font-bold
+      ">
+        {value}
+      </h2>
 
     </div>
   )

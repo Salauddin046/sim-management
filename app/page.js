@@ -160,7 +160,7 @@ const menus = [
 
 {
   title:
-    'Control Tower',
+    'SIM Overview',
 
   route:
     '/control-tower',
@@ -196,7 +196,7 @@ const cards = [
 
 {
   title:
-    'Control Tower',
+    'SIM Overview',
 
   route:
     '/control-tower',

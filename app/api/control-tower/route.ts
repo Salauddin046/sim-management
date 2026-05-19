@@ -8,190 +8,62 @@ export async function GET(request: Request) {
     const download =
       searchParams.get('download')
 
-    let allRows: any[] = []
-
-    let firstPageRows: any[] = []
-
     let page = 1
 
-    let hasNext = true
+    const response =
+      await fetch(
 
-    let totalSimCount = 0
+        'https://airtelsim.intellicar.in/api/v1/airtel/sims/list',
 
-    let availableCount = 0
+        {
 
-    let activeCount = 0
+          method: 'POST',
 
-    let tempDisconnectCount = 0
+          headers: {
 
-    let safeCustodyCount = 0
+            accept:
+              'application/json, text/plain, */*',
 
-    let activeTestModeCount = 0
+            authorization:
+              'Basic YWlydGVsYXBpOkFpcnRlSW50ZWxsaWNhckAjMTIzNDU=',
 
-    while (hasNext) {
+            'content-type':
+              'application/json',
 
-      console.log(
-        `Fetching Page: ${page}`
+            origin:
+              'https://airtelsim.intellicar.in',
+
+            referer:
+              'https://airtelsim.intellicar.in/analysis',
+
+            'user-agent':
+              'Mozilla/5.0',
+          },
+
+          body: JSON.stringify({
+
+            page_no: page,
+
+            limit:
+              download === 'true'
+                ? 5000
+                : 500,
+          }),
+
+          cache:
+            'no-store',
+        }
       )
 
-      const response =
-        await fetch(
+    const result =
+      await response.json()
 
-          'https://airtelsim.intellicar.in/api/v1/airtel/sims/list',
-
-          {
-
-            method: 'POST',
-
-            headers: {
-
-              accept:
-                'application/json, text/plain, */*',
-
-              authorization:
-                'Basic YWlydGVsYXBpOkFpcnRlSW50ZWxsaWNhckAjMTIzNDU=',
-
-              'content-type':
-                'application/json',
-
-              origin:
-                'https://airtelsim.intellicar.in',
-
-              referer:
-                'https://airtelsim.intellicar.in/analysis',
-
-              'user-agent':
-                'Mozilla/5.0',
-            },
-
-            body: JSON.stringify({
-
-              page_no: page,
-
-              limit: 500,
-            }),
-
-            cache:
-              'no-store',
-          }
-        )
-
-      const result =
-        await response.json()
-
-      const rows =
-        result?.data?.results || []
-
-      if (page === 1) {
-
-        firstPageRows = rows
-      }
-
-      totalSimCount =
-        Number(
-          result?.data?.totalsim || 0
-        )
-
-      rows.forEach((item: any) => {
-
-        const status =
-          (
-            item.status
-            ||
-            item.simstatus
-            ||
-            ''
-          )
-          .toLowerCase()
-
-        // AVAILABLE
-
-        if (
-          status.includes('available')
-        ) {
-
-          availableCount++
-        }
-
-        // ACTIVE
-
-        if (
-          status === 'active'
-        ) {
-
-          activeCount++
-        }
-
-        // TEST MODE
-
-        if (
-          status.includes('test')
-        ) {
-
-          activeTestModeCount++
-        }
-
-        // TEMP DISCONNECT
-
-        if (
-          status.includes('temp')
-        ) {
-
-          tempDisconnectCount++
-        }
-
-        // SAFE CUSTODY
-
-        if (
-          status.includes('safe')
-        ) {
-
-          safeCustodyCount++
-        }
-      })
-
-      // DOWNLOAD ALL DATA
-
-      if (
-        download === 'true'
-      ) {
-
-        allRows = [
-          ...allRows,
-          ...rows,
-        ]
-      }
-
-      hasNext =
-        result?.data?.hasnext || false
-
-      page++
-
-      // FOR NORMAL DASHBOARD
-      // ONLY SHOW FIRST PAGE
-      // BUT CONTINUE COUNTING
-
-      if (
-        download !== 'true'
-        &&
-        page > 1
-      ) {
-
-        allRows = []
-      }
-    }
-
-    const rowsToFormat =
-
-      download === 'true'
-
-      ? allRows
-
-      : firstPageRows
+    const rows =
+      result?.data?.results || []
 
     const formattedData =
 
-      rowsToFormat.map(
+      rows.map(
         (item: any) => ({
 
           sim_no:
@@ -275,17 +147,9 @@ export async function GET(request: Request) {
       success: true,
 
       totalCount:
-        totalSimCount,
-
-      availableCount,
-
-      activeCount,
-
-      activeTestModeCount,
-
-      tempDisconnectCount,
-
-      safeCustodyCount,
+        Number(
+          result?.data?.totalsim || 0
+        ),
 
       count:
         formattedData.length,
