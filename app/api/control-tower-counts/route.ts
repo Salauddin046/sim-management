@@ -21,7 +21,7 @@ export async function GET() {
     while (hasNext) {
 
       console.log(
-        `Counting Page: ${page}`
+        `Fetching Count Page: ${page}`
       )
 
       const response =
@@ -66,8 +66,26 @@ export async function GET() {
           }
         )
 
+      // RESPONSE ERROR
+
+      if (!response.ok) {
+
+        return Response.json({
+
+          success: false,
+
+          message:
+            'Failed to fetch Airtel data',
+        })
+      }
+
       const result =
         await response.json()
+
+      console.log(
+        'COUNT API RESULT:',
+        result
+      )
 
       const rows =
         result?.data?.results || []
@@ -92,7 +110,9 @@ export async function GET() {
         // AVAILABLE
 
         if (
-          status.includes('available')
+          status.includes(
+            'available'
+          )
         ) {
 
           availableCount++
@@ -107,10 +127,12 @@ export async function GET() {
           activeCount++
         }
 
-        // ACTIVE TEST MODE
+        // TEST MODE
 
         if (
-          status.includes('test')
+          status.includes(
+            'test'
+          )
         ) {
 
           activeTestModeCount++
@@ -119,7 +141,9 @@ export async function GET() {
         // TEMP DISCONNECT
 
         if (
-          status.includes('temp')
+          status.includes(
+            'temp'
+          )
         ) {
 
           tempDisconnectCount++
@@ -128,7 +152,9 @@ export async function GET() {
         // SAFE CUSTODY
 
         if (
-          status.includes('safe')
+          status.includes(
+            'safe'
+          )
         ) {
 
           safeCustodyCount++
@@ -139,6 +165,13 @@ export async function GET() {
         result?.data?.hasnext || false
 
       page++
+
+      // LIMIT FOR FAST DASHBOARD
+
+      if (page > 25) {
+
+        break
+      }
     }
 
     return Response.json({
@@ -161,13 +194,25 @@ export async function GET() {
   } catch (error) {
 
     console.log(
-      'CONTROL TOWER COUNT ERROR:',
+      'CONTROL TOWER COUNTS ERROR:',
       error
     )
 
     return Response.json({
 
       success: false,
+
+      totalCount: 0,
+
+      availableCount: 0,
+
+      activeCount: 0,
+
+      activeTestModeCount: 0,
+
+      tempDisconnectCount: 0,
+
+      safeCustodyCount: 0,
 
       message:
 
