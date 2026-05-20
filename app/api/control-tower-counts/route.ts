@@ -29,7 +29,7 @@ export async function GET(
     // SCAN 25 PAGES PER REQUEST
 
     const end =
-      start + 25
+      start + 150
 
     let page = start
 
