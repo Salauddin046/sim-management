@@ -26,14 +26,17 @@ export async function GET(
         searchParams.get('start')
       ) || 1
 
-    // SCAN 25 PAGES PER REQUEST
+    // END PAGE
+    // SCAN 25 PAGES
 
     const end =
-      start + 150
+      start + 25
 
     let page = start
 
     let hasNext = true
+
+    // CURRENT BATCH COUNTS
 
     let totalCount = 0
 
@@ -118,14 +121,14 @@ export async function GET(
       const rows =
         result?.data?.results || []
 
-      // TOTAL SIM COUNT
+      // TOTAL SIM
 
       totalCount =
         Number(
           result?.data?.totalsim || 0
         )
 
-      // HAS NEXT PAGE
+      // NEXT PAGE
 
       hasNext =
         result?.data?.hasnext || false
@@ -166,7 +169,7 @@ export async function GET(
           activeCount++
         }
 
-        // ACTIVE ON TEST MODE
+        // TEST MODE
 
         if (
           status.includes(
@@ -202,72 +205,111 @@ export async function GET(
       page++
     }
 
-    console.log(
-      'FINAL COUNTS:',
-      {
+    // CHECK EXISTING DATA
 
-        totalCount,
+    const existing =
+      await pool.query(
 
-        availableCount,
-
-        activeCount,
-
-        activeTestModeCount,
-
-        tempDisconnectCount,
-
-        safeCustodyCount,
-      }
-    )
-
-    // CLEAR OLD DATA
-
-    await pool.query(
-
-      `
-      DELETE FROM sim_dashboard_counts
-      `
-    )
-
-    // INSERT NEW DATA
-
-    await pool.query(
-
-      `
-      INSERT INTO sim_dashboard_counts (
-
-        total_count,
-
-        available_count,
-
-        active_count,
-
-        active_test_mode_count,
-
-        temp_disconnect_count,
-
-        safe_custody_count
-
+        `
+        SELECT *
+        FROM sim_dashboard_counts
+        LIMIT 1
+        `
       )
 
-      VALUES ($1,$2,$3,$4,$5,$6)
-      `,
+    // UPDATE EXISTING ROW
 
-      [
+    if (
+      existing.rows.length > 0
+    ) {
 
-        totalCount,
+      await pool.query(
 
-        availableCount,
+        `
+        UPDATE sim_dashboard_counts
 
-        activeCount,
+        SET
 
-        activeTestModeCount,
+        total_count = $1,
 
-        tempDisconnectCount,
+        available_count =
+          available_count + $2,
 
-        safeCustodyCount,
-      ]
-    )
+        active_count =
+          active_count + $3,
+
+        active_test_mode_count =
+          active_test_mode_count + $4,
+
+        temp_disconnect_count =
+          temp_disconnect_count + $5,
+
+        safe_custody_count =
+          safe_custody_count + $6,
+
+        updated_at = NOW()
+        `,
+
+        [
+
+          totalCount,
+
+          availableCount,
+
+          activeCount,
+
+          activeTestModeCount,
+
+          tempDisconnectCount,
+
+          safeCustodyCount,
+        ]
+      )
+
+    } else {
+
+      // FIRST INSERT
+
+      await pool.query(
+
+        `
+        INSERT INTO sim_dashboard_counts (
+
+          total_count,
+
+          available_count,
+
+          active_count,
+
+          active_test_mode_count,
+
+          temp_disconnect_count,
+
+          safe_custody_count
+
+        )
+
+        VALUES ($1,$2,$3,$4,$5,$6)
+        `,
+
+        [
+
+          totalCount,
+
+          availableCount,
+
+          activeCount,
+
+          activeTestModeCount,
+
+          tempDisconnectCount,
+
+          safeCustodyCount,
+        ]
+      )
+    }
+
+    // FINAL RESPONSE
 
     return Response.json({
 
@@ -287,6 +329,8 @@ export async function GET(
 
       scannedTillPage:
         page,
+
+      hasNext,
     })
 
   } catch (error) {
