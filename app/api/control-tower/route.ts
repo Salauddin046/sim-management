@@ -1,4 +1,6 @@
-export async function GET(request: Request) {
+export async function GET(
+  request: Request
+) {
 
   try {
 
@@ -55,11 +57,26 @@ export async function GET(request: Request) {
         }
       )
 
+    // API FAILED
+
+    if (!response.ok) {
+
+      return Response.json({
+
+        success: false,
+
+        message:
+          'Failed to fetch Airtel API',
+      })
+    }
+
     const result =
       await response.json()
 
     const rows =
       result?.data?.results || []
+
+    // FORMAT DATA
 
     const formattedData =
 
@@ -104,10 +121,11 @@ export async function GET(request: Request) {
 
           activation_date:
 
-            item.activation_date
-            ||
-
-            item.activationdate
+            (
+              item.activation_date
+              ||
+              item.activationdate
+            )
 
               ? new Date(
 
@@ -123,10 +141,11 @@ export async function GET(request: Request) {
 
           safeCustody_date:
 
-            item.safe_custody_date
-            ||
-
-            item.safecustodydate
+            (
+              item.safe_custody_date
+              ||
+              item.safecustodydate
+            )
 
               ? new Date(
 
@@ -168,6 +187,12 @@ export async function GET(request: Request) {
     return Response.json({
 
       success: false,
+
+      count: 0,
+
+      totalCount: 0,
+
+      data: [],
 
       message:
 

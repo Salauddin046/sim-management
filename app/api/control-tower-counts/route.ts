@@ -6,9 +6,23 @@ const pool = new Pool({
     process.env.DATABASE_URL,
 })
 
-export async function GET() {
+export async function GET(
+  request: Request
+) {
 
   try {
+
+    const { searchParams } =
+      new URL(request.url)
+
+    const start =
+      Number(
+        searchParams.get('start')
+      ) || 1
+
+    let page = start
+
+    let hasNext = true
 
     let totalCount = 0
 
@@ -22,11 +36,9 @@ export async function GET() {
 
     let safeCustodyCount = 0
 
-    for (
-      let page = 1;
-      page <= 1200;
-      page++
-    ) {
+    // DYNAMIC LOOP
+
+    while (hasNext) {
 
       console.log(
         `Scanning Page ${page}`
@@ -51,6 +63,15 @@ export async function GET() {
 
               'content-type':
                 'application/json',
+
+              origin:
+                'https://airtelsim.intellicar.in',
+
+              referer:
+                'https://airtelsim.intellicar.in/analysis',
+
+              'user-agent':
+                'Mozilla/5.0',
             },
 
             body: JSON.stringify({
@@ -59,12 +80,21 @@ export async function GET() {
 
               limit: 500,
             }),
+
+            cache:
+              'no-store',
           }
         )
 
+      // API FAILED
+
       if (!response.ok) {
 
-        continue
+        console.log(
+          `Page ${page} Failed`
+        )
+
+        break
       }
 
       const result =
@@ -73,10 +103,19 @@ export async function GET() {
       const rows =
         result?.data?.results || []
 
+      // TOTAL COUNT
+
       totalCount =
         Number(
           result?.data?.totalsim || 0
         )
+
+      // NEXT PAGE CHECK
+
+      hasNext =
+        result?.data?.hasnext || false
+
+      // STATUS COUNTS
 
       rows.forEach((item: any) => {
 
@@ -90,21 +129,25 @@ export async function GET() {
           )
           .toLowerCase()
 
+        // AVAILABLE
+
         if (
-          status.includes('initial')
+          status === 'initial'
         ) {
 
           availableCount++
         }
 
+        // ACTIVE
+
         if (
-          status.includes('active')
-          &&
-          !status.includes('test')
+          status === 'active'
         ) {
 
           activeCount++
         }
+
+        // TEST MODE
 
         if (
           status.includes('test')
@@ -113,12 +156,16 @@ export async function GET() {
           activeTestModeCount++
         }
 
+        // TEMP DISCONNECT
+
         if (
           status.includes('temp')
         ) {
 
           tempDisconnectCount++
         }
+
+        // SAFE CUSTODY
 
         if (
           status.includes('safe')
@@ -127,15 +174,28 @@ export async function GET() {
           safeCustodyCount++
         }
       })
+
+      page++
+
+      // SAFETY LIMIT
+      // PREVENT VERCEL CRASH
+
+      if (page > 2000) {
+
+        break
+      }
     }
 
-    // CLEAR OLD
+    // CLEAR OLD DATA
 
-    await pool.query(`
+    await pool.query(
+
+      `
       DELETE FROM sim_dashboard_counts
-    `)
+      `
+    )
 
-    // INSERT NEW
+    // INSERT NEW DATA
 
     await pool.query(
 
@@ -178,15 +238,41 @@ export async function GET() {
     return Response.json({
 
       success: true,
+
+      totalCount,
+
+      availableCount,
+
+      activeCount,
+
+      activeTestModeCount,
+
+      tempDisconnectCount,
+
+      safeCustodyCount,
+
+      scannedTillPage:
+        page,
     })
 
   } catch (error) {
 
-    console.log(error)
+    console.log(
+      'CONTROL TOWER COUNT ERROR:',
+      error
+    )
 
     return Response.json({
 
       success: false,
+
+      message:
+
+        error instanceof Error
+
+          ? error.message
+
+          : 'Unknown Error',
     })
   }
 }
