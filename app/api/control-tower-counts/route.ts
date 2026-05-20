@@ -128,6 +128,10 @@ export async function GET(
             ''
           )
           .toLowerCase()
+console.log(
+  'STATUS:',
+  status
+)
 
         // AVAILABLE
 
