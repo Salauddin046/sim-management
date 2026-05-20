@@ -30,7 +30,7 @@ export async function GET(
     // 50 PAGE BATCH
 
     const end =
-      start + 100
+      start + 150
 
     let page = start
 
