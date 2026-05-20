@@ -1,3 +1,11 @@
+import { Pool } from 'pg'
+
+const pool = new Pool({
+
+  connectionString:
+    process.env.DATABASE_URL,
+})
+
 export async function GET() {
 
   try {
@@ -14,17 +22,14 @@ export async function GET() {
 
     let safeCustodyCount = 0
 
-    // SCAN 50 PAGES
-    // 50 × 500 = 25,000 SIMS
-
     for (
       let page = 1;
-      page <= 50;
+      page <= 1200;
       page++
     ) {
 
       console.log(
-        `Fetching Count Page ${page}`
+        `Scanning Page ${page}`
       )
 
       const response =
@@ -46,15 +51,6 @@ export async function GET() {
 
               'content-type':
                 'application/json',
-
-              origin:
-                'https://airtelsim.intellicar.in',
-
-              referer:
-                'https://airtelsim.intellicar.in/analysis',
-
-              'user-agent':
-                'Mozilla/5.0',
             },
 
             body: JSON.stringify({
@@ -63,19 +59,10 @@ export async function GET() {
 
               limit: 500,
             }),
-
-            cache:
-              'no-store',
           }
         )
 
-      // API ERROR
-
       if (!response.ok) {
-
-        console.log(
-          `Page ${page} Failed`
-        )
 
         continue
       }
@@ -83,21 +70,13 @@ export async function GET() {
       const result =
         await response.json()
 
-      console.log(
-        `Page ${page} Loaded`
-      )
-
       const rows =
         result?.data?.results || []
-
-      // TOTAL SIM COUNT
 
       totalCount =
         Number(
           result?.data?.totalsim || 0
         )
-
-      // STATUS COUNTS
 
       rows.forEach((item: any) => {
 
@@ -111,60 +90,38 @@ export async function GET() {
           )
           .toLowerCase()
 
-        // AVAILABLE = INITIAL
-
         if (
-          status.includes(
-            'initial'
-          )
+          status.includes('initial')
         ) {
 
           availableCount++
         }
 
-        // ACTIVE
-
         if (
-          status.includes(
-            'active'
-          )
+          status.includes('active')
           &&
-          !status.includes(
-            'test'
-          )
+          !status.includes('test')
         ) {
 
           activeCount++
         }
 
-        // TEST MODE
-
         if (
-          status.includes(
-            'test'
-          )
+          status.includes('test')
         ) {
 
           activeTestModeCount++
         }
 
-        // TEMP DISCONNECT
-
         if (
-          status.includes(
-            'temp'
-          )
+          status.includes('temp')
         ) {
 
           tempDisconnectCount++
         }
 
-        // SAFE CUSTODY
-
         if (
-          status.includes(
-            'safe'
-          )
+          status.includes('safe')
         ) {
 
           safeCustodyCount++
@@ -172,53 +129,64 @@ export async function GET() {
       })
     }
 
-    return Response.json({
+    // CLEAR OLD
 
-      success: true,
+    await pool.query(`
+      DELETE FROM sim_dashboard_counts
+    `)
 
-      totalCount,
+    // INSERT NEW
 
-      availableCount,
+    await pool.query(
 
-      activeCount,
+      `
+      INSERT INTO sim_dashboard_counts (
 
-      activeTestModeCount,
+        total_count,
 
-      tempDisconnectCount,
+        available_count,
 
-      safeCustodyCount,
-    })
+        active_count,
 
-  } catch (error) {
+        active_test_mode_count,
 
-    console.log(
-      'CONTROL TOWER COUNTS ERROR:',
-      error
+        temp_disconnect_count,
+
+        safe_custody_count
+
+      )
+
+      VALUES ($1,$2,$3,$4,$5,$6)
+      `,
+
+      [
+
+        totalCount,
+
+        availableCount,
+
+        activeCount,
+
+        activeTestModeCount,
+
+        tempDisconnectCount,
+
+        safeCustodyCount,
+      ]
     )
 
     return Response.json({
 
+      success: true,
+    })
+
+  } catch (error) {
+
+    console.log(error)
+
+    return Response.json({
+
       success: false,
-
-      totalCount: 0,
-
-      availableCount: 0,
-
-      activeCount: 0,
-
-      activeTestModeCount: 0,
-
-      tempDisconnectCount: 0,
-
-      safeCustodyCount: 0,
-
-      message:
-
-        error instanceof Error
-
-          ? error.message
-
-          : 'Unknown error',
     })
   }
 }

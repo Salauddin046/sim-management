@@ -57,7 +57,7 @@ export default function ControlTowerPage() {
 
   }, [])
 
-  // FETCH TABLE DATA
+  // TABLE DATA
 
   const fetchData = async () => {
 
@@ -92,7 +92,7 @@ export default function ControlTowerPage() {
     }
   }
 
-  // FETCH COUNTS
+  // DASHBOARD COUNTS
 
   const fetchCounts = async () => {
 
@@ -100,39 +100,47 @@ export default function ControlTowerPage() {
 
       const response =
         await fetch(
-          '/api/control-tower-counts'
+          '/api/dashboard-counts'
         )
 
       const result =
         await response.json()
 
+      console.log(
+        'Dashboard Counts:',
+        result
+      )
+
       setTotalCount(
-        result.totalCount || 0
+        result.total_count || 0
       )
 
       setAvailableCount(
-        result.availableCount || 0
+        result.available_count || 0
       )
 
       setActiveCount(
-        result.activeCount || 0
+        result.active_count || 0
       )
 
       setActiveTestModeCount(
-        result.activeTestModeCount || 0
+        result.active_test_mode_count || 0
       )
 
       setTempDisconnectCount(
-        result.tempDisconnectCount || 0
+        result.temp_disconnect_count || 0
       )
 
       setSafeCustodyCount(
-        result.safeCustodyCount || 0
+        result.safe_custody_count || 0
       )
 
     } catch (error) {
 
-      console.log(error)
+      console.log(
+        'Dashboard Count Error:',
+        error
+      )
     }
   }
 
@@ -320,11 +328,6 @@ export default function ControlTowerPage() {
               SIM Overview
             </h1>
 
-            <p className="
-              text-gray-500
-            ">
-            </p>
-
           </div>
 
           <button
@@ -463,7 +466,7 @@ Search SIM / Mobile
 
         </div>
 
-        {/* CARDS */}
+        {/* DASHBOARD CARDS */}
 
         <div className="
           grid
