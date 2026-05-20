@@ -10,15 +10,27 @@ export async function GET(
   request: Request
 ) {
 
+  console.log(
+    'CONTROL TOWER COUNTS STARTED'
+  )
+
   try {
 
     const { searchParams } =
       new URL(request.url)
 
+    // START PAGE
+
     const start =
       Number(
         searchParams.get('start')
       ) || 1
+
+    // END PAGE
+    // 50 PAGE BATCH
+
+    const end =
+      start + 50
 
     let page = start
 
@@ -36,9 +48,13 @@ export async function GET(
 
     let safeCustodyCount = 0
 
-    // DYNAMIC LOOP
+    // LOOP
 
-    while (hasNext && page <= start + 50) {
+    while (
+      hasNext
+      &&
+      page <= end
+    ) {
 
       console.log(
         `Scanning Page ${page}`
@@ -86,7 +102,7 @@ export async function GET(
           }
         )
 
-      // API FAILED
+      // RESPONSE FAILED
 
       if (!response.ok) {
 
@@ -110,12 +126,16 @@ export async function GET(
           result?.data?.totalsim || 0
         )
 
-      // NEXT PAGE CHECK
+      // HAS NEXT
 
       hasNext =
         result?.data?.hasnext || false
 
-      // STATUS COUNTS
+      console.log(
+        `Rows: ${rows.length}`
+      )
+
+      // PROCESS STATUS
 
       rows.forEach((item: any) => {
 
@@ -128,10 +148,11 @@ export async function GET(
             ''
           )
           .toLowerCase()
-console.log(
-  'STATUS:',
-  status
-)
+
+        console.log(
+          'STATUS:',
+          status
+        )
 
         // AVAILABLE
 
@@ -154,7 +175,9 @@ console.log(
         // TEST MODE
 
         if (
-          status.includes('test')
+          status.includes(
+            'test'
+          )
         ) {
 
           activeTestModeCount++
@@ -163,7 +186,9 @@ console.log(
         // TEMP DISCONNECT
 
         if (
-          status.includes('temp')
+          status.includes(
+            'temp'
+          )
         ) {
 
           tempDisconnectCount++
@@ -172,7 +197,9 @@ console.log(
         // SAFE CUSTODY
 
         if (
-          status.includes('safe')
+          status.includes(
+            'safe'
+          )
         ) {
 
           safeCustodyCount++
@@ -180,15 +207,25 @@ console.log(
       })
 
       page++
-
-      // SAFETY LIMIT
-      // PREVENT VERCEL CRASH
-
-      if (page > 2000) {
-
-        break
-      }
     }
+
+    console.log(
+      'FINAL COUNTS:',
+      {
+
+        totalCount,
+
+        availableCount,
+
+        activeCount,
+
+        activeTestModeCount,
+
+        tempDisconnectCount,
+
+        safeCustodyCount,
+      }
+    )
 
     // CLEAR OLD DATA
 
