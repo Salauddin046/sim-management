@@ -38,7 +38,7 @@ export async function GET(
 
     // DYNAMIC LOOP
 
-    while (hasNext) {
+    while (hasNext && page <= start + 50) {
 
       console.log(
         `Scanning Page ${page}`
