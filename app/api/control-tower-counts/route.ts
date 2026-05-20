@@ -2,10 +2,6 @@ export async function GET() {
 
   try {
 
-    let page = 1
-
-    let hasNext = true
-
     let totalCount = 0
 
     let availableCount = 0
@@ -18,10 +14,17 @@ export async function GET() {
 
     let safeCustodyCount = 0
 
-    while (hasNext) {
+    // SCAN 50 PAGES
+    // 50 × 500 = 25,000 SIMS
+
+    for (
+      let page = 1;
+      page <= 50;
+      page++
+    ) {
 
       console.log(
-        `Fetching Count Page: ${page}`
+        `Fetching Count Page ${page}`
       )
 
       const response =
@@ -66,34 +69,35 @@ export async function GET() {
           }
         )
 
-      // RESPONSE ERROR
+      // API ERROR
 
       if (!response.ok) {
 
-        return Response.json({
+        console.log(
+          `Page ${page} Failed`
+        )
 
-          success: false,
-
-          message:
-            'Failed to fetch Airtel data',
-        })
+        continue
       }
 
       const result =
         await response.json()
 
       console.log(
-        'COUNT API RESULT:',
-        result
+        `Page ${page} Loaded`
       )
 
       const rows =
         result?.data?.results || []
 
+      // TOTAL SIM COUNT
+
       totalCount =
         Number(
           result?.data?.totalsim || 0
         )
+
+      // STATUS COUNTS
 
       rows.forEach((item: any) => {
 
@@ -107,11 +111,11 @@ export async function GET() {
           )
           .toLowerCase()
 
-        // AVAILABLE
+        // AVAILABLE = INITIAL
 
         if (
           status.includes(
-            'available'
+            'initial'
           )
         ) {
 
@@ -121,7 +125,13 @@ export async function GET() {
         // ACTIVE
 
         if (
-          status === 'active'
+          status.includes(
+            'active'
+          )
+          &&
+          !status.includes(
+            'test'
+          )
         ) {
 
           activeCount++
@@ -160,18 +170,6 @@ export async function GET() {
           safeCustodyCount++
         }
       })
-
-      hasNext =
-        result?.data?.hasnext || false
-
-      page++
-
-      // LIMIT FOR FAST DASHBOARD
-
-      if (page > 25) {
-
-        break
-      }
     }
 
     return Response.json({
