@@ -26,11 +26,10 @@ export async function GET(
         searchParams.get('start')
       ) || 1
 
-    // END PAGE
-    // 50 PAGE BATCH
+    // SCAN 25 PAGES PER REQUEST
 
     const end =
-      start + 150
+      start + 25
 
     let page = start
 
@@ -102,7 +101,7 @@ export async function GET(
           }
         )
 
-      // RESPONSE FAILED
+      // API FAILED
 
       if (!response.ok) {
 
@@ -119,20 +118,20 @@ export async function GET(
       const rows =
         result?.data?.results || []
 
-      // TOTAL COUNT
+      // TOTAL SIM COUNT
 
       totalCount =
         Number(
           result?.data?.totalsim || 0
         )
 
-      // HAS NEXT
+      // HAS NEXT PAGE
 
       hasNext =
         result?.data?.hasnext || false
 
       console.log(
-        `Rows: ${rows.length}`
+        `Rows Found: ${rows.length}`
       )
 
       // PROCESS STATUS
@@ -148,11 +147,6 @@ export async function GET(
             ''
           )
           .toLowerCase()
-
-        console.log(
-          'STATUS:',
-          status
-        )
 
         // AVAILABLE
 
@@ -172,7 +166,7 @@ export async function GET(
           activeCount++
         }
 
-        // TEST MODE
+        // ACTIVE ON TEST MODE
 
         if (
           status.includes(
@@ -197,9 +191,8 @@ export async function GET(
         // SAFE CUSTODY
 
         if (
-          status.includes(
-            'safe'
-          )
+          status ===
+          'safe_custody'
         ) {
 
           safeCustodyCount++
