@@ -22,20 +22,13 @@ export async function POST(req) {
       await req.json()
 
     let {
-
       name,
-
       email,
-
       password,
-
     } = body
 
-    // CLEAN VALUES
-
     name =
-      String(name)
-        .trim()
+      String(name).trim()
 
     email =
       String(email)
@@ -43,26 +36,16 @@ export async function POST(req) {
         .toLowerCase()
 
     password =
-      String(password)
-        .trim()
-
-    console.log({
-
-      name,
-      email,
-      password,
-    })
+      String(password).trim()
 
     // VALIDATION
 
     if (
-
       !name
       ||
       !email
       ||
       !password
-
     ) {
 
       return Response.json({
@@ -70,11 +53,11 @@ export async function POST(req) {
         success: false,
 
         message:
-          'All fields are required',
+          'All fields required',
       })
     }
 
-    // CHECK EXISTING USER
+    // CHECK USER
 
     const existingUser =
       await pool.query(
@@ -83,9 +66,7 @@ export async function POST(req) {
         SELECT *
         FROM users
 
-        WHERE LOWER(email)
-        =
-        LOWER($1)
+        WHERE email = $1
         `,
 
         [email]
@@ -120,9 +101,7 @@ export async function POST(req) {
       INSERT INTO users (
 
         name,
-
         email,
-
         password
 
       )
@@ -131,17 +110,10 @@ export async function POST(req) {
       `,
 
       [
-
         name,
-
         email,
-
         hashedPassword,
       ]
-    )
-
-    console.log(
-      'User Created Successfully'
     )
 
     return Response.json({
