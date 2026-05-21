@@ -1,4 +1,4 @@
-export async function GET(request) {
+export async function GET(request: Request) {
 
   try {
 
@@ -11,7 +11,7 @@ export async function GET(request) {
     const download =
       searchParams.get('download')
 
-    let allRows = []
+    let allRows: any[] = []
 
     let page = 1
 
@@ -91,7 +91,7 @@ export async function GET(request) {
       const formattedRows =
 
         rows.map(
-          (item) => ({
+          (item: any) => ({
 
             sim_no:
 
@@ -133,7 +133,6 @@ export async function GET(request) {
 
               item.activation_date
               ||
-
               item.activationdate
 
                 ? new Date(
@@ -152,7 +151,6 @@ export async function GET(request) {
 
               item.safe_custody_date
               ||
-
               item.safecustodydate
 
                 ? new Date(
@@ -167,7 +165,7 @@ export async function GET(request) {
 
                 : '-',
           }))
-        )
+      
 
       allRows = [
 
@@ -199,7 +197,7 @@ export async function GET(request) {
     if (search) {
 
       filteredRows =
-        allRows.filter((item) =>
+        allRows.filter((item: any) =>
 
           item.sim_no
             ?.toString()
