@@ -1,167 +1,254 @@
-import { Pool } from 'pg'
+'use client'
 
-const pool =
-  new Pool({
+import { useState } from 'react'
 
-    connectionString:
-      process.env.DATABASE_URL,
+export default function SendOtpPage() {
 
-    ssl: {
-      rejectUnauthorized: false,
-    },
-  })
+  const [email, setEmail] =
+    useState('')
 
-export async function POST(req) {
+  const [loading, setLoading] =
+    useState(false)
 
-  try {
+  const sendOtp =
+    async () => {
 
-    const body =
-      await req.json()
+      // VALIDATE EMAIL
 
-    let {
-      email,
-      otp,
-    } = body
+      if (!email) {
 
-    // CLEAN VALUES
+        alert(
+          'Enter Email ID'
+        )
 
-    email =
-      String(email)
-        .trim()
-        .toLowerCase()
+        return
+      }
 
-    otp =
-      String(otp)
-        .trim()
+      try {
 
-    console.log(
-      'Entered Email:',
-      email
-    )
+        setLoading(true)
 
-    console.log(
-      'Entered OTP:',
-      otp
-    )
+        const cleanEmail =
 
-    // GET ALL OTPS
+          String(email)
 
-    const result =
-      await pool.query(
-
-        `
-        SELECT *
-        FROM otp_store
-
-        ORDER BY id DESC
-        `
-      )
-
-    console.log(
-      'ALL OTP ROWS:',
-      result.rows
-    )
-
-    // FIND MATCHING EMAIL
-
-    const otpRow =
-      result.rows.find(
-
-        (row) =>
-
-          String(row.email)
             .trim()
+
             .toLowerCase()
 
-          ===
+        console.log(
+          'Sending OTP To:',
+          cleanEmail
+        )
 
-          email
-      )
+        // SEND OTP API
 
-    // EMAIL NOT FOUND
+        const response =
+          await fetch(
+            '/api/send-otp',
+            {
 
-    if (!otpRow) {
+              method: 'POST',
 
-      return Response.json({
+              headers: {
 
-        success: false,
+                'Content-Type':
+                  'application/json',
+              },
 
-        message:
-          'OTP not found',
-      })
+              body: JSON.stringify({
+
+                email:
+                  cleanEmail,
+              }),
+            }
+          )
+
+        const result =
+          await response.json()
+
+        console.log(
+          'OTP API Result:',
+          result
+        )
+
+        // FAILED
+
+        if (
+          !result.success
+        ) {
+
+          alert(
+
+            result.message
+            ||
+
+            'Failed to Send OTP'
+          )
+
+          return
+        }
+
+        // SAVE EMAIL FOR VERIFY PAGE
+
+        localStorage.setItem(
+
+          'signupData',
+
+          JSON.stringify({
+
+            email:
+              cleanEmail,
+          })
+        )
+
+        console.log(
+          'Email Saved In LocalStorage'
+        )
+
+        alert(
+          'OTP Sent Successfully'
+        )
+
+        // REDIRECT
+
+        window.location.href =
+          '/verify-otp'
+
+      } catch (error) {
+
+        console.error(
+          'SEND OTP ERROR:',
+          error
+        )
+
+        alert(
+          'Something went wrong'
+        )
+
+      } finally {
+
+        setLoading(false)
+      }
     }
 
-    console.log(
-      'Matched Row:',
-      otpRow
-    )
+  return (
 
-    const savedOtp =
-      String(
-        otpRow.otp
-      ).trim()
+    <div className="
+      min-h-screen
+      flex
+      items-center
+      justify-center
+      bg-gray-100
+      p-4
+    ">
 
-    console.log(
-      'Saved OTP:',
-      savedOtp
-    )
+      <div className="
+        bg-white
+        w-full
+        max-w-md
+        rounded-2xl
+        shadow-lg
+        p-8
+      ">
 
-    // MATCH OTP
+        <h1 className="
+          text-3xl
+          font-bold
+          mb-2
+          text-center
+        ">
+          Send OTP
+        </h1>
 
-    if (
-      savedOtp !== otp
-    ) {
+        <p className="
+          text-gray-500
+          text-sm
+          mb-6
+          text-center
+        ">
+          Enter your registered email ID
+        </p>
 
-      return Response.json({
+        <input
 
-        success: false,
+          type="email"
 
-        message:
-          'Invalid OTP',
+          value={email}
 
-        enteredOtp:
-          otp,
+          onChange={(e) =>
 
-        savedOtp:
-          savedOtp,
-      })
-    }
+            setEmail(
+              e.target.value
+            )
+          }
 
-    // DELETE AFTER SUCCESS
+          placeholder="Enter Email ID"
 
-    await pool.query(
+          className="
+            w-full
+            border
+            rounded-xl
+            p-3
+            mb-5
+            outline-none
+            focus:ring-2
+            focus:ring-black
+          "
+        />
 
-      `
-      DELETE FROM otp_store
-      WHERE LOWER(TRIM(email))
-      =
-      LOWER(TRIM($1))
-      `,
+        <button
 
-      [email]
-    )
+          onClick={
+            sendOtp
+          }
 
-    return Response.json({
+          disabled={
+            loading
+          }
 
-      success: true,
+          className="
+            w-full
+            bg-black
+            text-white
+            p-3
+            rounded-xl
+            font-semibold
+            hover:bg-gray-800
+            transition-all
+          "
+        >
 
-      message:
-        'OTP verified successfully',
-    })
+          {
+            loading
 
-  } catch (error) {
+              ? 'Sending OTP...'
 
-    console.log(
-      'VERIFY OTP ERROR:',
-      error
-    )
+              : 'Send OTP'
+          }
 
-    return Response.json({
+        </button>
 
-      success: false,
+        <button
 
-      message:
-        'OTP verification failed',
-    })
-  }
+          onClick={() =>
+            window.location.href = '/'
+          }
+
+          className="
+            w-full
+            mt-3
+            border
+            p-3
+            rounded-xl
+            text-sm
+          "
+        >
+          Back To Home
+        </button>
+
+      </div>
+
+    </div>
+  )
 }
