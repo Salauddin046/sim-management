@@ -1,180 +1,233 @@
-export async function GET(
-  request: Request
-) {
+export async function GET(request) {
 
   try {
 
     const { searchParams } =
       new URL(request.url)
 
+    const search =
+      searchParams.get('search') || ''
+
     const download =
       searchParams.get('download')
 
+    let allRows = []
+
     let page = 1
 
-    const response =
-      await fetch(
+    let hasNext = true
 
-        'https://airtelsim.intellicar.in/api/v1/airtel/sims/list',
+    // FETCH ALL PAGES
 
-        {
+    while (hasNext) {
 
-          method: 'POST',
-
-          headers: {
-
-            accept:
-              'application/json, text/plain, */*',
-
-            authorization:
-              'Basic YWlydGVsYXBpOkFpcnRlSW50ZWxsaWNhckAjMTIzNDU=',
-
-            'content-type':
-              'application/json',
-
-            origin:
-              'https://airtelsim.intellicar.in',
-
-            referer:
-              'https://airtelsim.intellicar.in/analysis',
-
-            'user-agent':
-              'Mozilla/5.0',
-          },
-
-          body: JSON.stringify({
-
-            page_no: page,
-
-            limit:
-              download === 'true'
-                ? 5000
-                : 500,
-          }),
-
-          cache:
-            'no-store',
-        }
+      console.log(
+        'Fetching Page:',
+        page
       )
 
-    // API FAILED
+      const response =
+        await fetch(
 
-    if (!response.ok) {
+          'https://airtelsim.intellicar.in/api/v1/airtel/sims/list',
 
-      return Response.json({
+          {
 
-        success: false,
+            method: 'POST',
 
-        message:
-          'Failed to fetch Airtel API',
-      })
-    }
+            headers: {
 
-    const result =
-      await response.json()
+              accept:
+                'application/json, text/plain, */*',
 
-    const rows =
-      result?.data?.results || []
+              authorization:
+                'Basic YWlydGVsYXBpOkFpcnRlSW50ZWxsaWNhckAjMTIzNDU=',
 
-    // FORMAT DATA
+              'content-type':
+                'application/json',
 
-    const formattedData =
+              origin:
+                'https://airtelsim.intellicar.in',
 
-      rows.map(
-        (item: any) => ({
+              referer:
+                'https://airtelsim.intellicar.in/analysis',
 
-          sim_no:
+              'user-agent':
+                'Mozilla/5.0',
+            },
 
-            item.sim_no
-            ||
+            body: JSON.stringify({
 
-            item.simnumber
-            ||
+              page_no: page,
 
-            item.iccid
-            ||
+              limit:
+                download === 'true'
+                  ? 5000
+                  : 500,
+            }),
 
-            '-',
+            cache:
+              'no-store',
+          }
+        )
 
-          mobile_no:
+      const result =
+        await response.json()
 
-            item.mobile_no
-            ||
+      const rows =
+        result?.data?.results || []
 
-            item.mobileno
-            ||
+      // STOP LOOP
 
-            item.msisdn
-            ||
+      if (rows.length === 0) {
 
-            '-',
+        hasNext = false
 
-          status:
+        break
+      }
 
-            item.status
-            ||
+      // FORMAT DATA
 
-            item.simstatus
-            ||
+      const formattedRows =
 
-            '-',
+        rows.map(
+          (item) => ({
 
-          activation_date:
+            sim_no:
 
-            (
+              item.sim_no
+              ||
+
+              item.simnumber
+              ||
+
+              item.iccid
+              ||
+
+              '-',
+
+            mobile_no:
+
+              item.mobile_no
+              ||
+
+              item.mobileno
+              ||
+
+              item.msisdn
+              ||
+
+              '-',
+
+            status:
+
+              item.status
+              ||
+
+              item.simstatus
+              ||
+
+              '-',
+
+            activation_date:
+
               item.activation_date
               ||
+
               item.activationdate
-            )
 
-              ? new Date(
+                ? new Date(
 
-                  item.activation_date
-                  ||
-                  item.activationdate
+                    item.activation_date
+                    ||
+                    item.activationdate
 
-                ).toLocaleDateString(
-                  'en-GB'
-                )
+                  ).toLocaleDateString(
+                    'en-GB'
+                  )
 
-              : '-',
+                : '-',
 
-          safeCustody_date:
+            safeCustody_date:
 
-            (
               item.safe_custody_date
               ||
+
               item.safecustodydate
+
+                ? new Date(
+
+                    item.safe_custody_date
+                    ||
+                    item.safecustodydate
+
+                  ).toLocaleDateString(
+                    'en-GB'
+                  )
+
+                : '-',
+          }))
+        )
+
+      allRows = [
+
+        ...allRows,
+
+        ...formattedRows,
+      ]
+
+      page++
+
+      // SAFETY LIMIT
+
+      if (page > 1500) {
+
+        hasNext = false
+      }
+    }
+
+    console.log(
+      'Total Rows:',
+      allRows.length
+    )
+
+    // GLOBAL SEARCH
+
+    let filteredRows =
+      allRows
+
+    if (search) {
+
+      filteredRows =
+        allRows.filter((item) =>
+
+          item.sim_no
+            ?.toString()
+            .toLowerCase()
+            .includes(
+              search.toLowerCase()
             )
 
-              ? new Date(
+          ||
 
-                  item.safe_custody_date
-                  ||
-                  item.safecustodydate
-
-                ).toLocaleDateString(
-                  'en-GB'
-                )
-
-              : '-',
-        })
-      )
+          item.mobile_no
+            ?.toString()
+            .toLowerCase()
+            .includes(
+              search.toLowerCase()
+            )
+        )
+    }
 
     return Response.json({
 
       success: true,
 
-      totalCount:
-        Number(
-          result?.data?.totalsim || 0
-        ),
-
       count:
-        formattedData.length,
+        filteredRows.length,
 
       data:
-        formattedData,
+        filteredRows,
     })
 
   } catch (error) {
@@ -187,12 +240,6 @@ export async function GET(
     return Response.json({
 
       success: false,
-
-      count: 0,
-
-      totalCount: 0,
-
-      data: [],
 
       message:
 

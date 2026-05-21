@@ -8,11 +8,6 @@ export default function ControlTowerPage() {
   const [rows, setRows] =
     useState([])
 
-  const [
-    filteredRows,
-    setFilteredRows,
-  ] = useState([])
-
   const [loading, setLoading] =
     useState(false)
 
@@ -55,10 +50,12 @@ export default function ControlTowerPage() {
 
   }, [])
 
-  // TABLE DATA
+  // FETCH TABLE DATA
 
   const fetchData =
-    async () => {
+    async (
+      searchValue = ''
+    ) => {
 
       try {
 
@@ -66,18 +63,16 @@ export default function ControlTowerPage() {
 
         const response =
           await fetch(
-            '/api/control-tower'
+
+            `/api/control-tower?search=${searchValue}`
           )
 
         const result =
           await response.json()
 
-        const apiData =
+        setRows(
           result.data || []
-
-        setRows(apiData)
-
-        setFilteredRows(apiData)
+        )
 
       } catch (error) {
 
@@ -107,11 +102,6 @@ export default function ControlTowerPage() {
 
         const result =
           await response.json()
-
-        console.log(
-          'Dashboard Counts:',
-          result
-        )
 
         setTotalCount(
           result.total_count || 0
@@ -146,39 +136,15 @@ export default function ControlTowerPage() {
       }
     }
 
-  // SEARCH
+  // LIVE SEARCH
 
   const handleSearch =
-    () => {
+    async (value) => {
 
-      let filtered =
-        [...rows]
+      setSearch(value)
 
-      if (search) {
-
-        filtered =
-          filtered.filter((item) =>
-
-            item.sim_no
-              ?.toString()
-              .toLowerCase()
-              .includes(
-                search.toLowerCase()
-              )
-
-            ||
-
-            item.mobile_no
-              ?.toString()
-              .toLowerCase()
-              .includes(
-                search.toLowerCase()
-              )
-          )
-      }
-
-      setFilteredRows(
-        filtered
+      await fetchData(
+        value
       )
     }
 
@@ -328,70 +294,38 @@ export default function ControlTowerPage() {
 
         </div>
 
-        {/* FILTERS */}
+        {/* SEARCH */}
 
         <div className="
           grid
-          md:grid-cols-3
+          md:grid-cols-2
           gap-4
           mb-6
         ">
 
-          <div className="
-            flex
-            gap-2
-          ">
+          <input
+            type="text"
 
-            <input
-              type="text"
-              placeholder="
+            placeholder="
 Search SIM / Mobile
-              "
-              value={search}
-              onChange={(e) =>
-                setSearch(
-                  e.target.value
-                )
-              }
-              className="
-                border
-                rounded-2xl
-                p-4
-                outline-none
-                w-full
-              "
-            />
-
-            <button
-              onClick={
-                handleSearch
-              }
-              className="
-                bg-blue-600
-                text-white
-                px-6
-                rounded-2xl
-                font-semibold
-              "
-            >
-              Search
-            </button>
-
-          </div>
-
-          <button
-            onClick={
-              handleSearch
-            }
-            className="
-              bg-green-600
-              text-white
-              rounded-2xl
-              font-semibold
             "
-          >
-            Apply Filter
-          </button>
+
+            value={search}
+
+            onChange={(e) =>
+              handleSearch(
+                e.target.value
+              )
+            }
+
+            className="
+              border
+              rounded-2xl
+              p-4
+              outline-none
+              w-full
+            "
+          />
 
           <button
             onClick={
@@ -538,7 +472,7 @@ Search SIM / Mobile
                   </tr>
                 )
 
-                : filteredRows.length === 0
+                : rows.length === 0
 
                 ? (
 
@@ -559,7 +493,7 @@ Search SIM / Mobile
 
                 : (
 
-                  filteredRows.map(
+                  rows.map(
                     (
                       row,
                       index
