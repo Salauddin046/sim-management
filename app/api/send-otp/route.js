@@ -1,8 +1,5 @@
 import { Pool } from 'pg'
 
-import nodemailer
-from 'nodemailer'
-
 const pool =
   new Pool({
 
@@ -14,23 +11,6 @@ const pool =
     },
   })
 
-// EMAIL TRANSPORT
-
-const transporter =
-  nodemailer.createTransport({
-
-    service: 'gmail',
-
-    auth: {
-
-      user:
-        process.env.EMAIL_USER,
-
-      pass:
-        process.env.EMAIL_PASS,
-    },
-  })
-
 export async function POST(req) {
 
   try {
@@ -38,133 +18,127 @@ export async function POST(req) {
     const body =
       await req.json()
 
-    let { email } =
-      body
+    let {
+      email,
+      otp,
+    } = body
 
-    // CLEAN EMAIL
+    // CLEAN VALUES
 
     email =
       String(email)
         .trim()
         .toLowerCase()
 
-    // EMAIL REQUIRED
+    otp =
+      String(otp)
+        .trim()
 
-    if (!email) {
+    console.log(
+      'Entered Email:',
+      email
+    )
+
+    console.log(
+      'Entered OTP:',
+      otp
+    )
+
+    // GET ALL OTPS
+
+    const result =
+      await pool.query(
+
+        `
+        SELECT *
+        FROM otp_store
+
+        ORDER BY id DESC
+        `
+      )
+
+    console.log(
+      'ALL OTP ROWS:',
+      result.rows
+    )
+
+    // FIND MATCHING EMAIL
+
+    const otpRow =
+      result.rows.find(
+
+        (row) =>
+
+          String(row.email)
+            .trim()
+            .toLowerCase()
+
+          ===
+
+          email
+      )
+
+    // EMAIL NOT FOUND
+
+    if (!otpRow) {
 
       return Response.json({
 
         success: false,
 
         message:
-          'Email is required',
+          'OTP not found',
       })
     }
 
     console.log(
-      'Sending OTP To:',
-      email
+      'Matched Row:',
+      otpRow
     )
 
-    // GENERATE OTP
-
-    const otp =
-      Math.floor(
-
-        100000
-        +
-        Math.random()
-        * 900000
-
-      ).toString()
+    const savedOtp =
+      String(
+        otpRow.otp
+      ).trim()
 
     console.log(
-      'Generated OTP:',
-      otp
+      'Saved OTP:',
+      savedOtp
     )
 
-    // DELETE OLD OTP
+    // MATCH OTP
+
+    if (
+      savedOtp !== otp
+    ) {
+
+      return Response.json({
+
+        success: false,
+
+        message:
+          'Invalid OTP',
+
+        enteredOtp:
+          otp,
+
+        savedOtp:
+          savedOtp,
+      })
+    }
+
+    // DELETE AFTER SUCCESS
 
     await pool.query(
 
       `
       DELETE FROM otp_store
-
-      WHERE email = $1
+      WHERE LOWER(TRIM(email))
+      =
+      LOWER(TRIM($1))
       `,
 
       [email]
-    )
-
-    // SAVE NEW OTP
-
-    await pool.query(
-
-      `
-      INSERT INTO otp_store (
-
-        email,
-        otp
-
-      )
-
-      VALUES ($1,$2)
-      `,
-
-      [
-        email,
-        otp,
-      ]
-    )
-
-    console.log(
-      'OTP Saved In DB'
-    )
-
-    // SEND EMAIL
-
-    await transporter.sendMail({
-
-      from:
-        process.env.EMAIL_USER,
-
-      to: email,
-
-      subject:
-        'OTP Verification',
-
-      html: `
-
-        <div style="
-          font-family: Arial;
-          padding: 20px;
-        ">
-
-          <h2>
-            SIM Management OTP
-          </h2>
-
-          <p>
-            Your OTP Code:
-          </p>
-
-          <h1 style="
-            letter-spacing: 5px;
-            color: #7c3aed;
-          ">
-            ${otp}
-          </h1>
-
-          <p>
-            This OTP is valid for 10 minutes.
-          </p>
-
-        </div>
-      `,
-    })
-
-    console.log(
-      'OTP Email Sent'
     )
 
     return Response.json({
@@ -172,13 +146,13 @@ export async function POST(req) {
       success: true,
 
       message:
-        'OTP sent successfully',
+        'OTP verified successfully',
     })
 
   } catch (error) {
 
     console.log(
-      'SEND OTP ERROR:',
+      'VERIFY OTP ERROR:',
       error
     )
 
@@ -187,7 +161,7 @@ export async function POST(req) {
       success: false,
 
       message:
-        'Failed to send OTP',
+        'OTP verification failed',
     })
   }
 }

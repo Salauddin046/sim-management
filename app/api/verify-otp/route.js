@@ -44,38 +44,43 @@ export async function POST(req) {
       otp
     )
 
-    // FETCH LATEST OTP
+    // GET ALL OTPS
 
     const result =
       await pool.query(
 
         `
         SELECT *
-
         FROM otp_store
 
-        WHERE LOWER(TRIM(email))
-        =
-        LOWER(TRIM($1))
-
         ORDER BY id DESC
-
-        LIMIT 1
-        `,
-
-        [email]
+        `
       )
 
     console.log(
-      'DB Result:',
+      'ALL OTP ROWS:',
       result.rows
     )
 
-    // OTP NOT FOUND
+    // FIND MATCHING EMAIL
 
-    if (
-      result.rows.length === 0
-    ) {
+    const otpRow =
+      result.rows.find(
+
+        (row) =>
+
+          String(row.email)
+            .trim()
+            .toLowerCase()
+
+          ===
+
+          email
+      )
+
+    // EMAIL NOT FOUND
+
+    if (!otpRow) {
 
       return Response.json({
 
@@ -86,11 +91,14 @@ export async function POST(req) {
       })
     }
 
-    // DB OTP
+    console.log(
+      'Matched Row:',
+      otpRow
+    )
 
     const savedOtp =
       String(
-        result.rows[0].otp
+        otpRow.otp
       ).trim()
 
     console.log(
@@ -110,16 +118,21 @@ export async function POST(req) {
 
         message:
           'Invalid OTP',
+
+        enteredOtp:
+          otp,
+
+        savedOtp:
+          savedOtp,
       })
     }
 
-    // DELETE OTP AFTER SUCCESS
+    // DELETE AFTER SUCCESS
 
     await pool.query(
 
       `
       DELETE FROM otp_store
-
       WHERE LOWER(TRIM(email))
       =
       LOWER(TRIM($1))
