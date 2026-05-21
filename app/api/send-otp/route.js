@@ -1,5 +1,8 @@
 import { Pool } from 'pg'
 
+import nodemailer
+from 'nodemailer'
+
 const pool =
   new Pool({
 
@@ -8,6 +11,23 @@ const pool =
 
     ssl: {
       rejectUnauthorized: false,
+    },
+  })
+
+// EMAIL TRANSPORT
+
+const transporter =
+  nodemailer.createTransport({
+
+    service: 'gmail',
+
+    auth: {
+
+      user:
+        process.env.EMAIL_USER,
+
+      pass:
+        process.env.EMAIL_PASS,
     },
   })
 
@@ -20,6 +40,19 @@ export async function POST(req) {
 
     const { email } =
       body
+
+    // VALIDATE EMAIL
+
+    if (!email) {
+
+      return Response.json({
+
+        success: false,
+
+        message:
+          'Email is required',
+      })
+    }
 
     // GENERATE OTP
 
@@ -71,13 +104,53 @@ export async function POST(req) {
       ]
     )
 
-    // SEND EMAIL HERE
+    // SEND EMAIL
+
+    await transporter.sendMail({
+
+      from:
+        process.env.EMAIL_USER,
+
+      to: email,
+
+      subject:
+        'OTP Verification',
+
+      html: `
+
+        <div style="
+          font-family: Arial;
+          padding: 20px;
+        ">
+
+          <h2>
+            SIM Management OTP
+          </h2>
+
+          <p>
+            Your OTP Code:
+          </p>
+
+          <h1 style="
+            letter-spacing: 5px;
+          ">
+            ${otp}
+          </h1>
+
+          <p>
+            This OTP is valid for 10 minutes.
+          </p>
+
+        </div>
+      `,
+    })
 
     return Response.json({
 
       success: true,
 
-      otp, // REMOVE LATER
+      message:
+        'OTP sent successfully',
     })
 
   } catch (error) {
