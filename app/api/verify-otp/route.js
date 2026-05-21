@@ -31,26 +31,32 @@ export async function POST(req) {
         .toLowerCase()
 
     otp =
-      Number(
-        String(otp).trim()
-      )
+      String(otp)
+        .trim()
+
+    console.log(
+      'Entered Email:',
+      email
+    )
 
     console.log(
       'Entered OTP:',
       otp
     )
 
-    // GET LATEST OTP
+    // FETCH LATEST OTP
 
     const result =
       await pool.query(
 
         `
-        SELECT otp
+        SELECT *
 
         FROM otp_store
 
-        WHERE LOWER(email) = LOWER($1)
+        WHERE LOWER(TRIM(email))
+        =
+        LOWER(TRIM($1))
 
         ORDER BY id DESC
 
@@ -59,6 +65,11 @@ export async function POST(req) {
 
         [email]
       )
+
+    console.log(
+      'DB Result:',
+      result.rows
+    )
 
     // OTP NOT FOUND
 
@@ -78,16 +89,16 @@ export async function POST(req) {
     // DB OTP
 
     const savedOtp =
-      Number(
+      String(
         result.rows[0].otp
-      )
+      ).trim()
 
     console.log(
       'Saved OTP:',
       savedOtp
     )
 
-    // MATCH
+    // MATCH OTP
 
     if (
       savedOtp !== otp
@@ -109,7 +120,9 @@ export async function POST(req) {
       `
       DELETE FROM otp_store
 
-      WHERE LOWER(email) = LOWER($1)
+      WHERE LOWER(TRIM(email))
+      =
+      LOWER(TRIM($1))
       `,
 
       [email]
