@@ -136,15 +136,13 @@ export default function ControlTowerPage() {
       }
     }
 
-  // LIVE SEARCH
+  // SEARCH BUTTON
 
   const handleSearch =
-    async (value) => {
-
-      setSearch(value)
+    async () => {
 
       await fetchData(
-        value
+        search
       )
     }
 
@@ -294,11 +292,11 @@ export default function ControlTowerPage() {
 
         </div>
 
-        {/* SEARCH */}
+        {/* SEARCH SECTION */}
 
         <div className="
           grid
-          md:grid-cols-2
+          md:grid-cols-3
           gap-4
           mb-6
         ">
@@ -313,7 +311,7 @@ Search SIM / Mobile
             value={search}
 
             onChange={(e) =>
-              handleSearch(
+              setSearch(
                 e.target.value
               )
             }
@@ -326,6 +324,20 @@ Search SIM / Mobile
               w-full
             "
           />
+
+          <button
+            onClick={
+              handleSearch
+            }
+            className="
+              bg-blue-600
+              text-white
+              rounded-2xl
+              font-semibold
+            "
+          >
+            Search
+          </button>
 
           <button
             onClick={
