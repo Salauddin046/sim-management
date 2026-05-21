@@ -1,4 +1,4 @@
-'use client'
+2'use client'
 
 import { useState } from 'react'
 
@@ -21,14 +21,32 @@ export default function VerifyOtpPage() {
 
       try {
 
+        // VALIDATE OTP
+
+        if (
+          otp.length !== 6
+        ) {
+
+          alert(
+            'Enter valid 6 digit OTP'
+          )
+
+          return
+        }
+
         setLoading(true)
+
+        // GET SIGNUP DATA
 
         const signupData =
           JSON.parse(
+
             localStorage.getItem(
               'signupData'
             )
           )
+
+        // SESSION EXPIRED
 
         if (
           !signupData
@@ -45,6 +63,18 @@ export default function VerifyOtpPage() {
           return
         }
 
+        console.log(
+          'Signup Data:',
+          signupData
+        )
+
+        console.log(
+          'Entered OTP:',
+          otp
+        )
+
+        // VERIFY OTP
+
         const response =
           await fetch(
             '/api/verify-otp',
@@ -53,6 +83,7 @@ export default function VerifyOtpPage() {
               method: 'POST',
 
               headers: {
+
                 'Content-Type':
                   'application/json',
               },
@@ -60,15 +91,29 @@ export default function VerifyOtpPage() {
               body: JSON.stringify({
 
                 email:
-                  signupData.email,
+                  String(
+                    signupData.email
+                  )
+                  .trim()
+                  .toLowerCase(),
 
-                otp,
+                otp:
+                  String(
+                    otp
+                  ).trim(),
               }),
             }
           )
 
         const data =
           await response.json()
+
+        console.log(
+          'Verify Response:',
+          data
+        )
+
+        // INVALID OTP
 
         if (
           !data.success
@@ -81,6 +126,8 @@ export default function VerifyOtpPage() {
           return
         }
 
+        // CREATE ACCOUNT
+
         const signupResponse =
           await fetch(
             '/api/signup',
@@ -89,6 +136,7 @@ export default function VerifyOtpPage() {
               method: 'POST',
 
               headers: {
+
                 'Content-Type':
                   'application/json',
               },
@@ -104,13 +152,23 @@ export default function VerifyOtpPage() {
                 password:
                   signupData.password,
 
-                otp,
+                otp:
+                  String(
+                    otp
+                  ).trim(),
               }),
             }
           )
 
         const signupResult =
           await signupResponse.json()
+
+        console.log(
+          'Signup Result:',
+          signupResult
+        )
+
+        // SIGNUP FAILED
 
         if (
           !signupResult.success
@@ -122,6 +180,8 @@ export default function VerifyOtpPage() {
 
           return
         }
+
+        // CLEAR SESSION
 
         localStorage.removeItem(
           'signupData'
@@ -138,6 +198,7 @@ export default function VerifyOtpPage() {
       } catch (error) {
 
         console.error(
+          'VERIFY OTP ERROR:',
           error
         )
 
@@ -204,13 +265,28 @@ export default function VerifyOtpPage() {
 
           <input
             type="text"
+
             placeholder="Enter OTP"
+
             value={otp}
+
             onChange={(e) =>
+
               setOtp(
+
                 e.target.value
+
+                  .replace(
+                    /\D/g,
+                    ''
+                  )
+
+                  .slice(0, 6)
               )
             }
+
+            maxLength={6}
+
             className="
               w-full
               bg-white/10
@@ -227,12 +303,15 @@ export default function VerifyOtpPage() {
           />
 
           <button
+
             onClick={
               verifyOtp
             }
+
             disabled={
               loading
             }
+
             className="
               w-full
               bg-white
@@ -240,15 +319,39 @@ export default function VerifyOtpPage() {
               py-4
               rounded-2xl
               font-bold
+              hover:scale-[1.02]
+              transition-all
             "
           >
 
             {
               loading
+
                 ? 'Verifying...'
+
                 : 'Verify OTP'
             }
 
+          </button>
+
+          <button
+
+            onClick={() =>
+              router.push(
+                '/signup'
+              )
+            }
+
+            className="
+              w-full
+              border
+              border-white/30
+              py-4
+              rounded-2xl
+              text-white
+            "
+          >
+            Back
           </button>
 
         </div>
