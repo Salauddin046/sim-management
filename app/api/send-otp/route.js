@@ -1,254 +1,170 @@
-'use client'
+import { Pool } from 'pg'
 
-import { useState } from 'react'
+import nodemailer
+from 'nodemailer'
 
-export default function SendOtpPage() {
+const pool =
+  new Pool({
 
-  const [email, setEmail] =
-    useState('')
+    connectionString:
+      process.env.DATABASE_URL,
 
-  const [loading, setLoading] =
-    useState(false)
+    ssl: {
+      rejectUnauthorized: false,
+    },
+  })
 
-  const sendOtp =
-    async () => {
+const transporter =
+  nodemailer.createTransport({
 
-      // VALIDATE EMAIL
+    service: 'gmail',
 
-      if (!email) {
+    auth: {
 
-        alert(
-          'Enter Email ID'
-        )
+      user:
+        process.env.EMAIL_USER,
 
-        return
-      }
+      pass:
+        process.env.EMAIL_PASS,
+    },
+  })
 
-      try {
+export async function POST(req) {
 
-        setLoading(true)
+  try {
 
-        const cleanEmail =
+    const body =
+      await req.json()
 
-          String(email)
+    let { email } =
+      body
 
-            .trim()
+    // CLEAN EMAIL
 
-            .toLowerCase()
+    email =
+      String(email)
+        .trim()
+        .toLowerCase()
 
-        console.log(
-          'Sending OTP To:',
-          cleanEmail
-        )
+    // VALIDATE
 
-        // SEND OTP API
+    if (!email) {
 
-        const response =
-          await fetch(
-            '/api/send-otp',
-            {
+      return Response.json({
 
-              method: 'POST',
+        success: false,
 
-              headers: {
-
-                'Content-Type':
-                  'application/json',
-              },
-
-              body: JSON.stringify({
-
-                email:
-                  cleanEmail,
-              }),
-            }
-          )
-
-        const result =
-          await response.json()
-
-        console.log(
-          'OTP API Result:',
-          result
-        )
-
-        // FAILED
-
-        if (
-          !result.success
-        ) {
-
-          alert(
-
-            result.message
-            ||
-
-            'Failed to Send OTP'
-          )
-
-          return
-        }
-
-        // SAVE EMAIL FOR VERIFY PAGE
-
-        localStorage.setItem(
-
-          'signupData',
-
-          JSON.stringify({
-
-            email:
-              cleanEmail,
-          })
-        )
-
-        console.log(
-          'Email Saved In LocalStorage'
-        )
-
-        alert(
-          'OTP Sent Successfully'
-        )
-
-        // REDIRECT
-
-        window.location.href =
-          '/verify-otp'
-
-      } catch (error) {
-
-        console.error(
-          'SEND OTP ERROR:',
-          error
-        )
-
-        alert(
-          'Something went wrong'
-        )
-
-      } finally {
-
-        setLoading(false)
-      }
+        message:
+          'Email required',
+      })
     }
 
-  return (
+    // GENERATE OTP
 
-    <div className="
-      min-h-screen
-      flex
-      items-center
-      justify-center
-      bg-gray-100
-      p-4
-    ">
+    const otp =
+      Math.floor(
 
-      <div className="
-        bg-white
-        w-full
-        max-w-md
-        rounded-2xl
-        shadow-lg
-        p-8
-      ">
+        100000
+        +
+        Math.random()
+        * 900000
 
-        <h1 className="
-          text-3xl
-          font-bold
-          mb-2
-          text-center
+      ).toString()
+
+    console.log(
+      'Generated OTP:',
+      otp
+    )
+
+    // DELETE OLD OTP
+
+    await pool.query(
+
+      `
+      DELETE FROM otp_store
+      WHERE email = $1
+      `,
+
+      [email]
+    )
+
+    // INSERT NEW OTP
+
+    await pool.query(
+
+      `
+      INSERT INTO otp_store (
+
+        email,
+        otp
+
+      )
+
+      VALUES ($1,$2)
+      `,
+
+      [
+        email,
+        otp,
+      ]
+    )
+
+    // SEND MAIL
+
+    await transporter.sendMail({
+
+      from:
+        process.env.EMAIL_USER,
+
+      to: email,
+
+      subject:
+        'OTP Verification',
+
+      html: `
+
+        <div style="
+          font-family: Arial;
+          padding: 20px;
         ">
-          Send OTP
-        </h1>
 
-        <p className="
-          text-gray-500
-          text-sm
-          mb-6
-          text-center
-        ">
-          Enter your registered email ID
-        </p>
+          <h2>
+            SIM Management OTP
+          </h2>
 
-        <input
+          <h1>
+            ${otp}
+          </h1>
 
-          type="email"
+          <p>
+            Valid for 10 minutes
+          </p>
 
-          value={email}
+        </div>
+      `,
+    })
 
-          onChange={(e) =>
+    return Response.json({
 
-            setEmail(
-              e.target.value
-            )
-          }
+      success: true,
 
-          placeholder="Enter Email ID"
+      message:
+        'OTP sent successfully',
+    })
 
-          className="
-            w-full
-            border
-            rounded-xl
-            p-3
-            mb-5
-            outline-none
-            focus:ring-2
-            focus:ring-black
-          "
-        />
+  } catch (error) {
 
-        <button
+    console.log(
+      'SEND OTP ERROR:',
+      error
+    )
 
-          onClick={
-            sendOtp
-          }
+    return Response.json({
 
-          disabled={
-            loading
-          }
+      success: false,
 
-          className="
-            w-full
-            bg-black
-            text-white
-            p-3
-            rounded-xl
-            font-semibold
-            hover:bg-gray-800
-            transition-all
-          "
-        >
-
-          {
-            loading
-
-              ? 'Sending OTP...'
-
-              : 'Send OTP'
-          }
-
-        </button>
-
-        <button
-
-          onClick={() =>
-            window.location.href = '/'
-          }
-
-          className="
-            w-full
-            mt-3
-            border
-            p-3
-            rounded-xl
-            text-sm
-          "
-        >
-          Back To Home
-        </button>
-
-      </div>
-
-    </div>
-  )
+      message:
+        'Failed to send OTP',
+    })
+  }
 }
