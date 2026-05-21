@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState }
+from 'react'
 
 export default function ControlTowerPage() {
 
@@ -16,9 +17,6 @@ export default function ControlTowerPage() {
     useState(false)
 
   const [search, setSearch] =
-    useState('')
-
-  const [status, setStatus] =
     useState('')
 
   // COUNTS
@@ -59,149 +57,130 @@ export default function ControlTowerPage() {
 
   // TABLE DATA
 
-  const fetchData = async () => {
+  const fetchData =
+    async () => {
 
-    try {
+      try {
 
-      setLoading(true)
+        setLoading(true)
 
-      const response =
-        await fetch(
-          '/api/control-tower'
+        const response =
+          await fetch(
+            '/api/control-tower'
+          )
+
+        const result =
+          await response.json()
+
+        const apiData =
+          result.data || []
+
+        setRows(apiData)
+
+        setFilteredRows(apiData)
+
+      } catch (error) {
+
+        console.log(error)
+
+        alert(
+          'No data found'
         )
 
-      const result =
-        await response.json()
+      } finally {
 
-      const apiData =
-        result.data || []
-
-      setRows(apiData)
-
-      setFilteredRows(apiData)
-
-    } catch (error) {
-
-      console.log(error)
-
-      alert('No data found')
-
-    } finally {
-
-      setLoading(false)
+        setLoading(false)
+      }
     }
-  }
 
   // DASHBOARD COUNTS
 
-  const fetchCounts = async () => {
+  const fetchCounts =
+    async () => {
 
-    try {
+      try {
 
-      const response =
-        await fetch(
-          '/api/dashboard-counts'
+        const response =
+          await fetch(
+            '/api/dashboard-counts'
+          )
+
+        const result =
+          await response.json()
+
+        console.log(
+          'Dashboard Counts:',
+          result
         )
 
-      const result =
-        await response.json()
+        setTotalCount(
+          result.total_count || 0
+        )
 
-      console.log(
-        'Dashboard Counts:',
-        result
-      )
+        setAvailableCount(
+          result.available_count || 0
+        )
 
-      setTotalCount(
-        result.total_count || 0
-      )
+        setActiveCount(
+          result.active_count || 0
+        )
 
-      setAvailableCount(
-        result.available_count || 0
-      )
+        setActiveTestModeCount(
+          result.active_test_mode_count || 0
+        )
 
-      setActiveCount(
-        result.active_count || 0
-      )
+        setTempDisconnectCount(
+          result.temp_disconnect_count || 0
+        )
 
-      setActiveTestModeCount(
-        result.active_test_mode_count || 0
-      )
+        setSafeCustodyCount(
+          result.safe_custody_count || 0
+        )
 
-      setTempDisconnectCount(
-        result.temp_disconnect_count || 0
-      )
+      } catch (error) {
 
-      setSafeCustodyCount(
-        result.safe_custody_count || 0
-      )
-
-    } catch (error) {
-
-      console.log(
-        'Dashboard Count Error:',
-        error
-      )
+        console.log(
+          'Dashboard Count Error:',
+          error
+        )
+      }
     }
-  }
 
   // SEARCH
 
-  const handleSearch = () => {
+  const handleSearch =
+    () => {
 
-    let filtered = [...rows]
+      let filtered =
+        [...rows]
 
-    if (search) {
+      if (search) {
 
-      filtered =
-        filtered.filter((item) =>
+        filtered =
+          filtered.filter((item) =>
 
-          item.sim_no
-            ?.toString()
-            .toLowerCase()
-            .includes(
-              search.toLowerCase()
-            )
+            item.sim_no
+              ?.toString()
+              .toLowerCase()
+              .includes(
+                search.toLowerCase()
+              )
 
-          ||
+            ||
 
-          item.mobile_no
-            ?.toString()
-            .toLowerCase()
-            .includes(
-              search.toLowerCase()
-            )
-        )
+            item.mobile_no
+              ?.toString()
+              .toLowerCase()
+              .includes(
+                search.toLowerCase()
+              )
+          )
+      }
+
+      setFilteredRows(
+        filtered
+      )
     }
-
-    if (status) {
-
-      filtered =
-        filtered.filter((item) =>
-
-          item.status
-            ?.toLowerCase()
-            ===
-          status.toLowerCase()
-        )
-    }
-
-    setFilteredRows(filtered)
-  }
-
-  // UNIQUE STATUS
-
-  const uniqueStatus = [
-
-    ...new Set(
-
-      rows
-        .map(
-          (item) =>
-            item.status
-        )
-        .filter(Boolean)
-    ),
-  ]
 
   // CSV DOWNLOAD
 
@@ -212,6 +191,7 @@ export default function ControlTowerPage() {
 
         const response =
           await fetch(
+
             '/api/control-tower?download=true'
           )
 
@@ -352,7 +332,7 @@ export default function ControlTowerPage() {
 
         <div className="
           grid
-          md:grid-cols-4
+          md:grid-cols-3
           gap-4
           mb-6
         ">
@@ -398,43 +378,6 @@ Search SIM / Mobile
             </button>
 
           </div>
-
-          <select
-            value={status}
-            onChange={(e) =>
-              setStatus(
-                e.target.value
-              )
-            }
-            className="
-              border
-              rounded-2xl
-              p-4
-            "
-          >
-
-            <option value="">
-              All Status
-            </option>
-
-            {
-              uniqueStatus.map(
-                (
-                  item,
-                  index
-                ) => (
-
-                  <option
-                    key={index}
-                    value={item}
-                  >
-                    {item}
-                  </option>
-                )
-              )
-            }
-
-          </select>
 
           <button
             onClick={
