@@ -1,4 +1,15 @@
-import nodemailer from 'nodemailer'
+import { Pool } from 'pg'
+
+const pool =
+  new Pool({
+
+    connectionString:
+      process.env.DATABASE_URL,
+
+    ssl: {
+      rejectUnauthorized: false,
+    },
+  })
 
 export async function POST(req) {
 
@@ -7,108 +18,66 @@ export async function POST(req) {
     const body =
       await req.json()
 
-    const email =
-      body.email
+    const { email } =
+      body
 
-    if (!email) {
-
-      return Response.json({
-
-        success: false,
-
-        message:
-          'Email is required',
-      })
-    }
+    // GENERATE OTP
 
     const otp =
       Math.floor(
-        100000 +
-        Math.random() *
-        900000
+
+        100000
+        +
+        Math.random()
+        * 900000
+
       ).toString()
 
-    global.otpStore =
-      global.otpStore || {}
-
-    global.otpStore[email] =
+    console.log(
+      'Generated OTP:',
       otp
-
-    console.log(
-      'EMAIL_USER:',
-      process.env.EMAIL_USER
     )
 
-    console.log(
-      'EMAIL_PASS EXISTS:',
-      !!process.env.EMAIL_PASS
-    )
+    // DELETE OLD OTP
 
-    const transporter =
-      nodemailer.createTransport({
+    await pool.query(
 
-        service: 'gmail',
-
-        auth: {
-
-          user:
-            process.env.EMAIL_USER,
-
-          pass:
-            process.env.EMAIL_PASS,
-        },
-      })
-
-    await transporter.sendMail({
-
-      from:
-        process.env.EMAIL_USER,
-
-      to: email,
-
-      subject:
-        'SIM Management OTP',
-
-      html: `
-
-        <div style="
-          font-family: Arial;
-          padding: 20px;
-        ">
-
-          <h2>
-            SIM Management System
-          </h2>
-
-          <p>
-            Your OTP Code:
-          </p>
-
-          <h1 style="
-            letter-spacing: 6px;
-            color: #7c3aed;
-          ">
-            ${otp}
-          </h1>
-
-          <p>
-            OTP valid for 5 minutes.
-          </p>
-
-        </div>
+      `
+      DELETE FROM otp_store
+      WHERE email = $1
       `,
-    })
 
-    console.log(
-      'OTP MAIL SENT'
+      [email]
     )
+
+    // INSERT NEW OTP
+
+    await pool.query(
+
+      `
+      INSERT INTO otp_store (
+
+        email,
+        otp
+
+      )
+
+      VALUES ($1,$2)
+      `,
+
+      [
+        email,
+        otp,
+      ]
+    )
+
+    // SEND EMAIL HERE
 
     return Response.json({
 
       success: true,
 
-      message:
-        'OTP Sent Successfully',
+      otp, // REMOVE LATER
     })
 
   } catch (error) {
@@ -123,7 +92,6 @@ export async function POST(req) {
       success: false,
 
       message:
-        error.message ||
         'Failed to send OTP',
     })
   }
