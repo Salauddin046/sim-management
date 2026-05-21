@@ -38,10 +38,17 @@ export async function POST(req) {
     const body =
       await req.json()
 
-    const { email } =
+    let { email } =
       body
 
-    // VALIDATE EMAIL
+    // CLEAN EMAIL
+
+    email =
+      String(email)
+        .trim()
+        .toLowerCase()
+
+    // EMAIL REQUIRED
 
     if (!email) {
 
@@ -53,6 +60,11 @@ export async function POST(req) {
           'Email is required',
       })
     }
+
+    console.log(
+      'Sending OTP To:',
+      email
+    )
 
     // GENERATE OTP
 
@@ -77,13 +89,14 @@ export async function POST(req) {
 
       `
       DELETE FROM otp_store
+
       WHERE email = $1
       `,
 
       [email]
     )
 
-    // INSERT NEW OTP
+    // SAVE NEW OTP
 
     await pool.query(
 
@@ -102,6 +115,10 @@ export async function POST(req) {
         email,
         otp,
       ]
+    )
+
+    console.log(
+      'OTP Saved In DB'
     )
 
     // SEND EMAIL
@@ -133,6 +150,7 @@ export async function POST(req) {
 
           <h1 style="
             letter-spacing: 5px;
+            color: #7c3aed;
           ">
             ${otp}
           </h1>
@@ -144,6 +162,10 @@ export async function POST(req) {
         </div>
       `,
     })
+
+    console.log(
+      'OTP Email Sent'
+    )
 
     return Response.json({
 
