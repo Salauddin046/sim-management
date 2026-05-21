@@ -18,10 +18,18 @@ export async function POST(req) {
     const body =
       await req.json()
 
-    const {
+    let {
       email,
       otp,
     } = body
+
+    // CLEAN OTP
+
+    otp =
+      String(otp)
+        .trim()
+
+    // GET LATEST OTP
 
     const result =
       await pool.query(
@@ -29,17 +37,51 @@ export async function POST(req) {
         `
         SELECT *
         FROM otp_store
+
         WHERE email = $1
-        AND otp = $2
+
+        ORDER BY id DESC
+
+        LIMIT 1
         `,
-        [
-          email,
-          otp,
-        ]
+
+        [email]
       )
+
+    // NO OTP FOUND
 
     if (
       result.rows.length === 0
+    ) {
+
+      return Response.json({
+
+        success: false,
+
+        message:
+          'OTP not found',
+      })
+    }
+
+    const savedOtp =
+      String(
+        result.rows[0].otp
+      ).trim()
+
+    console.log(
+      'Saved OTP:',
+      savedOtp
+    )
+
+    console.log(
+      'Entered OTP:',
+      otp
+    )
+
+    // OTP MISMATCH
+
+    if (
+      savedOtp !== otp
     ) {
 
       return Response.json({
@@ -51,6 +93,19 @@ export async function POST(req) {
       })
     }
 
+    // OPTIONAL:
+    // DELETE OTP AFTER SUCCESS
+
+    await pool.query(
+
+      `
+      DELETE FROM otp_store
+      WHERE email = $1
+      `,
+
+      [email]
+    )
+
     return Response.json({
 
       success: true,
@@ -61,7 +116,10 @@ export async function POST(req) {
 
   } catch (error) {
 
-    console.log(error)
+    console.log(
+      'VERIFY OTP ERROR:',
+      error
+    )
 
     return Response.json({
 
