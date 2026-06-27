@@ -1,142 +1,69 @@
-import { Pool } from 'pg'
+import bcrypt from 'bcryptjs'
+import pool from '@/lib/db'
 
-import bcrypt
-from 'bcryptjs'
-
-const pool =
-  new Pool({
-
-    connectionString:
-      process.env.DATABASE_URL,
-
-    ssl: {
-      rejectUnauthorized: false,
-    },
-  })
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export async function POST(req) {
-
   try {
+    const body = await req.json()
+    const name = String(body.name || '').trim()
+    const email = String(body.email || '').trim().toLowerCase()
+    // DO NOT trim password — spaces are valid password characters (NIST 800-63B)
+    const password = String(body.password || '')
 
-    const body =
-      await req.json()
-
-    let {
-      name,
-      email,
-      password,
-    } = body
-
-    name =
-      String(name).trim()
-
-    email =
-      String(email)
-        .trim()
-        .toLowerCase()
-
-    password =
-      String(password).trim()
-
-    // VALIDATION
-
-    if (
-      !name
-      ||
-      !email
-      ||
-      !password
-    ) {
-
-      return Response.json({
-
-        success: false,
-
-        message:
-          'All fields required',
-      })
+    if (!name || !email || !password) {
+      return Response.json(
+        { success: false, message: 'All fields required' },
+        { status: 400 }
+      )
     }
 
-    // CHECK USER
-
-    const existingUser =
-      await pool.query(
-
-        `
-        SELECT *
-        FROM users
-
-        WHERE email = $1
-        `,
-
-        [email]
+    if (!EMAIL_REGEX.test(email)) {
+      return Response.json(
+        { success: false, message: 'Invalid email address' },
+        { status: 400 }
       )
-
-    if (
-      existingUser.rows.length > 0
-    ) {
-
-      return Response.json({
-
-        success: false,
-
-        message:
-          'Email already exists',
-      })
     }
 
-    // HASH PASSWORD
-
-    const hashedPassword =
-      await bcrypt.hash(
-        password,
-        10
+    if (password.length < 6) {
+      return Response.json(
+        { success: false, message: 'Password must be at least 6 characters' },
+        { status: 400 }
       )
+    }
 
-    // INSERT USER
+    if (password.length > 128) {
+      return Response.json(
+        { success: false, message: 'Password too long (max 128 characters)' },
+        { status: 400 }
+      )
+    }
+
+    const existing = await pool.query(
+      'SELECT id FROM users WHERE email = $1 LIMIT 1',
+      [email]
+    )
+
+    if (existing.rows.length > 0) {
+      return Response.json(
+        { success: false, message: 'Email already exists' },
+        { status: 409 }
+      )
+    }
+
+    // 12 rounds: ~250ms per hash — better than 10 for 2024 hardware
+    const hashedPassword = await bcrypt.hash(password, 12)
 
     await pool.query(
-
-      `
-      INSERT INTO users (
-
-        name,
-        email,
-        password
-
-      )
-
-      VALUES ($1,$2,$3)
-      `,
-
-      [
-        name,
-        email,
-        hashedPassword,
-      ]
+      'INSERT INTO users (name, email, password) VALUES ($1, $2, $3)',
+      [name, email, hashedPassword]
     )
 
-    return Response.json({
-
-      success: true,
-
-      message:
-        'Signup successful',
-    })
-
+    return Response.json({ success: true, message: 'Signup successful' })
   } catch (error) {
-
-    console.log(
-      'SIGNUP ERROR:',
-      error
+    return Response.json(
+      { success: false, message: 'Signup failed' },
+      { status: 500 }
     )
-
-    return Response.json({
-
-      success: false,
-
-      message:
-        'Signup failed',
-    })
   }
 }

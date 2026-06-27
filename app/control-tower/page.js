@@ -1,625 +1,133 @@
 'use client'
 
-import { useEffect, useState }
-from 'react'
-
-export default function ControlTowerPage() {
-
-  const [rows, setRows] =
-    useState([])
-
-  const [loading, setLoading] =
-    useState(false)
-
-  const [search, setSearch] =
-    useState('')
-
-  // COUNTS
-
-  const [totalCount, setTotalCount] =
-    useState(0)
-
-  const [
-    availableCount,
-    setAvailableCount,
-  ] = useState(0)
-
-  const [activeCount, setActiveCount] =
-    useState(0)
-
-  const [
-    activeTestModeCount,
-    setActiveTestModeCount,
-  ] = useState(0)
-
-  const [
-    tempDisconnectCount,
-    setTempDisconnectCount,
-  ] = useState(0)
-
-  const [
-    safeCustodyCount,
-    setSafeCustodyCount,
-  ] = useState(0)
-
-  useEffect(() => {
-
-    fetchData()
-
-    fetchCounts()
-
-  }, [])
-
-  // FETCH TABLE DATA
-
-  const fetchData =
-    async (
-      searchValue = ''
-    ) => {
-
-      try {
-
-        setLoading(true)
-
-        const response =
-          await fetch(
-
-            `/api/control-tower?search=${searchValue}`
-          )
-
-        const result =
-          await response.json()
-
-        setRows(
-          result.data || []
-        )
-
-      } catch (error) {
-
-        console.log(error)
-
-        alert(
-          'No data found'
-        )
-
-      } finally {
-
-        setLoading(false)
-      }
-    }
-
-  // DASHBOARD COUNTS
-
-  const fetchCounts =
-    async () => {
-
-      try {
-
-        const response =
-          await fetch(
-            '/api/dashboard-counts'
-          )
-
-        const result =
-          await response.json()
-
-        setTotalCount(
-          result.total_count || 0
-        )
-
-        setAvailableCount(
-          result.available_count || 0
-        )
-
-        setActiveCount(
-          result.active_count || 0
-        )
-
-        setActiveTestModeCount(
-          result.active_test_mode_count || 0
-        )
-
-        setTempDisconnectCount(
-          result.temp_disconnect_count || 0
-        )
-
-        setSafeCustodyCount(
-          result.safe_custody_count || 0
-        )
-
-      } catch (error) {
-
-        console.log(
-          'Dashboard Count Error:',
-          error
-        )
-      }
-    }
-
-  // SEARCH BUTTON
-
-  const handleSearch =
-    async () => {
-
-      await fetchData(
-        search
-      )
-    }
-
-  // CSV DOWNLOAD
-
-  const downloadCSV =
-    async () => {
-
-      try {
-
-        const response =
-          await fetch(
-
-            '/api/control-tower?download=true'
-          )
-
-        const result =
-          await response.json()
-
-        const data =
-          result.data || []
-
-        const headers = [
-
-          'SIM No',
-
-          'Mobile No',
-
-          'Status',
-
-          'Activation Date',
-
-          'Safe Custody Date',
-        ]
-
-        const csvRows = [
-          headers.join(',')
-        ]
-
-        data.forEach((row) => {
-
-          csvRows.push([
-
-            row.sim_no || '',
-
-            row.mobile_no || '',
-
-            row.status || '',
-
-            row.activation_date || '',
-
-            row.safeCustody_date || '',
-
-          ].join(','))
-        })
-
-        const blob =
-          new Blob(
-
-            [csvRows.join('\n')],
-
-            {
-              type:
-                'text/csv',
-            }
-          )
-
-        const url =
-          window.URL
-            .createObjectURL(blob)
-
-        const a =
-          document
-            .createElement('a')
-
-        a.href = url
-
-        a.download =
-          'all_sim_data.csv'
-
-        a.click()
-
-      } catch (error) {
-
-        console.log(error)
-
-        alert(
-          'CSV Download Failed'
-        )
-      }
-    }
-
+import { useEffect, useState } from 'react'
+import { buildCSV } from '@/lib/csv'
+import DashboardLayout from '@/lib/DashboardLayout'
+import { useAuth } from '@/lib/useAuth'
+
+function Card({ title, value, color }) {
   return (
-
-    <div className="
-      min-h-screen
-      bg-gray-100
-      p-6
-    ">
-
-      <div className="
-        max-w-7xl
-        mx-auto
-        bg-white
-        rounded-3xl
-        shadow-xl
-        p-6
-      ">
-
-        {/* HEADER */}
-
-        <div className="
-          flex
-          justify-between
-          items-center
-          mb-6
-          flex-wrap
-          gap-4
-        ">
-
-          <div>
-
-            <h1 className="
-              text-4xl
-              font-bold
-            ">
-              SIM Overview
-            </h1>
-
-          </div>
-
-          <button
-            onClick={() =>
-              window.history.back()
-            }
-            className="
-              bg-black
-              text-white
-              px-6
-              py-3
-              rounded-2xl
-              font-semibold
-            "
-          >
-            Back
-          </button>
-
-        </div>
-
-        {/* SEARCH SECTION */}
-
-        <div className="
-          grid
-          md:grid-cols-3
-          gap-4
-          mb-6
-        ">
-
-          <input
-            type="text"
-
-            placeholder="
-Search SIM / Mobile
-            "
-
-            value={search}
-
-            onChange={(e) =>
-              setSearch(
-                e.target.value
-              )
-            }
-
-            className="
-              border
-              rounded-2xl
-              p-4
-              outline-none
-              w-full
-            "
-          />
-
-          <button
-            onClick={
-              handleSearch
-            }
-            className="
-              bg-blue-600
-              text-white
-              rounded-2xl
-              font-semibold
-            "
-          >
-            Search
-          </button>
-
-          <button
-            onClick={
-              downloadCSV
-            }
-            className="
-              bg-purple-600
-              text-white
-              rounded-2xl
-              font-semibold
-            "
-          >
-            Download CSV
-          </button>
-
-        </div>
-
-        {/* DASHBOARD CARDS */}
-
-        <div className="
-          grid
-          grid-cols-2
-          md:grid-cols-6
-          gap-4
-          mb-8
-        ">
-
-          <Card
-            title="Total"
-            value={totalCount}
-            color="bg-indigo-600"
-          />
-
-          <Card
-            title="Available"
-            value={availableCount}
-            color="bg-cyan-600"
-          />
-
-          <Card
-            title="Active"
-            value={activeCount}
-            color="bg-green-600"
-          />
-
-          <Card
-            title="Test Mode"
-            value={activeTestModeCount}
-            color="bg-pink-600"
-          />
-
-          <Card
-            title="Temp Disconnect"
-            value={tempDisconnectCount}
-            color="bg-yellow-500"
-          />
-
-          <Card
-            title="Safe Custody"
-            value={safeCustodyCount}
-            color="bg-red-600"
-          />
-
-        </div>
-
-        {/* TABLE */}
-
-        <div className="
-          overflow-auto
-          border
-          rounded-2xl
-        ">
-
-          <table className="
-            w-full
-            border-collapse
-          ">
-
-            <thead>
-
-              <tr className="
-                bg-black
-                text-white
-              ">
-
-                <th className="
-                  border
-                  p-4
-                ">
-                  SIM No
-                </th>
-
-                <th className="
-                  border
-                  p-4
-                ">
-                  Mobile No
-                </th>
-
-                <th className="
-                  border
-                  p-4
-                ">
-                  Status
-                </th>
-
-                <th className="
-                  border
-                  p-4
-                ">
-                  Activation Date
-                </th>
-
-                <th className="
-                  border
-                  p-4
-                ">
-                  Safe Custody Date
-                </th>
-
-              </tr>
-
-            </thead>
-
-            <tbody>
-
-              {
-                loading
-
-                ? (
-
-                  <tr>
-
-                    <td
-                      colSpan="5"
-                      className="
-                        text-center
-                        p-10
-                      "
-                    >
-                      Loading...
-                    </td>
-
-                  </tr>
-                )
-
-                : rows.length === 0
-
-                ? (
-
-                  <tr>
-
-                    <td
-                      colSpan="5"
-                      className="
-                        text-center
-                        p-10
-                      "
-                    >
-                      No data found
-                    </td>
-
-                  </tr>
-                )
-
-                : (
-
-                  rows.map(
-                    (
-                      row,
-                      index
-                    ) => (
-
-                      <tr
-                        key={index}
-                        className="
-                          hover:bg-gray-100
-                        "
-                      >
-
-                        <td className="
-                          border
-                          p-3
-                        ">
-                          {row.sim_no}
-                        </td>
-
-                        <td className="
-                          border
-                          p-3
-                        ">
-                          {row.mobile_no}
-                        </td>
-
-                        <td className="
-                          border
-                          p-3
-                        ">
-
-                          <span
-                            className="
-                              bg-green-600
-                              text-white
-                              px-3
-                              py-1
-                              rounded-full
-                              text-sm
-                            "
-                          >
-                            {row.status}
-                          </span>
-
-                        </td>
-
-                        <td className="
-                          border
-                          p-3
-                        ">
-                          {
-                            row.activation_date
-                            || '-'
-                          }
-                        </td>
-
-                        <td className="
-                          border
-                          p-3
-                        ">
-                          {
-                            row.safeCustody_date
-                            || '-'
-                          }
-                        </td>
-
-                      </tr>
-                    )
-                  )
-                )
-              }
-
-            </tbody>
-
-          </table>
-
-        </div>
-
-      </div>
-
+    <div className={`${color} text-white rounded-3xl p-4 shadow-lg`}>
+      <p className="text-xs opacity-80 mb-1">{title}</p>
+      <h2 className="text-2xl font-bold">{value.toLocaleString()}</h2>
     </div>
   )
 }
 
-// CARD COMPONENT
+export default function ControlTowerPage() {
+  const { user, loading: authLoading } = useAuth()
+  const [rows, setRows] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [search, setSearch] = useState('')
+  const [counts, setCounts] = useState({ total_count: 0, available_count: 0, active_count: 0, active_test_mode_count: 0, temp_disconnect_count: 0, safe_custody_count: 0 })
 
-function Card({
+  useEffect(() => {
+    fetchData()
+    fetchCounts()
+  }, [])
 
-  title,
+  const fetchData = async (searchValue = '') => {
+    try {
+      setLoading(true)
+      const response = await fetch(`/api/control-tower?search=${encodeURIComponent(searchValue)}`)
+      const result = await response.json()
+      if (result.success) setRows(result.data || [])
+    } catch {
+      alert('Failed to load data')
+    } finally {
+      setLoading(false)
+    }
+  }
 
-  value,
+  const fetchCounts = async () => {
+    try {
+      const response = await fetch('/api/dashboard-counts')
+      const result = await response.json()
+      if (result.success) setCounts(result)
+    } catch {}
+  }
 
-  color,
+  const downloadCSV = async () => {
+    try {
+      const response = await fetch('/api/control-tower?download=true')
+      const result = await response.json()
+      const data = result.data || []
+      const headers = ['SIM No', 'Mobile No', 'Status', 'Activation Date', 'Safe Custody Date']
+      const csvRows = [headers.join(','), ...data.map((row) => [row.sim_no, row.mobile_no, row.status, row.activation_date, row.safeCustody_date].join(','))]
+      const a = document.createElement('a')
+      a.href = URL.createObjectURL(new Blob([csvRows.join('\n')], { type: 'text/csv' }))
+      a.download = `sim_overview_${Date.now()}.csv`
+      a.click()
+    } catch {
+      alert('Download failed')
+    }
+  }
 
-}) {
+  if (authLoading) return <div className="min-h-screen flex items-center justify-center"><p className="text-gray-500">Loading...</p></div>
+  if (!user) return null
 
   return (
+    <DashboardLayout activeTitle="SIM Overview" user={user}>
+      <div className="min-h-screen bg-gray-100 p-6">
+        <div className="max-w-7xl mx-auto bg-white rounded-3xl shadow-xl p-6">
 
-    <div className={`
-      ${color}
-      text-white
-      rounded-3xl
-      p-6
-    `}>
+          {/* Search */}
+          <div className="grid md:grid-cols-3 gap-4 mb-6">
+            <input
+              type="text"
+              placeholder="Search SIM / Mobile"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && fetchData(search)}
+              className="border rounded-2xl p-4 outline-none"
+            />
+            <button onClick={() => fetchData(search)} disabled={loading} className="bg-blue-600 text-white rounded-2xl font-semibold disabled:opacity-60">
+              {loading ? 'Searching...' : 'Search'}
+            </button>
+            <button onClick={downloadCSV} className="bg-purple-600 text-white rounded-2xl font-semibold">
+              Download CSV
+            </button>
+          </div>
 
-      <p>{title}</p>
+          {/* Stats */}
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-8">
+            <Card title="Total" value={counts.total_count || 0} color="bg-indigo-600" />
+            <Card title="Available" value={counts.available_count || 0} color="bg-cyan-600" />
+            <Card title="Active" value={counts.active_count || 0} color="bg-green-600" />
+            <Card title="Test Mode" value={counts.active_test_mode_count || 0} color="bg-pink-600" />
+            <Card title="Temp Disconnect" value={counts.temp_disconnect_count || 0} color="bg-yellow-500" />
+            <Card title="Safe Custody" value={counts.safe_custody_count || 0} color="bg-red-600" />
+          </div>
 
-      <h2 className="
-        text-3xl
-        font-bold
-      ">
-        {value}
-      </h2>
-
-    </div>
+          {/* Table */}
+          <div className="overflow-auto border rounded-2xl">
+            <table className="w-full border-collapse text-sm">
+              <thead>
+                <tr className="bg-black text-white">
+                  {['SIM No', 'Mobile No', 'Status', 'Activation Date', 'Safe Custody Date'].map((h) => (
+                    <th key={h} className="border p-4">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {loading ? (
+                  <tr><td colSpan="5" className="border p-10 text-center text-gray-500">Loading...</td></tr>
+                ) : rows.length === 0 ? (
+                  <tr><td colSpan="5" className="border p-10 text-center text-gray-500">No data found</td></tr>
+                ) : rows.map((row, i) => (
+                  <tr key={i} className="hover:bg-gray-50">
+                    <td className="border p-4">{row.sim_no}</td>
+                    <td className="border p-4">{row.mobile_no}</td>
+                    <td className="border p-4">{row.status}</td>
+                    <td className="border p-4">{row.activation_date}</td>
+                    <td className="border p-4">{row.safeCustody_date}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </DashboardLayout>
   )
 }
