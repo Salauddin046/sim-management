@@ -11,7 +11,7 @@
   "dependencies": {
     "bcryptjs": "^3.0.2",
     "jsonwebtoken": "^9.0.3",
-    "next": "15.3.2",
+    "next": "15.3.8",
     "nodemailer": "^6.10.1",
     "pg": "^8.13.3",
     "react": "^19.0.0",
