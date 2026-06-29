@@ -1,6 +1,4 @@
 import bcrypt from 'bcryptjs'
-import pool from '@/lib/db'
-import { createSessionCookie } from '@/lib/auth'
 
 export async function POST(req) {
   try {
@@ -15,10 +13,19 @@ export async function POST(req) {
       )
     }
 
+    // Inline pool to avoid import issues
+    const { Pool } = await import('pg')
+    const pool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: false },
+    })
+
     const result = await pool.query(
       'SELECT id, name, email, password FROM users WHERE email = $1 LIMIT 1',
       [email]
     )
+
+    await pool.end()
 
     const INVALID_MSG = 'Invalid email or password'
 
@@ -33,7 +40,14 @@ export async function POST(req) {
       return Response.json({ success: false, message: INVALID_MSG }, { status: 401 })
     }
 
-    const sessionCookie = createSessionCookie(user)
+    // Inline session cookie to avoid auth.js import
+    const { createHmac } = await import('crypto')
+    const secret = process.env.SESSION_SECRET || ''
+    const payload = { id: user.id, name: user.name, email: user.email }
+    const encoded = Buffer.from(JSON.stringify(payload)).toString('base64url')
+    const sig = createHmac('sha256', secret).update(encoded).digest('base64url')
+    const token = `${encoded}.${sig}`
+    const sessionCookie = `session=${token}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=28800`
 
     return Response.json(
       { success: true, user: { id: user.id, name: user.name, email: user.email } },
@@ -41,9 +55,10 @@ export async function POST(req) {
     )
 
   } catch (error) {
-    console.error('LOGIN CRASH:', error.message, error.stack)
+    const msg = error?.message || error?.toString() || 'Unknown error'
+    console.error('LOGIN CRASH:', msg)
     return Response.json(
-      { success: false, message: error.message },
+      { success: false, message: msg },
       { status: 500 }
     )
   }
