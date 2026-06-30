@@ -1,12 +1,13 @@
 import pool from '@/lib/db'
 
 // Vercel Pro allows up to 300s (5 min) function duration.
-// Paginating ~590k+ SIMs at 500/page = ~1200 calls.
-// At ~150-300ms per call this totals roughly 3-6 minutes, so we set the max.
+// Pages are fetched in parallel batches to stay well under that limit
+// even if Airtel's per-call latency is higher than expected.
 export const maxDuration = 300
 
 const PAGE_LIMIT = 500
 const MAX_PAGES_SAFETY = 5000 // hard ceiling so a bug in Airtel's hasnext flag can't loop forever
+const BATCH_SIZE = 15 // pages fetched concurrently per round
 
 // Buckets correspond to the dashboard's 6 cards.
 // Confirmed real values from Airtel: ACTIVE, TEMP_DISCONNECT.
@@ -49,12 +50,9 @@ async function fetchAirtelPage(page, airtelAuth) {
   }
 }
 
-// Optional shared-secret check so this isn't callable by anyone who finds the URL.
-// Set CRON_SECRET in Vercel env vars and Vercel automatically sends it as a Bearer token
-// to cron-triggered requests when configured in vercel.json.
 function isAuthorized(request) {
   const cronSecret = process.env.CRON_SECRET
-  if (!cronSecret) return true // no secret configured, allow (set one in production)
+  if (!cronSecret) return true
   const authHeader = request.headers.get('authorization')
   return authHeader === `Bearer ${cronSecret}`
 }
@@ -90,21 +88,37 @@ export async function GET(request) {
 
   try {
     while (hasNext && page <= MAX_PAGES_SAFETY) {
-      const { rows, hasNext: nextFlag, totalSim } = await fetchAirtelPage(page, airtelAuth)
-
-      if (totalSim && !reportedTotal) reportedTotal = totalSim
-
-      for (const row of rows) {
-        const bucket = classifyStatus(row.status)
-        counts[bucket] += 1
-        totalProcessed += 1
+      const batchPages = []
+      for (let i = 0; i < BATCH_SIZE; i++) {
+        batchPages.push(page + i)
       }
 
-      hasNext = nextFlag
-      page += 1
+      const results = await Promise.all(
+        batchPages.map((p) => fetchAirtelPage(p, airtelAuth))
+      )
 
-      // Stop early if Airtel returns an empty page despite hasNext=true (defensive)
-      if (rows.length === 0) break
+      let sawEmptyOrEnd = false
+
+      for (const { rows, hasNext: nextFlag, totalSim } of results) {
+        if (totalSim && !reportedTotal) reportedTotal = totalSim
+
+        for (const row of rows) {
+          const bucket = classifyStatus(row.status)
+          counts[bucket] += 1
+          totalProcessed += 1
+        }
+
+        if (rows.length === 0 || !nextFlag) {
+          sawEmptyOrEnd = true
+        }
+      }
+
+      page += BATCH_SIZE
+
+      if (sawEmptyOrEnd) {
+        hasNext = false
+        break
+      }
     }
 
     const totalCount = reportedTotal ? parseInt(reportedTotal, 10) : totalProcessed
