@@ -9,10 +9,10 @@ const PAGES_PER_INVOCATION = 180
 function classifyStatus(status) {
   const s = (status || '').toUpperCase().trim()
   if (s === 'ACTIVE') return 'active_count'
-  if (s === 'AVAILABLE') return 'available_count'
-  if (s === 'TEST_MODE' || s === 'ACTIVE_TEST_MODE' || s === 'TESTMODE') return 'active_test_mode_count'
-  if (s === 'TEMP_DISCONNECT' || s === 'TEMPDISCONNECT') return 'temp_disconnect_count'
-  if (s === 'SAFE_CUSTODY' || s === 'SAFECUSTODY') return 'safe_custody_count'
+  if (s === 'INITIAL') return 'available_count'
+  if (s === 'ACTIVATED_ON_TEST_MODE') return 'active_test_mode_count'
+  if (s === 'TEMP_DISCONNECT') return 'temp_disconnect_count'
+  if (s === 'SAFE_CUSTODY') return 'safe_custody_count'
   return 'other_count'
 }
 
