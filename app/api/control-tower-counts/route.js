@@ -1,10 +1,10 @@
 import pool from '@/lib/db'
 
-export const maxDuration = 300
+export const maxDuration = 90
 
 const PAGE_LIMIT = 500
-const MAX_PAGES_SAFETY = 5000
 const BATCH_SIZE = 15
+const PAGES_PER_INVOCATION = 180
 
 function classifyStatus(status) {
   const s = (status || '').toUpperCase().trim()
@@ -63,6 +63,37 @@ function isAuthorized(request) {
   return authHeader === `Bearer ${cronSecret}`
 }
 
+async function getProgress() {
+  const result = await pool.query(
+    'SELECT * FROM dashboard_sync_progress WHERE id = 1'
+  )
+  return result.rows[0]
+}
+
+async function saveProgress(updates) {
+  const fields = Object.keys(updates)
+  const setClauses = fields.map((f, i) => `${f} = $${i + 1}`).join(', ')
+  const values = fields.map((f) => updates[f])
+
+  await pool.query(
+    `UPDATE dashboard_sync_progress SET ${setClauses}, updated_at = NOW() WHERE id = 1`,
+    values
+  )
+}
+
+async function triggerNextChunk(request, cronSecret) {
+  const baseUrl = `${request.nextUrl?.protocol || 'https:'}//${request.headers.get('host')}`
+  const url = `${baseUrl}/api/control-tower-counts`
+
+  // Fire and forget - don't await the full completion, just kick it off
+  fetch(url, {
+    headers: cronSecret ? { Authorization: `Bearer ${cronSecret}` } : {},
+  }).catch(() => {
+    // Errors here don't matter - if this fails, the chain stops and
+    // the progress row will show 'in_progress' stuck, which is visible for debugging
+  })
+}
+
 export async function GET(request) {
   if (!isAuthorized(request)) {
     return Response.json({ success: false, message: 'Unauthorized' }, { status: 401 })
@@ -77,109 +108,70 @@ export async function GET(request) {
   }
 
   const { searchParams } = new URL(request.url)
-  const debugMode = searchParams.get('debug') === 'true'
-  const maxPagesOverride = searchParams.get('maxPages')
-    ? parseInt(searchParams.get('maxPages'), 10)
-    : null
+  const resetFlag = searchParams.get('reset') === 'true'
 
-  const startedAt = Date.now()
+  let progress = await getProgress()
 
-  if (debugMode) {
-    const debugBatchMode = searchParams.get('batchTest') === 'true'
+  if (!progress) {
+    return Response.json(
+      { success: false, message: 'dashboard_sync_progress row missing - run the setup SQL first' },
+      { status: 500 }
+    )
+  }
 
-    if (debugBatchMode) {
-      const testBatchSize = maxPagesOverride || 15
-      const batchStart = Date.now()
+  // Start a fresh sync if idle, or if explicitly reset
+  if (progress.status === 'idle' || resetFlag) {
+    await saveProgress({
+      current_page: 1,
+      total_sim: null,
+      active_count: 0,
+      available_count: 0,
+      active_test_mode_count: 0,
+      temp_disconnect_count: 0,
+      safe_custody_count: 0,
+      other_count: 0,
+      total_processed: 0,
+      status: 'in_progress',
+      started_at: new Date().toISOString(),
+    })
+    progress = await getProgress()
+  }
 
-      const batchPages = []
-      for (let i = 1; i <= testBatchSize; i++) batchPages.push(i)
-
-      const results = await Promise.allSettled(
-        batchPages.map((p) => fetchAirtelPage(p, airtelAuth))
-      )
-
-      const batchTotalMs = Date.now() - batchStart
-      const succeeded = results.filter((r) => r.status === 'fulfilled').length
-      const failed = results.filter((r) => r.status === 'rejected').length
-
-      return Response.json({
-        success: true,
-        debug: true,
-        batchTest: true,
-        batch_size: testBatchSize,
-        batch_total_ms: batchTotalMs,
-        succeeded,
-        failed,
-        verdict:
-          batchTotalMs < 3000
-            ? 'LIKELY PARALLEL - batch completed in roughly single-call time'
-            : 'LIKELY SERIALIZED - batch took roughly as long as sequential calls would',
-      })
-    }
-
-    const pagesToTest = maxPagesOverride || 5
-    const timings = []
-
-    for (let p = 1; p <= pagesToTest; p++) {
-      const callStart = Date.now()
-      try {
-        const result = await fetchAirtelPage(p, airtelAuth)
-        timings.push({
-          page: p,
-          ms: Date.now() - callStart,
-          rowCount: result.rows.length,
-          hasNext: result.hasNext,
-          totalSim: result.totalSim,
-        })
-      } catch (err) {
-        timings.push({ page: p, error: err.message, ms: Date.now() - callStart })
-      }
-    }
-
-    const totalMs = Date.now() - startedAt
-    const validTimings = timings.filter((t) => !t.error)
-    const avgMs = validTimings.length
-      ? validTimings.reduce((sum, t) => sum + t.ms, 0) / validTimings.length
-      : null
-
+  if (progress.status === 'done') {
     return Response.json({
       success: true,
-      debug: true,
-      pages_tested: pagesToTest,
-      total_ms: totalMs,
-      avg_ms_per_call: avgMs,
-      timings,
-      projected_total_seconds_sequential: avgMs ? (avgMs * 1200) / 1000 : null,
+      message: 'Sync already completed. Use ?reset=true to start a new sync.',
+      progress,
     })
   }
 
-  const counts = {
-    active_count: 0,
-    available_count: 0,
-    active_test_mode_count: 0,
-    temp_disconnect_count: 0,
-    safe_custody_count: 0,
-    other_count: 0,
-  }
-
-  let totalProcessed = 0
-  let reportedTotal = null
-  let page = 1
+  const startPage = progress.current_page
+  let page = startPage
+  const endPage = startPage + PAGES_PER_INVOCATION
   let hasNext = true
-  const effectiveMaxPages = maxPagesOverride || MAX_PAGES_SAFETY
+  let reachedEnd = false
+
+  const counts = {
+    active_count: progress.active_count,
+    available_count: progress.available_count,
+    active_test_mode_count: progress.active_test_mode_count,
+    temp_disconnect_count: progress.temp_disconnect_count,
+    safe_custody_count: progress.safe_custody_count,
+    other_count: progress.other_count,
+  }
+  let totalProcessed = progress.total_processed
+  let reportedTotal = progress.total_sim
 
   try {
-    while (hasNext && page <= effectiveMaxPages) {
+    while (hasNext && page < endPage) {
       const batchPages = []
-      for (let i = 0; i < BATCH_SIZE; i++) {
+      for (let i = 0; i < BATCH_SIZE && page + i < endPage; i++) {
         batchPages.push(page + i)
       }
 
       const results = await Promise.all(
         batchPages.map((p) => fetchAirtelPage(p, airtelAuth))
       )
-
-      let sawEmptyOrEnd = false
 
       for (const { rows, hasNext: nextFlag, totalSim } of results) {
         if (totalSim && !reportedTotal) reportedTotal = totalSim
@@ -191,50 +183,83 @@ export async function GET(request) {
         }
 
         if (rows.length === 0 || !nextFlag) {
-          sawEmptyOrEnd = true
+          reachedEnd = true
+          hasNext = false
         }
       }
 
-      page += BATCH_SIZE
-
-      if (sawEmptyOrEnd) {
-        hasNext = false
-        break
-      }
+      page += batchPages.length
     }
 
-    const totalCount = reportedTotal ? parseInt(reportedTotal, 10) : totalProcessed
+    if (reachedEnd) {
+      // Finished - write final tally to sim_dashboard_counts and mark done
+      const totalCount = reportedTotal ? parseInt(reportedTotal, 10) : totalProcessed
 
-    await pool.query(
-      `INSERT INTO sim_dashboard_counts
-        (total_count, available_count, active_count, active_test_mode_count, temp_disconnect_count, safe_custody_count, updated_at)
-       VALUES ($1, $2, $3, $4, $5, $6, NOW())`,
-      [
-        totalCount,
-        counts.available_count,
-        counts.active_count,
-        counts.active_test_mode_count,
-        counts.temp_disconnect_count,
-        counts.safe_custody_count,
-      ]
-    )
+      await pool.query(
+        `INSERT INTO sim_dashboard_counts
+          (total_count, available_count, active_count, active_test_mode_count, temp_disconnect_count, safe_custody_count, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, NOW())`,
+        [
+          totalCount,
+          counts.available_count,
+          counts.active_count,
+          counts.active_test_mode_count,
+          counts.temp_disconnect_count,
+          counts.safe_custody_count,
+        ]
+      )
 
-    const durationSeconds = ((Date.now() - startedAt) / 1000).toFixed(1)
+      await saveProgress({
+        current_page: page,
+        total_sim: reportedTotal,
+        ...counts,
+        total_processed: totalProcessed,
+        status: 'done',
+      })
 
-    return Response.json({
-      success: true,
-      total_count: totalCount,
-      total_processed: totalProcessed,
-      pages_fetched: page - 1,
-      duration_seconds: durationSeconds,
-      counts,
-    })
+      return Response.json({
+        success: true,
+        finished: true,
+        total_count: totalCount,
+        total_processed: totalProcessed,
+        counts,
+      })
+    } else {
+      // Not finished - save progress and trigger next chunk
+      await saveProgress({
+        current_page: page,
+        total_sim: reportedTotal,
+        ...counts,
+        total_processed: totalProcessed,
+        status: 'in_progress',
+      })
+
+      const cronSecret = process.env.CRON_SECRET
+      await triggerNextChunk(request, cronSecret)
+
+      return Response.json({
+        success: true,
+        finished: false,
+        pages_processed_this_chunk: page - startPage,
+        current_page: page,
+        total_processed: totalProcessed,
+        message: 'Chunk complete, next chunk triggered',
+      })
+    }
   } catch (error) {
+    await saveProgress({
+      current_page: page,
+      total_sim: reportedTotal,
+      ...counts,
+      total_processed: totalProcessed,
+      status: 'error',
+    })
+
     return Response.json(
       {
         success: false,
         message: error.message || 'Sync failed',
-        pages_completed_before_failure: page - 1,
+        page_at_failure: page,
         partial_counts: counts,
       },
       { status: 500 }
