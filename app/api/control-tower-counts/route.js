@@ -85,6 +85,38 @@ export async function GET(request) {
   const startedAt = Date.now()
 
   if (debugMode) {
+    const debugBatchMode = searchParams.get('batchTest') === 'true'
+
+    if (debugBatchMode) {
+      const testBatchSize = maxPagesOverride || 15
+      const batchStart = Date.now()
+
+      const batchPages = []
+      for (let i = 1; i <= testBatchSize; i++) batchPages.push(i)
+
+      const results = await Promise.allSettled(
+        batchPages.map((p) => fetchAirtelPage(p, airtelAuth))
+      )
+
+      const batchTotalMs = Date.now() - batchStart
+      const succeeded = results.filter((r) => r.status === 'fulfilled').length
+      const failed = results.filter((r) => r.status === 'rejected').length
+
+      return Response.json({
+        success: true,
+        debug: true,
+        batchTest: true,
+        batch_size: testBatchSize,
+        batch_total_ms: batchTotalMs,
+        succeeded,
+        failed,
+        verdict:
+          batchTotalMs < 3000
+            ? 'LIKELY PARALLEL - batch completed in roughly single-call time'
+            : 'LIKELY SERIALIZED - batch took roughly as long as sequential calls would',
+      })
+    }
+
     const pagesToTest = maxPagesOverride || 5
     const timings = []
 
