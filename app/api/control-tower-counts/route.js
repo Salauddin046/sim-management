@@ -1,7 +1,7 @@
 import { getSession } from '@/lib/auth'
 
 const MAX_SEARCH_PAGES = 50
-const BATCH_SIZE = 15 // matches the concurrency Airtel can actually handle (measured earlier)
+const BATCH_SIZE = 4 // matches the concurrency Airtel can actually handle (measured earlier)
 
 function formatRow(item) {
   const activationRaw = item.activation_date || item.activationdate
