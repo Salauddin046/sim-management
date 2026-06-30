@@ -6,7 +6,6 @@ export async function POST(req) {
   try {
     const body = await req.json()
     const email = String(body.email || '').trim().toLowerCase()
-    // DO NOT trim password — spaces are valid password characters (NIST 800-63B)
     const password = String(body.password || '')
 
     if (!email || !password) {
@@ -21,7 +20,6 @@ export async function POST(req) {
       [email]
     )
 
-    // Same message for wrong email and wrong password — prevents user enumeration
     const INVALID_MSG = 'Invalid email or password'
 
     if (result.rows.length === 0) {
@@ -41,9 +39,11 @@ export async function POST(req) {
       { success: true, user: { id: user.id, name: user.name, email: user.email } },
       { status: 200, headers: { 'Set-Cookie': sessionCookie } }
     )
+
   } catch (error) {
+    console.error('LOGIN CRASH:', error.message, error.stack)
     return Response.json(
-      { success: false, message: 'Login failed' },
+      { success: false, message: error.message || 'Login failed' },
       { status: 500 }
     )
   }

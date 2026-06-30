@@ -34,7 +34,7 @@ async function fetchAirtelPage(page, limit, airtelAuth) {
     }
   )
   const result = await response.json()
-  return result?.data?.results || []
+  return { rows: result?.data?.results || [], raw: result, httpStatus: response.status }
 }
 
 export async function GET(request) {
@@ -64,9 +64,15 @@ export async function GET(request) {
       let allRows = []
       let page = 1
       let truncated = false
+      let firstPageRaw = null
+      let firstPageHttpStatus = null
 
       while (page <= MAX_SEARCH_PAGES) {
-        const rows = await fetchAirtelPage(page, 500, airtelAuth)
+        const { rows, raw, httpStatus } = await fetchAirtelPage(page, 500, airtelAuth)
+        if (page === 1) {
+          firstPageRaw = raw
+          firstPageHttpStatus = httpStatus
+        }
         if (rows.length === 0) break
         allRows = [...allRows, ...rows.map(formatRow)]
         if (rows.length < 500) break
@@ -87,12 +93,16 @@ export async function GET(request) {
         count: filtered.length,
         data: filtered,
         truncated,
+        debug_total_fetched: allRows.length,
+        debug_sample_formatted: allRows.slice(0, 3),
+        debug_raw_first_page: firstPageRaw,
+        debug_http_status: firstPageHttpStatus,
       })
     }
 
     // NORMAL / DOWNLOAD MODE
     const limit = download === 'true' ? 5000 : 500
-    const rows = await fetchAirtelPage(1, limit, airtelAuth)
+    const { rows } = await fetchAirtelPage(1, limit, airtelAuth)
     const formattedRows = rows.map(formatRow)
 
     return Response.json({
@@ -102,7 +112,7 @@ export async function GET(request) {
     })
   } catch (error) {
     return Response.json(
-      { success: false, message: 'Failed to fetch SIM data' },
+      { success: false, message: 'Failed to fetch SIM data', error: String(error) },
       { status: 500 }
     )
   }
