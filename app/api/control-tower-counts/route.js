@@ -85,12 +85,11 @@ async function triggerNextChunk(request, cronSecret) {
   const baseUrl = `${request.nextUrl?.protocol || 'https:'}//${request.headers.get('host')}`
   const url = `${baseUrl}/api/control-tower-counts`
 
-  // Fire and forget - don't await the full completion, just kick it off
   fetch(url, {
     headers: cronSecret ? { Authorization: `Bearer ${cronSecret}` } : {},
   }).catch(() => {
-    // Errors here don't matter - if this fails, the chain stops and
-    // the progress row will show 'in_progress' stuck, which is visible for debugging
+    // If this fails, the chain stops and the progress row stays 'in_progress',
+    // which is visible for debugging and safe to manually resume.
   })
 }
 
@@ -119,8 +118,10 @@ export async function GET(request) {
     )
   }
 
-  // Start a fresh sync if idle, or if explicitly reset
-  if (progress.status === 'idle' || resetFlag) {
+  // Start a fresh sync if idle/done, or if explicitly reset.
+  // Note: an 'error' status does NOT trigger a reset - it resumes cleanly
+  // from the last successfully saved page (see catch block below for why).
+  if (progress.status === 'idle' || progress.status === 'done' || resetFlag) {
     await saveProgress({
       current_page: 1,
       total_sim: null,
@@ -135,14 +136,6 @@ export async function GET(request) {
       started_at: new Date().toISOString(),
     })
     progress = await getProgress()
-  }
-
-  if (progress.status === 'done') {
-    return Response.json({
-      success: true,
-      message: 'Sync already completed. Use ?reset=true to start a new sync.',
-      progress,
-    })
   }
 
   const startPage = progress.current_page
@@ -192,7 +185,6 @@ export async function GET(request) {
     }
 
     if (reachedEnd) {
-      // Finished - write final tally to sim_dashboard_counts and mark done
       const totalCount = reportedTotal ? parseInt(reportedTotal, 10) : totalProcessed
 
       await pool.query(
@@ -225,7 +217,6 @@ export async function GET(request) {
         counts,
       })
     } else {
-      // Not finished - save progress and trigger next chunk
       await saveProgress({
         current_page: page,
         total_sim: reportedTotal,
@@ -247,11 +238,14 @@ export async function GET(request) {
       })
     }
   } catch (error) {
+    // CRITICAL: do NOT save counts/page progress here.
+    // This chunk failed partway through, and we don't know exactly which
+    // pages completed before the error vs which were mid-flight. Saving
+    // this partial state would cause double-counting on retry, since the
+    // retry would re-fetch pages already tallied in this failed attempt.
+    // Instead, leave current_page and all counts untouched at their last
+    // successfully saved values, so a retry resumes cleanly with no overlap.
     await saveProgress({
-      current_page: page,
-      total_sim: reportedTotal,
-      ...counts,
-      total_processed: totalProcessed,
       status: 'error',
     })
 
@@ -260,7 +254,7 @@ export async function GET(request) {
         success: false,
         message: error.message || 'Sync failed',
         page_at_failure: page,
-        partial_counts: counts,
+        note: 'Progress was not updated for this failed chunk. Retry will resume cleanly from the last successful checkpoint.',
       },
       { status: 500 }
     )
