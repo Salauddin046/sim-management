@@ -1,18 +1,11 @@
 import pool from '@/lib/db'
 
-// Vercel Pro allows up to 300s (5 min) function duration.
-// Pages are fetched in parallel batches to stay well under that limit
-// even if Airtel's per-call latency is higher than expected.
 export const maxDuration = 300
 
 const PAGE_LIMIT = 500
-const MAX_PAGES_SAFETY = 5000 // hard ceiling so a bug in Airtel's hasnext flag can't loop forever
-const BATCH_SIZE = 15 // pages fetched concurrently per round
+const MAX_PAGES_SAFETY = 5000
+const BATCH_SIZE = 15
 
-// Buckets correspond to the dashboard's 6 cards.
-// Confirmed real values from Airtel: ACTIVE, TEMP_DISCONNECT.
-// Unconfirmed but expected based on dashboard labels: AVAILABLE, TEST_MODE (or ACTIVE_TEST_MODE), SAFE_CUSTODY.
-// Anything not matching a known bucket falls into "other_count" so nothing is silently dropped.
 function classifyStatus(status) {
   const s = (status || '').toUpperCase().trim()
   if (s === 'ACTIVE') return 'active_count'
@@ -24,29 +17,42 @@ function classifyStatus(status) {
 }
 
 async function fetchAirtelPage(page, airtelAuth) {
-  const response = await fetch(
-    'https://airtelsim.intellicar.in/api/v1/airtel/sims/list',
-    {
-      method: 'POST',
-      headers: {
-        accept: 'application/json, text/plain, */*',
-        authorization: `Basic ${airtelAuth}`,
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({ page_no: page, limit: PAGE_LIMIT }),
-      cache: 'no-store',
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), 15000)
+
+  try {
+    const response = await fetch(
+      'https://airtelsim.intellicar.in/api/v1/airtel/sims/list',
+      {
+        method: 'POST',
+        headers: {
+          accept: 'application/json, text/plain, */*',
+          authorization: `Basic ${airtelAuth}`,
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({ page_no: page, limit: PAGE_LIMIT }),
+        cache: 'no-store',
+        signal: controller.signal,
+      }
+    )
+
+    if (!response.ok) {
+      throw new Error(`Airtel API returned HTTP ${response.status} on page ${page}`)
     }
-  )
 
-  if (!response.ok) {
-    throw new Error(`Airtel API returned HTTP ${response.status} on page ${page}`)
-  }
-
-  const result = await response.json()
-  return {
-    rows: result?.data?.results || [],
-    hasNext: result?.data?.hasnext ?? false,
-    totalSim: result?.data?.totalsim ?? null,
+    const result = await response.json()
+    return {
+      rows: result?.data?.results || [],
+      hasNext: result?.data?.hasnext ?? false,
+      totalSim: result?.data?.totalsim ?? null,
+    }
+  } catch (err) {
+    if (err.name === 'AbortError') {
+      throw new Error(`Airtel API timed out after 15s on page ${page}`)
+    }
+    throw err
+  } finally {
+    clearTimeout(timeoutId)
   }
 }
 
@@ -70,7 +76,50 @@ export async function GET(request) {
     )
   }
 
+  const { searchParams } = new URL(request.url)
+  const debugMode = searchParams.get('debug') === 'true'
+  const maxPagesOverride = searchParams.get('maxPages')
+    ? parseInt(searchParams.get('maxPages'), 10)
+    : null
+
   const startedAt = Date.now()
+
+  if (debugMode) {
+    const pagesToTest = maxPagesOverride || 5
+    const timings = []
+
+    for (let p = 1; p <= pagesToTest; p++) {
+      const callStart = Date.now()
+      try {
+        const result = await fetchAirtelPage(p, airtelAuth)
+        timings.push({
+          page: p,
+          ms: Date.now() - callStart,
+          rowCount: result.rows.length,
+          hasNext: result.hasNext,
+          totalSim: result.totalSim,
+        })
+      } catch (err) {
+        timings.push({ page: p, error: err.message, ms: Date.now() - callStart })
+      }
+    }
+
+    const totalMs = Date.now() - startedAt
+    const validTimings = timings.filter((t) => !t.error)
+    const avgMs = validTimings.length
+      ? validTimings.reduce((sum, t) => sum + t.ms, 0) / validTimings.length
+      : null
+
+    return Response.json({
+      success: true,
+      debug: true,
+      pages_tested: pagesToTest,
+      total_ms: totalMs,
+      avg_ms_per_call: avgMs,
+      timings,
+      projected_total_seconds_sequential: avgMs ? (avgMs * 1200) / 1000 : null,
+    })
+  }
 
   const counts = {
     active_count: 0,
@@ -85,9 +134,10 @@ export async function GET(request) {
   let reportedTotal = null
   let page = 1
   let hasNext = true
+  const effectiveMaxPages = maxPagesOverride || MAX_PAGES_SAFETY
 
   try {
-    while (hasNext && page <= MAX_PAGES_SAFETY) {
+    while (hasNext && page <= effectiveMaxPages) {
       const batchPages = []
       for (let i = 0; i < BATCH_SIZE; i++) {
         batchPages.push(page + i)
