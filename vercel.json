@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/control-tower-counts",
+      "schedule": "0 21 * * *"
+    }
+  ]
+}
