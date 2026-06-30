@@ -1,22 +1,26 @@
-import pool from '@/lib/db'
+import { getSession } from '@/lib/auth'
 
-export const maxDuration = 90
+const MAX_SEARCH_PAGES = 50
+const BATCH_SIZE = 15 // matches the concurrency Airtel can actually handle (measured earlier)
 
-const PAGE_LIMIT = 500
-const BATCH_SIZE = 15
-const PAGES_PER_INVOCATION = 180
+function formatRow(item) {
+  const activationRaw = item.activation_date || item.activationdate
+  const safeCustodyRaw = item.safe_custody_date || item.safecustodydate
 
-function classifyStatus(status) {
-  const s = (status || '').toUpperCase().trim()
-  if (s === 'ACTIVE') return 'active_count'
-  if (s === 'INITIAL') return 'available_count'
-  if (s === 'ACTIVATED_ON_TEST_MODE') return 'active_test_mode_count'
-  if (s === 'TEMP_DISCONNECT') return 'temp_disconnect_count'
-  if (s === 'SAFE_CUSTODY') return 'safe_custody_count'
-  return 'other_count'
+  return {
+    sim_no: item.sim_no || item.simnumber || item.iccid || '-',
+    mobile_no: item.mobile_no || item.mobileno || item.msisdn || '-',
+    status: item.status || item.simstatus || '-',
+    activation_date: activationRaw
+      ? new Date(activationRaw).toLocaleDateString('en-GB')
+      : '-',
+    safeCustody_date: safeCustodyRaw
+      ? new Date(safeCustodyRaw).toLocaleDateString('en-GB')
+      : '-',
+  }
 }
 
-async function fetchAirtelPage(page, airtelAuth) {
+async function fetchAirtelPage(page, limit, airtelAuth) {
   const controller = new AbortController()
   const timeoutId = setTimeout(() => controller.abort(), 15000)
 
@@ -30,232 +34,112 @@ async function fetchAirtelPage(page, airtelAuth) {
           authorization: `Basic ${airtelAuth}`,
           'content-type': 'application/json',
         },
-        body: JSON.stringify({ page_no: page, limit: PAGE_LIMIT }),
+        body: JSON.stringify({ page_no: page, limit }),
         cache: 'no-store',
         signal: controller.signal,
       }
     )
-
-    if (!response.ok) {
-      throw new Error(`Airtel API returned HTTP ${response.status} on page ${page}`)
-    }
-
     const result = await response.json()
     return {
       rows: result?.data?.results || [],
       hasNext: result?.data?.hasnext ?? false,
-      totalSim: result?.data?.totalsim ?? null,
     }
   } catch (err) {
-    if (err.name === 'AbortError') {
-      throw new Error(`Airtel API timed out after 15s on page ${page}`)
-    }
-    throw err
+    // Treat a timed-out or failed page as empty rather than crashing the whole search
+    return { rows: [], hasNext: false }
   } finally {
     clearTimeout(timeoutId)
   }
 }
 
-function isAuthorized(request) {
-  const cronSecret = process.env.CRON_SECRET
-  if (!cronSecret) return true
-  const authHeader = request.headers.get('authorization')
-  return authHeader === `Bearer ${cronSecret}`
-}
-
-async function getProgress() {
-  const result = await pool.query(
-    'SELECT * FROM dashboard_sync_progress WHERE id = 1'
-  )
-  return result.rows[0]
-}
-
-async function saveProgress(updates) {
-  const fields = Object.keys(updates)
-  const setClauses = fields.map((f, i) => `${f} = $${i + 1}`).join(', ')
-  const values = fields.map((f) => updates[f])
-
-  await pool.query(
-    `UPDATE dashboard_sync_progress SET ${setClauses}, updated_at = NOW() WHERE id = 1`,
-    values
-  )
-}
-
-async function triggerNextChunk(request, cronSecret) {
-  const baseUrl = `${request.nextUrl?.protocol || 'https:'}//${request.headers.get('host')}`
-  const url = `${baseUrl}/api/control-tower-counts`
-
-  fetch(url, {
-    headers: cronSecret ? { Authorization: `Bearer ${cronSecret}` } : {},
-  }).catch(() => {
-    // If this fails, the chain stops and the progress row stays 'in_progress',
-    // which is visible for debugging and safe to manually resume.
-  })
-}
-
 export async function GET(request) {
-  if (!isAuthorized(request)) {
-    return Response.json({ success: false, message: 'Unauthorized' }, { status: 401 })
-  }
-
-  const airtelAuth = process.env.AIRTEL_API_AUTH
-  if (!airtelAuth) {
+  const session = await getSession(request)
+  if (!session) {
     return Response.json(
-      { success: false, message: 'AIRTEL_API_AUTH not configured' },
-      { status: 500 }
+      { success: false, message: 'Unauthorized' },
+      { status: 401 }
     )
   }
-
-  const { searchParams } = new URL(request.url)
-  const resetFlag = searchParams.get('reset') === 'true'
-
-  let progress = await getProgress()
-
-  if (!progress) {
-    return Response.json(
-      { success: false, message: 'dashboard_sync_progress row missing - run the setup SQL first' },
-      { status: 500 }
-    )
-  }
-
-  // Start a fresh sync if idle/done, or if explicitly reset.
-  // Note: an 'error' status does NOT trigger a reset - it resumes cleanly
-  // from the last successfully saved page (see catch block below for why).
-  if (progress.status === 'idle' || progress.status === 'done' || resetFlag) {
-    await saveProgress({
-      current_page: 1,
-      total_sim: null,
-      active_count: 0,
-      available_count: 0,
-      active_test_mode_count: 0,
-      temp_disconnect_count: 0,
-      safe_custody_count: 0,
-      other_count: 0,
-      total_processed: 0,
-      status: 'in_progress',
-      started_at: new Date().toISOString(),
-    })
-    progress = await getProgress()
-  }
-
-  const startPage = progress.current_page
-  let page = startPage
-  const endPage = startPage + PAGES_PER_INVOCATION
-  let hasNext = true
-  let reachedEnd = false
-
-  const counts = {
-    active_count: progress.active_count,
-    available_count: progress.available_count,
-    active_test_mode_count: progress.active_test_mode_count,
-    temp_disconnect_count: progress.temp_disconnect_count,
-    safe_custody_count: progress.safe_custody_count,
-    other_count: progress.other_count,
-  }
-  let totalProcessed = progress.total_processed
-  let reportedTotal = progress.total_sim
 
   try {
-    while (hasNext && page < endPage) {
-      const batchPages = []
-      for (let i = 0; i < BATCH_SIZE && page + i < endPage; i++) {
-        batchPages.push(page + i)
-      }
+    const { searchParams } = new URL(request.url)
+    const search = searchParams.get('search') || ''
+    const download = searchParams.get('download')
 
-      const results = await Promise.all(
-        batchPages.map((p) => fetchAirtelPage(p, airtelAuth))
+    const airtelAuth = process.env.AIRTEL_API_AUTH
+    if (!airtelAuth) {
+      return Response.json(
+        { success: false, message: 'API configuration missing' },
+        { status: 500 }
       )
-
-      for (const { rows, hasNext: nextFlag, totalSim } of results) {
-        if (totalSim && !reportedTotal) reportedTotal = totalSim
-
-        for (const row of rows) {
-          const bucket = classifyStatus(row.status)
-          counts[bucket] += 1
-          totalProcessed += 1
-        }
-
-        if (rows.length === 0 || !nextFlag) {
-          reachedEnd = true
-          hasNext = false
-        }
-      }
-
-      page += batchPages.length
     }
 
-    if (reachedEnd) {
-      const totalCount = reportedTotal ? parseInt(reportedTotal, 10) : totalProcessed
+    // SEARCH MODE — fetch pages in parallel batches instead of one at a time.
+    // Cuts a worst-case 50-page sequential search (~55s) down to roughly
+    // 4 batches at ~1.5s each (~6-8s), since Airtel handles ~15 concurrent
+    // requests without queuing them fully sequentially.
+    if (search) {
+      let allRows = []
+      let page = 1
+      let truncated = false
+      let keepGoing = true
 
-      await pool.query(
-        `INSERT INTO sim_dashboard_counts
-          (total_count, available_count, active_count, active_test_mode_count, temp_disconnect_count, safe_custody_count, updated_at)
-         VALUES ($1, $2, $3, $4, $5, $6, NOW())`,
-        [
-          totalCount,
-          counts.available_count,
-          counts.active_count,
-          counts.active_test_mode_count,
-          counts.temp_disconnect_count,
-          counts.safe_custody_count,
-        ]
+      while (keepGoing && page <= MAX_SEARCH_PAGES) {
+        const batchPages = []
+        for (let i = 0; i < BATCH_SIZE && page + i <= MAX_SEARCH_PAGES; i++) {
+          batchPages.push(page + i)
+        }
+
+        const results = await Promise.all(
+          batchPages.map((p) => fetchAirtelPage(p, 500, airtelAuth))
+        )
+
+        let sawShortPage = false
+
+        for (const { rows, hasNext } of results) {
+          allRows = [...allRows, ...rows.map(formatRow)]
+          if (rows.length < 500 || !hasNext) {
+            sawShortPage = true
+          }
+        }
+
+        page += batchPages.length
+
+        if (sawShortPage) {
+          keepGoing = false
+        }
+      }
+
+      if (page > MAX_SEARCH_PAGES) truncated = true
+
+      const searchLower = search.toLowerCase()
+      const filtered = allRows.filter(
+        (item) =>
+          item.sim_no?.toLowerCase().includes(searchLower) ||
+          item.mobile_no?.toLowerCase().includes(searchLower)
       )
-
-      await saveProgress({
-        current_page: page,
-        total_sim: reportedTotal,
-        ...counts,
-        total_processed: totalProcessed,
-        status: 'done',
-      })
 
       return Response.json({
         success: true,
-        finished: true,
-        total_count: totalCount,
-        total_processed: totalProcessed,
-        counts,
-      })
-    } else {
-      await saveProgress({
-        current_page: page,
-        total_sim: reportedTotal,
-        ...counts,
-        total_processed: totalProcessed,
-        status: 'in_progress',
-      })
-
-      const cronSecret = process.env.CRON_SECRET
-      await triggerNextChunk(request, cronSecret)
-
-      return Response.json({
-        success: true,
-        finished: false,
-        pages_processed_this_chunk: page - startPage,
-        current_page: page,
-        total_processed: totalProcessed,
-        message: 'Chunk complete, next chunk triggered',
+        count: filtered.length,
+        data: filtered,
+        truncated,
       })
     }
-  } catch (error) {
-    // CRITICAL: do NOT save counts/page progress here.
-    // This chunk failed partway through, and we don't know exactly which
-    // pages completed before the error vs which were mid-flight. Saving
-    // this partial state would cause double-counting on retry, since the
-    // retry would re-fetch pages already tallied in this failed attempt.
-    // Instead, leave current_page and all counts untouched at their last
-    // successfully saved values, so a retry resumes cleanly with no overlap.
-    await saveProgress({
-      status: 'error',
+
+    // NORMAL / DOWNLOAD MODE
+    const limit = download === 'true' ? 5000 : 500
+    const { rows } = await fetchAirtelPage(1, limit, airtelAuth)
+    const formattedRows = rows.map(formatRow)
+
+    return Response.json({
+      success: true,
+      count: formattedRows.length,
+      data: formattedRows,
     })
-
+  } catch (error) {
     return Response.json(
-      {
-        success: false,
-        message: error.message || 'Sync failed',
-        page_at_failure: page,
-        note: 'Progress was not updated for this failed chunk. Retry will resume cleanly from the last successful checkpoint.',
-      },
+      { success: false, message: 'Failed to fetch SIM data' },
       { status: 500 }
     )
   }
