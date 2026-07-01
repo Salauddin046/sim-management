@@ -59,13 +59,22 @@ async function fetchAirtelPage(page, airtelAuth) {
 async function upsertSims(rows) {
   if (!rows.length) return
 
-  // Build bulk upsert — insert or update all rows in one query
-  const values = rows.map((r, i) => {
+  // Deduplicate by sim_no — keep the last occurrence if Airtel returns duplicates
+  // within the same page (which causes "ON CONFLICT DO UPDATE cannot affect row twice")
+  const seen = new Map()
+  for (const row of rows) {
+    if (row.sim_no) seen.set(row.sim_no, row)
+  }
+  const deduplicated = Array.from(seen.values())
+
+  if (!deduplicated.length) return
+
+  const values = deduplicated.map((r, i) => {
     const base = i * 10
     return `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5}, $${base + 6}, $${base + 7}, $${base + 8}, $${base + 9}, $${base + 10}, NOW())`
   }).join(', ')
 
-  const params = rows.flatMap(r => [
+  const params = deduplicated.flatMap(r => [
     r.sim_no || null,
     r.mobile_no || null,
     r.status || null,
