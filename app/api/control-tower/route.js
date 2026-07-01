@@ -1,41 +1,5 @@
+import pool from '@/lib/db'
 import { getSession } from '@/lib/auth'
-
-const MAX_SEARCH_PAGES = 50
-
-function formatRow(item) {
-  const activationRaw = item.activation_date || item.activationdate
-  const safeCustodyRaw = item.safe_custody_date || item.safecustodydate
-
-  return {
-    sim_no: item.sim_no || item.simnumber || item.iccid || '-',
-    mobile_no: item.mobile_no || item.mobileno || item.msisdn || '-',
-    status: item.status || item.simstatus || '-',
-    activation_date: activationRaw
-      ? new Date(activationRaw).toLocaleDateString('en-GB')
-      : '-',
-    safeCustody_date: safeCustodyRaw
-      ? new Date(safeCustodyRaw).toLocaleDateString('en-GB')
-      : '-',
-  }
-}
-
-async function fetchAirtelPage(page, limit, airtelAuth) {
-  const response = await fetch(
-    'https://airtelsim.intellicar.in/api/v1/airtel/sims/list',
-    {
-      method: 'POST',
-      headers: {
-        accept: 'application/json, text/plain, */*',
-        authorization: `Basic ${airtelAuth}`,
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({ page_no: page, limit }),
-      cache: 'no-store',
-    }
-  )
-  const result = await response.json()
-  return { rows: result?.data?.results || [], raw: result, httpStatus: response.status }
-}
 
 export async function GET(request) {
   const session = await getSession(request)
@@ -59,60 +23,90 @@ export async function GET(request) {
       )
     }
 
-    // SEARCH MODE — paginate up to MAX_SEARCH_PAGES
     if (search) {
-      let allRows = []
-      let page = 1
-      let truncated = false
-      let firstPageRaw = null
-      let firstPageHttpStatus = null
-
-      while (page <= MAX_SEARCH_PAGES) {
-        const { rows, raw, httpStatus } = await fetchAirtelPage(page, 500, airtelAuth)
-        if (page === 1) {
-          firstPageRaw = raw
-          firstPageHttpStatus = httpStatus
-        }
-        if (rows.length === 0) break
-        allRows = [...allRows, ...rows.map(formatRow)]
-        if (rows.length < 500) break
-        page++
-      }
-
-      if (page > MAX_SEARCH_PAGES) truncated = true
-
-      const searchLower = search.toLowerCase()
-      const filtered = allRows.filter(
-        (item) =>
-          item.sim_no?.toLowerCase().includes(searchLower) ||
-          item.mobile_no?.toLowerCase().includes(searchLower)
+      const searchParam = `%${search}%`
+      const result = await pool.query(
+        `SELECT
+          sim_no,
+          mobile_no,
+          status,
+          activation_date,
+          safe_custody_date
+         FROM airtel_sims
+         WHERE sim_no ILIKE $1 OR mobile_no ILIKE $1
+         ORDER BY activation_date DESC NULLS LAST
+         LIMIT 500`,
+        [searchParam]
       )
+
+      const rows = result.rows.map((r) => ({
+        sim_no: r.sim_no || '-',
+        mobile_no: r.mobile_no || '-',
+        status: r.status || '-',
+        activation_date: r.activation_date
+          ? new Date(r.activation_date).toLocaleDateString('en-GB')
+          : '-',
+        safeCustody_date: r.safe_custody_date
+          ? new Date(r.safe_custody_date).toLocaleDateString('en-GB')
+          : '-',
+      }))
 
       return Response.json({
         success: true,
-        count: filtered.length,
-        data: filtered,
-        truncated,
-        debug_total_fetched: allRows.length,
-        debug_sample_formatted: allRows.slice(0, 3),
-        debug_raw_first_page: firstPageRaw,
-        debug_http_status: firstPageHttpStatus,
+        count: rows.length,
+        data: rows,
+        truncated: rows.length === 500,
       })
     }
 
-    // NORMAL / DOWNLOAD MODE
     const limit = download === 'true' ? 5000 : 500
-    const { rows } = await fetchAirtelPage(1, limit, airtelAuth)
-    const formattedRows = rows.map(formatRow)
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 25000)
 
-    return Response.json({
-      success: true,
-      count: formattedRows.length,
-      data: formattedRows,
-    })
+    try {
+      const response = await fetch(
+        'https://airtelsim.intellicar.in/api/v1/airtel/sims/list',
+        {
+          method: 'POST',
+          headers: {
+            accept: 'application/json, text/plain, */*',
+            authorization: `Basic ${airtelAuth}`,
+            'content-type': 'application/json',
+          },
+          body: JSON.stringify({ page_no: 1, limit }),
+          cache: 'no-store',
+          signal: controller.signal,
+        }
+      )
+
+      const result = await response.json()
+      const rows = (result?.data?.results || []).map((item) => {
+        const activationRaw = item.activation_date || item.activationdate
+        const safeCustodyRaw = item.safe_custody_date || item.safecustodydate
+        return {
+          sim_no: item.sim_no || '-',
+          mobile_no: item.mobile_no || '-',
+          status: item.status || '-',
+          activation_date: activationRaw
+            ? new Date(activationRaw).toLocaleDateString('en-GB')
+            : '-',
+          safeCustody_date: safeCustodyRaw
+            ? new Date(safeCustodyRaw).toLocaleDateString('en-GB')
+            : '-',
+        }
+      })
+
+      return Response.json({
+        success: true,
+        count: rows.length,
+        data: rows,
+      })
+    } finally {
+      clearTimeout(timeoutId)
+    }
   } catch (error) {
     return Response.json(
-      { success: false, message: 'Failed to fetch SIM data', error: String(error) },
+      { success: false, message: 'Failed to fetch SIM data' },
       { status: 500 }
     )
   }
